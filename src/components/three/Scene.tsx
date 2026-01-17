@@ -10,6 +10,7 @@ import { BasicShape } from "@/components/three/generators/BasicShape"
 import { Text3DGenerator } from "@/components/three/generators/Text3D"
 import { ReliefGenerator } from "@/components/three/generators/Relief"
 import { StencilGenerator } from "@/components/three/generators/Stencil"
+import { QRCodeGenerator } from "@/components/three/generators/QRCode"
 
 import { ExportHandler } from "@/components/three/ExportHandler"
 import { Spinner } from "@/components/ui/spinner"
@@ -89,6 +90,10 @@ function CurrentModel() {
 
   if (currentMode === 'hollow') {
      return <StencilGenerator />
+  }
+
+  if (currentMode === 'qr') {
+     return <QRCodeGenerator />
   }
 
   return null

@@ -665,8 +665,156 @@ export function Panel() {
     )
   }
 
+  if (currentMode === 'qr') {
+    return (
+      <div className="p-5 space-y-5">
+        <div className="pb-3 border-b border-white/5">
+           <h2 className="text-base font-semibold bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">二维码参数</h2>
+           <p className="text-xs text-muted-foreground mt-0.5">生成可Print的 3D 二维码</p>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <LabelWithHint hint="输入链接或文本生成二维码">链接/内容</LabelWithHint>
+            <Input 
+              value={parameters.qrText}
+              onChange={(e) => updateParam('qrText', e.target.value)}
+              placeholder="https://example.com"
+              className="mt-1.5"
+            />
+          </div>
+
+          <div>
+             <Label>尺寸 (Size)</Label>
+             <Slider value={parameters.qrSize} min={20} max={200} step={1}
+               onChange={(val) => updateParam('qrSize', val)} unit="mm" />
+          </div>
+
+          <div>
+             <Label>深度 (Depth)</Label>
+             <Slider value={parameters.qrDepth} min={0.5} max={10} step={0.5}
+               onChange={(val) => updateParam('qrDepth', val)} unit="mm" />
+          </div>
+          
+          <div>
+             <Label>底板厚度 (Base)</Label>
+             <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
+               onChange={(val) => updateParam('baseThickness', val)} unit="mm" />
+          </div>
+          
+          <div className="bg-muted/30 p-3 rounded-lg space-y-3">
+             <Label>生成模式</Label>
+             <div className="flex gap-2">
+               <button
+                 onClick={() => updateParam('qrInvert', false)}
+                 className={cn(
+                   "flex-1 py-1.5 px-3 rounded text-xs font-medium transition-colors border",
+                   !parameters.qrInvert 
+                     ? "bg-primary text-primary-foreground border-primary" 
+                     : "bg-transparent text-muted-foreground border-border hover:bg-muted"
+                 )}
+               >
+                 浮雕 (凸)
+               </button>
+               <button
+                 onClick={() => updateParam('qrInvert', true)}
+                 className={cn(
+                   "flex-1 py-1.5 px-3 rounded text-xs font-medium transition-colors border",
+                   parameters.qrInvert 
+                     ? "bg-primary text-primary-foreground border-primary" 
+                     : "bg-transparent text-muted-foreground border-border hover:bg-muted"
+                 )}
+               >
+                 凹雕 (凹)
+               </button>
+             </div>
+             <p className="text-[10px] text-muted-foreground">
+               {parameters.qrInvert ? '适合作为模具或内嵌图案 (挖空)' : '适合作为铭牌或印章 (凸起)'}
+             </p>
+             
+             {parameters.qrInvert && (
+                <div className="flex items-center space-x-2 pt-1 border-t border-white/10 mt-1">
+                  <input 
+                    type="checkbox" 
+                    id="qr-through"
+                    className="rounded border-gray-500 bg-transparent"
+                    checked={parameters.qrIsThrough}
+                    onChange={(e) => updateParam('qrIsThrough', e.target.checked)}
+                  />
+                  <label htmlFor="qr-through" className="text-xs font-medium cursor-pointer select-none">
+                    贯穿底板 (镂空)
+                  </label>
+                </div>
+             )}
+          </div>
+          
+          <div>
+             <Label>底板圆角</Label>
+             <Slider value={parameters.plateCornerRadius} min={0} max={parameters.qrSize/2} step={1}
+               onChange={(val) => updateParam('plateCornerRadius', val)} unit="mm" />
+          </div>
+
+          <div>
+             <Label>边距 (Padding)</Label>
+             <Slider value={parameters.qrMargin} min={0} max={20} step={0.5}
+               onChange={(val) => updateParam('qrMargin', val)} unit="mm" />
+          </div>
+          
+           {/* Material Section Reuse */}
+           <Section title="材质设置">
+              <div>
+                <Label>底板颜色</Label>
+                <div className="flex gap-2 mt-1.5">
+                  <Input 
+                    type="color" 
+                    value={parameters.plateColor}
+                    onChange={(e) => updateParam('plateColor', e.target.value)}
+                    className="w-8 h-8 p-0 border-0 rounded-md cursor-pointer shrink-0"
+                  />
+                  <Input 
+                    value={parameters.plateColor}
+                    onChange={(e) => updateParam('plateColor', e.target.value)}
+                    className="font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>二维码颜色</Label>
+                <div className="flex gap-2 mt-1.5">
+                  <Input 
+                    type="color" 
+                    value={parameters.textColor}
+                    onChange={(e) => updateParam('textColor', e.target.value)}
+                    className="w-8 h-8 p-0 border-0 rounded-md cursor-pointer shrink-0"
+                  />
+                  <Input 
+                    value={parameters.textColor}
+                    onChange={(e) => updateParam('textColor', e.target.value)}
+                    className="font-mono text-xs"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label>粗糙度</Label>
+                <Slider value={parameters.roughness} min={0} max={1} step={0.05}
+                  onChange={(val) => updateParam('roughness', val)} />
+              </div>
+              
+              <div>
+                <Label>金属度</Label>
+                <Slider value={parameters.metalness} min={0} max={1} step={0.05}
+                  onChange={(val) => updateParam('metalness', val)} />
+              </div>
+           </Section>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6 flex items-center justify-center text-muted-foreground">
+    <div className="p-6 flex items-center justify-center text-muted-foreground text-sm">
       此模式参数面板尚未实现
     </div>
   )

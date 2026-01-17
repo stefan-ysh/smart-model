@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template'
+export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template' | 'qr'
 export type ShapeType = 'cube' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'octahedron'
 export type PlateShape = 'square' | 'rectangle' | 'circle' | 'diamond' | 'star' | 'wave' | 'heart'
 
@@ -33,6 +33,14 @@ export interface ModelParams {
   imageUrl: string | null
   invert: boolean
   reliefHeight: number
+  
+  // QR Code params
+  qrText: string
+  qrSize: number
+  qrDepth: number
+  qrInvert: boolean // false: relief (raised), true: hollow (sunken)
+  qrMargin: number
+  qrIsThrough: boolean
   
   // Hollow/Stencil plate params
   plateShape: PlateShape
@@ -173,7 +181,7 @@ const generateId = () => Math.random().toString(36).substring(2, 9)
 
 const defaultParams: ModelParams = {
   shapeType: 'cube',
-  size: 20,
+  size: 40,
   height: 50,
   segments: 32,
   textContent: 'Hello',
@@ -204,6 +212,14 @@ const defaultParams: ModelParams = {
       reliefHeight: 5
     }
   ],
+  
+  // QR Code defaults
+  qrText: 'https://github.com/StartPoly/smart-model',
+  qrSize: 50,
+  qrDepth: 2,
+  qrInvert: false,
+  qrMargin: 1,
+  qrIsThrough: false,
 
   baseThickness: 2,
   hasBase: false,

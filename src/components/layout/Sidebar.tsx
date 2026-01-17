@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Box, Type, Image as ImageIcon, Grid3x3, Folder } from "lucide-react"
+import { Box, Type, Image as ImageIcon, Grid3x3, Folder, QrCode } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useModelStore, GeneratorMode } from "@/lib/store"
 
@@ -47,6 +47,7 @@ export function Sidebar() {
     { mode: 'text', icon: Type, label: '3D文本' },
     { mode: 'relief', icon: ImageIcon, label: '浮雕板' },
     { mode: 'hollow', icon: Grid3x3, label: '镂空板' },
+    { mode: 'qr', icon: QrCode, label: '二维码' },
     { mode: 'template', icon: Folder, label: '模板库' },
   ]
 

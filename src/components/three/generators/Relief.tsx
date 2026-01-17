@@ -136,7 +136,8 @@ function ReliefMesh() {
   const { parameters } = useModelStore()
   const { 
     size, baseThickness, textItems, reliefHeight,
-    plateShape, plateWidth, plateHeight 
+    plateShape, plateWidth, plateHeight,
+    plateColor, textColor, roughness, metalness
   } = parameters
 
   // Load all unique fonts needed
@@ -188,21 +189,21 @@ function ReliefMesh() {
   }, [plateShape, size, plateWidth, plateHeight, baseThickness])
 
   return (
-    <group>
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, baseThickness / 2, 0]}>
       {/* Base Plate */}
       <mesh geometry={plateGeo}>
-        <meshStandardMaterial color="#334155" roughness={0.5} />
+        <meshStandardMaterial color={plateColor} roughness={roughness} metalness={metalness} />
       </mesh>
 
       {/* Embossed Text Items */}
       {textMeshes.map((item: any) => (
         <group 
           key={item.id}
-          position={[item.position.x, item.position.y, baseThickness / 2]}
+          position={[item.position.x, item.position.y, baseThickness / 2 + item.position.z]}
           rotation={[0, 0, (item.rotation * Math.PI) / 180]}
         >
           <mesh geometry={item.geometry}>
-            <meshStandardMaterial color="#e2e8f0" roughness={0.5} />
+            <meshStandardMaterial color={textColor} roughness={roughness} metalness={metalness} />
           </mesh>
         </group>
       ))}

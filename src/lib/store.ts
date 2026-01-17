@@ -10,7 +10,7 @@ export interface TextItem {
   content: string
   fontSize: number
   fontUrl: string
-  position: { x: number, y: number }
+  position: { x: number, y: number, z: number } // 3D coordinates
   rotation: number // Rotation in degrees
 }
 
@@ -43,6 +43,12 @@ export interface ModelParams {
   baseThickness: number
   hasBase: boolean
   
+  // Material settings
+  plateColor: string
+  textColor: string
+  roughness: number
+  metalness: number
+  
   // Display options
   showShadows: boolean
   
@@ -68,34 +74,20 @@ interface ModelStore {
   setViewPreset: (preset: string | null) => void
 }
 
-// Stencil fonts (fonts with connected strokes for 3D printing)
-export const STENCIL_FONTS = [
-  { 
-    value: 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', 
-    label: 'Helvetiker Bold (推荐)' 
-  },
-  { 
-    value: 'https://threejs.org/examples/fonts/optimer_bold.typeface.json', 
-    label: 'Optimer Bold' 
-  },
-  { 
-    value: 'https://threejs.org/examples/fonts/gentilis_bold.typeface.json', 
-    label: 'Gentilis Bold' 
-  },
-]
-
 // All available fonts
 export const ALL_FONTS = [
-  { value: 'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', label: 'Helvetiker Regular' },
-  { value: 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', label: 'Helvetiker Bold' },
-  { value: 'https://threejs.org/examples/fonts/optimer_regular.typeface.json', label: 'Optimer Regular' },
-  { value: 'https://threejs.org/examples/fonts/optimer_bold.typeface.json', label: 'Optimer Bold' },
-  { value: 'https://threejs.org/examples/fonts/gentilis_regular.typeface.json', label: 'Gentilis Regular' },
-  { value: 'https://threejs.org/examples/fonts/gentilis_bold.typeface.json', label: 'Gentilis Bold' },
-  { value: 'https://threejs.org/examples/fonts/droid/droid_sans_regular.typeface.json', label: 'Droid Sans' },
-  { value: 'https://threejs.org/examples/fonts/droid/droid_sans_bold.typeface.json', label: 'Droid Sans Bold' },
-  { value: 'https://threejs.org/examples/fonts/droid/droid_serif_regular.typeface.json', label: 'Droid Serif' },
-  { value: 'https://threejs.org/examples/fonts/droid/droid_serif_bold.typeface.json', label: 'Droid Serif Bold' },
+  { value: '/fonts/连筋中文.json', label: '连筋中文' },
+  { value: '/fonts/连筋英文.json', label: '连筋英文' },
+  { value: '/fonts/helvetiker_bold.json', label: 'Helvetiker Bold' },
+  { value: '/fonts/helvetiker_regular.json', label: 'Helvetiker Regular' },
+  { value: '/fonts/optimer_bold.json', label: 'Optimer Bold' },
+  { value: '/fonts/optimer_regular.json', label: 'Optimer Regular' },
+  { value: '/fonts/gentilis_bold.json', label: 'Gentilis Bold' },
+  { value: '/fonts/gentilis_regular.json', label: 'Gentilis Regular' },
+  { value: '/fonts/droid_sans_bold.json', label: 'Droid Sans Bold' },
+  { value: '/fonts/droid_sans_regular.json', label: 'Droid Sans Regular' },
+  { value: '/fonts/droid_serif_bold.json', label: 'Droid Serif Bold' },
+  { value: '/fonts/droid_serif_regular.json', label: 'Droid Serif Regular' },
 ]
 
 const generateId = () => Math.random().toString(36).substring(2, 9)
@@ -108,7 +100,7 @@ const defaultParams: ModelParams = {
   textContent: 'Hello',
   fontSize: 20,
   thickness: 5,
-  fontUrl: 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json',
+  fontUrl: '/fonts/helvetiker_bold.json',
   textPosition: { x: 0, y: 0 },
   
   imageUrl: null,
@@ -124,14 +116,21 @@ const defaultParams: ModelParams = {
       id: generateId(),
       content: 'Hello',
       fontSize: 12,
-      fontUrl: 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json',
-      position: { x: 0, y: 0 },
+      fontUrl: '/fonts/helvetiker_bold.json',
+      position: { x: 0, y: 0, z: 0 },
       rotation: 0
     }
   ],
 
   baseThickness: 2,
   hasBase: false,
+  
+  // Material defaults
+  plateColor: '#0ea5e9',
+  textColor: '#e2e8f0',
+  roughness: 0.3,
+  metalness: 0.1,
+  
   showShadows: false,
   exportTrigger: 0,
 }
@@ -162,8 +161,8 @@ export const useModelStore = create<ModelStore>((set) => ({
           id: generateId(),
           content: 'Text',
           fontSize: 12,
-          fontUrl: 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json',
-          position: { x: 0, y: (state.parameters.textItems.length * 15) % 30 - 15 },
+          fontUrl: '/fonts/helvetiker_bold.json',
+          position: { x: 0, y: (state.parameters.textItems.length * 15) % 30 - 15, z: 0 },
           rotation: 0
         }
       ]

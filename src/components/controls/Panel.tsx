@@ -1,6 +1,6 @@
 "use client"
 
-import { useModelStore, ShapeType, GeneratorMode } from "@/lib/store"
+import { useModelStore, ShapeType, GeneratorMode, ALL_FONTS } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 
@@ -105,6 +105,25 @@ const PlateShapeButton = ({
   )
 }
 
+// Color picker component
+const ColorInput = ({ value, onChange, label }: { value: string, onChange: (val: string) => void, label?: string }) => (
+  <div className="flex items-center gap-2">
+    <input
+      type="color"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-10 h-10 rounded cursor-pointer border border-border"
+    />
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="flex-1 px-2 py-1 text-sm bg-secondary rounded border border-border font-mono"
+      placeholder="#000000"
+    />
+  </div>
+)
+
 // Section component for better organization
 const Section = ({ title, children, collapsible = false }: { title: string, children: React.ReactNode, collapsible?: boolean }) => (
   <div className="space-y-3 border-b border-border pb-4 last:border-0">
@@ -195,16 +214,7 @@ export function Panel() {
               <Label>字体 (Font)</Label>
               <Select
                 value={parameters.fontUrl}
-                options={[
-                  { value: 'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', label: 'Helvetiker (Regular)' },
-                  { value: 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', label: 'Helvetiker (Bold)' },
-                  { value: 'https://threejs.org/examples/fonts/optimer_regular.typeface.json', label: 'Optimer (Regular)' },
-                  { value: 'https://threejs.org/examples/fonts/optimer_bold.typeface.json', label: 'Optimer (Bold)' },
-                  { value: 'https://threejs.org/examples/fonts/gentilis_regular.typeface.json', label: 'Gentilis (Regular)' },
-                  { value: 'https://threejs.org/examples/fonts/gentilis_bold.typeface.json', label: 'Gentilis (Bold)' },
-                  { value: 'https://threejs.org/examples/fonts/droid/droid_sans_regular.typeface.json', label: 'Droid Sans' },
-                  { value: 'https://threejs.org/examples/fonts/droid/droid_serif_regular.typeface.json', label: 'Droid Serif' },
-                ]}
+                options={ALL_FONTS}
                 onChange={(val) => updateParam('fontUrl', val)}
               />
            </div>
@@ -351,12 +361,7 @@ export function Panel() {
                    <Label>字体</Label>
                    <Select
                      value={item.fontUrl}
-                     options={[
-                       { value: 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', label: 'Helvetiker Bold' },
-                       { value: 'https://threejs.org/examples/fonts/optimer_bold.typeface.json', label: 'Optimer Bold' },
-                       { value: 'https://threejs.org/examples/fonts/gentilis_bold.typeface.json', label: 'Gentilis Bold' },
-                       { value: 'https://threejs.org/examples/fonts/droid/droid_sans_bold.typeface.json', label: 'Droid Sans Bold' },
-                     ]}
+                     options={ALL_FONTS}
                      onChange={(val) => updateTextItem(item.id, { fontUrl: val })}
                    />
                 </div>
@@ -375,21 +380,48 @@ export function Panel() {
                 
                 <div>
                    <Label>位置</Label>
-                   <div className="grid grid-cols-2 gap-2">
-                      <div>
-                         <span className="text-xs text-muted-foreground">X</span>
-                         <Slider value={item.position.x} min={-50} max={50} step={1}
+                   <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                         <span className="text-xs text-muted-foreground w-8">横向</span>
+                         <Slider value={item.position.x} min={-200} max={200} step={1}
                            onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} />
                       </div>
-                      <div>
-                         <span className="text-xs text-muted-foreground">Y</span>
-                         <Slider value={item.position.y} min={-50} max={50} step={1}
+                      <div className="flex items-center gap-2">
+                         <span className="text-xs text-muted-foreground w-8">纵向</span>
+                         <Slider value={item.position.y} min={-200} max={200} step={1}
                            onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} />
                       </div>
                    </div>
                 </div>
              </div>
            ))}
+        </div>
+        
+        {/* Material Section */}
+        <div className="space-y-4 border-t border-border pt-4">
+           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">材质设置</h3>
+           
+           <div>
+              <Label>底板颜色</Label>
+              <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
+           </div>
+           
+           <div>
+              <Label>文字颜色</Label>
+              <ColorInput value={parameters.textColor} onChange={(val) => updateParam('textColor', val)} />
+           </div>
+           
+           <div>
+              <Label>粗糙度</Label>
+              <Slider value={parameters.roughness} min={0} max={1} step={0.05}
+                onChange={(val) => updateParam('roughness', val)} />
+           </div>
+           
+           <div>
+              <Label>金属度</Label>
+              <Slider value={parameters.metalness} min={0} max={1} step={0.05}
+                onChange={(val) => updateParam('metalness', val)} />
+           </div>
         </div>
       </div>
     )
@@ -495,12 +527,7 @@ export function Panel() {
                    <Label>字体</Label>
                    <Select
                      value={item.fontUrl}
-                     options={[
-                       { value: 'https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', label: 'Helvetiker Bold (推荐)' },
-                       { value: 'https://threejs.org/examples/fonts/optimer_bold.typeface.json', label: 'Optimer Bold' },
-                       { value: 'https://threejs.org/examples/fonts/gentilis_bold.typeface.json', label: 'Gentilis Bold' },
-                       { value: 'https://threejs.org/examples/fonts/droid/droid_sans_bold.typeface.json', label: 'Droid Sans Bold' },
-                     ]}
+                     options={ALL_FONTS}
                      onChange={(val) => updateTextItem(item.id, { fontUrl: val })}
                    />
                 </div>
@@ -519,21 +546,43 @@ export function Panel() {
                 
                 <div>
                    <Label>位置</Label>
-                   <div className="grid grid-cols-2 gap-2">
-                      <div>
-                         <span className="text-xs text-muted-foreground">X</span>
-                         <Slider value={item.position.x} min={-50} max={50} step={1}
+                   <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                         <span className="text-xs text-muted-foreground w-8">横向</span>
+                         <Slider value={item.position.x} min={-200} max={200} step={1}
                            onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} />
                       </div>
-                      <div>
-                         <span className="text-xs text-muted-foreground">Y</span>
-                         <Slider value={item.position.y} min={-50} max={50} step={1}
+                      <div className="flex items-center gap-2">
+                         <span className="text-xs text-muted-foreground w-8">纵向</span>
+                         <Slider value={item.position.y} min={-200} max={200} step={1}
                            onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} />
                       </div>
                    </div>
                 </div>
              </div>
            ))}
+        </div>
+        
+        {/* Material Section */}
+        <div className="space-y-4 border-t border-border pt-4">
+           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">材质设置</h3>
+           
+           <div>
+              <Label>底板颜色</Label>
+              <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
+           </div>
+           
+           <div>
+              <Label>粗糙度</Label>
+              <Slider value={parameters.roughness} min={0} max={1} step={0.05}
+                onChange={(val) => updateParam('roughness', val)} />
+           </div>
+           
+           <div>
+              <Label>金属度</Label>
+              <Slider value={parameters.metalness} min={0} max={1} step={0.05}
+                onChange={(val) => updateParam('metalness', val)} />
+           </div>
         </div>
       </div>
     )

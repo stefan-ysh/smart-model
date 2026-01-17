@@ -122,12 +122,10 @@ export function Scene() {
             shadow-mapSize={[1024, 1024]}
           />
           
-          {/* Model centered at origin */}
-          <Center>
-            <group name="export-target">
-              <CurrentModel />
-            </group>
-          </Center>
+          {/* Model - positioned so it sits on the grid */}
+          <group name="export-target">
+            <CurrentModel />
+          </group>
           
           {/* Grid - infinite and filling the view */}
           <Grid 

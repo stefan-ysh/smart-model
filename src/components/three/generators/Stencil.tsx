@@ -185,7 +185,8 @@ function StencilMesh() {
   const { parameters } = useModelStore()
   const { 
     size, baseThickness, textItems, 
-    plateShape, plateWidth, plateHeight 
+    plateShape, plateWidth, plateHeight,
+    plateColor, roughness, metalness
   } = parameters
 
   // Load all unique fonts needed
@@ -241,13 +242,16 @@ function StencilMesh() {
   if (!resultGeometry) return null
 
   return (
-    <mesh geometry={resultGeometry}>
-      <meshStandardMaterial 
-        color="#0ea5e9" 
-        roughness={0.3} 
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, baseThickness / 2, 0]}>
+      <mesh geometry={resultGeometry}>
+        <meshStandardMaterial 
+          color={plateColor} 
+          roughness={roughness}
+          metalness={metalness}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
   )
 }
 

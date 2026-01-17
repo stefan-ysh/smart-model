@@ -47,26 +47,83 @@ function createPlateGeometry(shape: PlateShape, size: number, width: number, hei
     }
     
     case 'wave': {
+      // Smooth rounded rectangle with wavy sides
       const waveShape = new THREE.Shape()
-      const w = size
-      const h = size * 0.6
+      const w = size * 0.8
+      const h = size * 0.5
+      const waveAmp = size * 0.08 // Wave amplitude
+      
+      // Start bottom-left, go clockwise
       waveShape.moveTo(-w/2, -h/2)
+      
+      // Bottom edge (straight)
       waveShape.lineTo(w/2, -h/2)
-      waveShape.bezierCurveTo(w/2 + 5, 0, w/2 + 5, 0, w/2, h/2)
+      
+      // Right edge (wavy)
+      waveShape.bezierCurveTo(
+        w/2 + waveAmp, -h/4,
+        w/2 - waveAmp, h/4,
+        w/2, h/2
+      )
+      
+      // Top edge (straight)
       waveShape.lineTo(-w/2, h/2)
-      waveShape.bezierCurveTo(-w/2 - 5, 0, -w/2 - 5, 0, -w/2, -h/2)
-      return new THREE.ExtrudeGeometry(waveShape, { depth: thickness, bevelEnabled: false })
-        .translate(0, 0, -thickness / 2)
+      
+      // Left edge (wavy - mirrored)
+      waveShape.bezierCurveTo(
+        -w/2 - waveAmp, h/4,
+        -w/2 + waveAmp, -h/4,
+        -w/2, -h/2
+      )
+      
+      return new THREE.ExtrudeGeometry(waveShape, { 
+        depth: thickness, 
+        bevelEnabled: false,
+        curveSegments: 32
+      }).translate(0, 0, -thickness / 2)
     }
     
     case 'heart': {
+      // Proper heart shape with smooth curves
       const heartShape = new THREE.Shape()
-      const s = size / 4
-      heartShape.moveTo(0, -s * 2)
-      heartShape.bezierCurveTo(-s * 2, -s * 2, -s * 2, s, 0, s * 2)
-      heartShape.bezierCurveTo(s * 2, s, s * 2, -s * 2, 0, -s * 2)
-      return new THREE.ExtrudeGeometry(heartShape, { depth: thickness, bevelEnabled: false })
-        .translate(0, 0, -thickness / 2)
+      const s = size / 2
+      
+      // Start at bottom point
+      heartShape.moveTo(0, -s * 0.7)
+      
+      // Left curve going up
+      heartShape.bezierCurveTo(
+        -s * 0.1, -s * 0.4,  // control 1
+        -s * 0.7, -s * 0.4,  // control 2
+        -s * 0.7, s * 0.1    // end point (left bump bottom)
+      )
+      
+      // Left top bump
+      heartShape.bezierCurveTo(
+        -s * 0.7, s * 0.5,   // control 1
+        -s * 0.35, s * 0.7,  // control 2
+        0, s * 0.4           // top center dip
+      )
+      
+      // Right top bump (mirror)
+      heartShape.bezierCurveTo(
+        s * 0.35, s * 0.7,   // control 1
+        s * 0.7, s * 0.5,    // control 2
+        s * 0.7, s * 0.1     // end point (right bump bottom)
+      )
+      
+      // Right curve going down
+      heartShape.bezierCurveTo(
+        s * 0.7, -s * 0.4,   // control 1
+        s * 0.1, -s * 0.4,   // control 2
+        0, -s * 0.7          // back to bottom point
+      )
+      
+      return new THREE.ExtrudeGeometry(heartShape, { 
+        depth: thickness, 
+        bevelEnabled: false,
+        curveSegments: 32
+      }).translate(0, 0, -thickness / 2)
     }
     
     case 'square':

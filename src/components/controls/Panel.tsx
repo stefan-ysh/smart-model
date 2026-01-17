@@ -281,12 +281,26 @@ export function Panel() {
                   <Slider value={parameters.plateHeight} min={20} max={200} step={1}
                     onChange={(val) => updateParam('plateHeight', val)} />
                </div>
+               <div>
+                  <Label>圆角半径</Label>
+                  <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
+                    onChange={(val) => updateParam('plateCornerRadius', val)} />
+               </div>
              </>
            ) : (
              <div>
                 <Label>尺寸 (Size)</Label>
                 <Slider value={parameters.size} min={20} max={200} step={1}
                   onChange={(val) => updateParam('size', val)} />
+             </div>
+           )}
+
+           {/* Corner radius for all non-circle shapes */}
+           {parameters.plateShape !== 'rectangle' && parameters.plateShape !== 'circle' && (
+             <div>
+                <Label>圆角半径</Label>
+                <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
+                  onChange={(val) => updateParam('plateCornerRadius', val)} />
              </div>
            )}
 
@@ -485,12 +499,26 @@ export function Panel() {
                   <Slider value={parameters.plateHeight} min={20} max={200} step={1}
                     onChange={(val) => updateParam('plateHeight', val)} />
                </div>
+               <div>
+                  <Label>圆角半径</Label>
+                  <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
+                    onChange={(val) => updateParam('plateCornerRadius', val)} />
+               </div>
              </>
            ) : (
              <div>
                 <Label>尺寸 (Size)</Label>
                 <Slider value={parameters.size} min={20} max={200} step={1}
                   onChange={(val) => updateParam('size', val)} />
+             </div>
+           )}
+
+           {/* Corner radius for all non-circle shapes */}
+           {parameters.plateShape !== 'rectangle' && parameters.plateShape !== 'circle' && (
+             <div>
+                <Label>圆角半径</Label>
+                <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
+                  onChange={(val) => updateParam('plateCornerRadius', val)} />
              </div>
            )}
 

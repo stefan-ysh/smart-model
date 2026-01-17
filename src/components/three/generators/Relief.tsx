@@ -13,10 +13,35 @@ function createPlateGeometry(
   width: number,
   height: number,
   thickness: number,
+  cornerRadius: number = 0,
 ): THREE.BufferGeometry {
   switch (shape) {
-    case "rectangle":
+    case "rectangle": {
+      // Use rounded rectangle if cornerRadius > 0
+      if (cornerRadius > 0) {
+        const maxRadius = Math.min(width, height) / 2 - 1;
+        const r = Math.min(cornerRadius, maxRadius);
+        const rectShape = new THREE.Shape();
+        const w = width / 2;
+        const h = height / 2;
+        
+        rectShape.moveTo(-w + r, -h);
+        rectShape.lineTo(w - r, -h);
+        rectShape.quadraticCurveTo(w, -h, w, -h + r);
+        rectShape.lineTo(w, h - r);
+        rectShape.quadraticCurveTo(w, h, w - r, h);
+        rectShape.lineTo(-w + r, h);
+        rectShape.quadraticCurveTo(-w, h, -w, h - r);
+        rectShape.lineTo(-w, -h + r);
+        rectShape.quadraticCurveTo(-w, -h, -w + r, -h);
+        
+        return new THREE.ExtrudeGeometry(rectShape, {
+          depth: thickness,
+          bevelEnabled: false,
+        }).translate(0, 0, -thickness / 2);
+      }
       return new THREE.BoxGeometry(width, height, thickness);
+    }
 
     case "circle":
       return new THREE.CylinderGeometry(
@@ -26,18 +51,25 @@ function createPlateGeometry(
         64,
       ).rotateX(Math.PI / 2);
 
+
     case "diamond": {
       const diamondShape = new THREE.Shape();
       const half = size / 2;
+      // Simple diamond shape - bevel will round the corners
       diamondShape.moveTo(0, half);
       diamondShape.lineTo(half, 0);
       diamondShape.lineTo(0, -half);
       diamondShape.lineTo(-half, 0);
       diamondShape.closePath();
+      
+      const bevelRadius = cornerRadius / 2;
       return new THREE.ExtrudeGeometry(diamondShape, {
         depth: thickness,
-        bevelEnabled: false,
-      }).translate(0, 0, -thickness / 2);
+        bevelEnabled: cornerRadius > 0,
+        bevelThickness: bevelRadius,
+        bevelSize: bevelRadius,
+        bevelSegments: 4,
+      }).translate(0, 0, -thickness / 2 - (cornerRadius > 0 ? bevelRadius : 0));
     }
 
     case "star": {
@@ -56,7 +88,10 @@ function createPlateGeometry(
       starShape.closePath();
       return new THREE.ExtrudeGeometry(starShape, {
         depth: thickness,
-        bevelEnabled: false,
+        bevelEnabled: cornerRadius > 0,
+        bevelThickness: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSize: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSegments: cornerRadius > 0 ? 3 : 1,
       }).translate(0, 0, -thickness / 2);
     }
 
@@ -98,7 +133,10 @@ function createPlateGeometry(
 
       return new THREE.ExtrudeGeometry(waveShape, {
         depth: thickness,
-        bevelEnabled: false,
+        bevelEnabled: cornerRadius > 0,
+        bevelThickness: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSize: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSegments: cornerRadius > 0 ? 3 : 1,
         curveSegments: 32,
       }).translate(0, 0, -thickness / 2);
     }
@@ -153,14 +191,40 @@ function createPlateGeometry(
 
       return new THREE.ExtrudeGeometry(heartShape, {
         depth: thickness,
-        bevelEnabled: false,
+        bevelEnabled: cornerRadius > 0,
+        bevelThickness: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSize: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSegments: cornerRadius > 0 ? 3 : 1,
         curveSegments: 32,
       }).translate(0, 0, -thickness / 2);
     }
 
     case "square":
-    default:
+    default: {
+      // Use rounded square if cornerRadius > 0
+      if (cornerRadius > 0) {
+        const maxRadius = size / 2 - 1;
+        const r = Math.min(cornerRadius, maxRadius);
+        const rectShape = new THREE.Shape();
+        const half = size / 2;
+        
+        rectShape.moveTo(-half + r, -half);
+        rectShape.lineTo(half - r, -half);
+        rectShape.quadraticCurveTo(half, -half, half, -half + r);
+        rectShape.lineTo(half, half - r);
+        rectShape.quadraticCurveTo(half, half, half - r, half);
+        rectShape.lineTo(-half + r, half);
+        rectShape.quadraticCurveTo(-half, half, -half, half - r);
+        rectShape.lineTo(-half, -half + r);
+        rectShape.quadraticCurveTo(-half, -half, -half + r, -half);
+        
+        return new THREE.ExtrudeGeometry(rectShape, {
+          depth: thickness,
+          bevelEnabled: false,
+        }).translate(0, 0, -thickness / 2);
+      }
       return new THREE.BoxGeometry(size, size, thickness);
+    }
   }
 }
 
@@ -175,6 +239,7 @@ function ReliefMesh() {
     plateHeight,
     platePosition,
     plateRotation,
+    plateCornerRadius,
     plateColor,
     textColor,
     roughness,
@@ -245,8 +310,9 @@ function ReliefMesh() {
       plateWidth,
       plateHeight,
       baseThickness,
+      plateCornerRadius,
     );
-  }, [plateShape, size, plateWidth, plateHeight, baseThickness]);
+  }, [plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius]);
 
   return (
     <>

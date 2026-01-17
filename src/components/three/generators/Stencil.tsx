@@ -8,10 +8,34 @@ import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg"
 import { useModelStore, PlateShape, TextItem } from "@/lib/store"
 
 // Create plate geometry based on shape type
-function createPlateGeometry(shape: PlateShape, size: number, width: number, height: number, thickness: number): THREE.BufferGeometry {
+function createPlateGeometry(shape: PlateShape, size: number, width: number, height: number, thickness: number, cornerRadius: number = 0): THREE.BufferGeometry {
   switch (shape) {
-    case 'rectangle':
+    case 'rectangle': {
+      // Use rounded rectangle if cornerRadius > 0
+      if (cornerRadius > 0) {
+        const maxRadius = Math.min(width, height) / 2 - 1
+        const r = Math.min(cornerRadius, maxRadius)
+        const rectShape = new THREE.Shape()
+        const w = width / 2
+        const h = height / 2
+        
+        rectShape.moveTo(-w + r, -h)
+        rectShape.lineTo(w - r, -h)
+        rectShape.quadraticCurveTo(w, -h, w, -h + r)
+        rectShape.lineTo(w, h - r)
+        rectShape.quadraticCurveTo(w, h, w - r, h)
+        rectShape.lineTo(-w + r, h)
+        rectShape.quadraticCurveTo(-w, h, -w, h - r)
+        rectShape.lineTo(-w, -h + r)
+        rectShape.quadraticCurveTo(-w, -h, -w + r, -h)
+        
+        return new THREE.ExtrudeGeometry(rectShape, {
+          depth: thickness,
+          bevelEnabled: false,
+        }).translate(0, 0, -thickness / 2)
+      }
       return new THREE.BoxGeometry(width, height, thickness)
+    }
     
     case 'circle':
       return new THREE.CylinderGeometry(size / 2, size / 2, thickness, 64)
@@ -20,13 +44,21 @@ function createPlateGeometry(shape: PlateShape, size: number, width: number, hei
     case 'diamond': {
       const diamondShape = new THREE.Shape()
       const half = size / 2
+      // Simple diamond shape - bevel will round the corners
       diamondShape.moveTo(0, half)
       diamondShape.lineTo(half, 0)
       diamondShape.lineTo(0, -half)
       diamondShape.lineTo(-half, 0)
       diamondShape.closePath()
-      return new THREE.ExtrudeGeometry(diamondShape, { depth: thickness, bevelEnabled: false })
-        .translate(0, 0, -thickness / 2)
+      
+      const bevelRadius = cornerRadius / 2
+      return new THREE.ExtrudeGeometry(diamondShape, { 
+        depth: thickness, 
+        bevelEnabled: cornerRadius > 0,
+        bevelThickness: bevelRadius,
+        bevelSize: bevelRadius,
+        bevelSegments: 4,
+      }).translate(0, 0, -thickness / 2 - (cornerRadius > 0 ? bevelRadius : 0))
     }
     
     case 'star': {
@@ -43,8 +75,13 @@ function createPlateGeometry(shape: PlateShape, size: number, width: number, hei
         else starShape.lineTo(x, y)
       }
       starShape.closePath()
-      return new THREE.ExtrudeGeometry(starShape, { depth: thickness, bevelEnabled: false })
-        .translate(0, 0, -thickness / 2)
+      return new THREE.ExtrudeGeometry(starShape, { 
+        depth: thickness, 
+        bevelEnabled: cornerRadius > 0,
+        bevelThickness: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSize: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSegments: cornerRadius > 0 ? 3 : 1,
+      }).translate(0, 0, -thickness / 2)
     }
     
     case 'wave': {
@@ -79,7 +116,10 @@ function createPlateGeometry(shape: PlateShape, size: number, width: number, hei
       
       return new THREE.ExtrudeGeometry(waveShape, { 
         depth: thickness, 
-        bevelEnabled: false,
+        bevelEnabled: cornerRadius > 0,
+        bevelThickness: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSize: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSegments: cornerRadius > 0 ? 3 : 1,
         curveSegments: 32
       }).translate(0, 0, -thickness / 2)
     }
@@ -122,14 +162,40 @@ function createPlateGeometry(shape: PlateShape, size: number, width: number, hei
       
       return new THREE.ExtrudeGeometry(heartShape, { 
         depth: thickness, 
-        bevelEnabled: false,
+        bevelEnabled: cornerRadius > 0,
+        bevelThickness: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSize: cornerRadius > 0 ? cornerRadius / 3 : 0,
+        bevelSegments: cornerRadius > 0 ? 3 : 1,
         curveSegments: 32
       }).translate(0, 0, -thickness / 2)
     }
     
     case 'square':
-    default:
+    default: {
+      // Use rounded square if cornerRadius > 0
+      if (cornerRadius > 0) {
+        const maxRadius = size / 2 - 1
+        const r = Math.min(cornerRadius, maxRadius)
+        const rectShape = new THREE.Shape()
+        const half = size / 2
+        
+        rectShape.moveTo(-half + r, -half)
+        rectShape.lineTo(half - r, -half)
+        rectShape.quadraticCurveTo(half, -half, half, -half + r)
+        rectShape.lineTo(half, half - r)
+        rectShape.quadraticCurveTo(half, half, half - r, half)
+        rectShape.lineTo(-half + r, half)
+        rectShape.quadraticCurveTo(-half, half, -half, half - r)
+        rectShape.lineTo(-half, -half + r)
+        rectShape.quadraticCurveTo(-half, -half, -half + r, -half)
+        
+        return new THREE.ExtrudeGeometry(rectShape, {
+          depth: thickness,
+          bevelEnabled: false,
+        }).translate(0, 0, -thickness / 2)
+      }
       return new THREE.BoxGeometry(size, size, thickness)
+    }
   }
 }
 
@@ -186,7 +252,7 @@ function StencilMesh() {
   const { 
     size, baseThickness, textItems, 
     plateShape, plateWidth, plateHeight,
-    platePosition, plateRotation,
+    platePosition, plateRotation, plateCornerRadius,
     plateColor, roughness, metalness
   } = parameters
 
@@ -200,7 +266,7 @@ function StencilMesh() {
 
     try {
       // Create plate brush
-      const plateGeo = createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness)
+      const plateGeo = createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius)
       const plateBrush = new Brush(plateGeo)
       
       const evaluator = new Evaluator()
@@ -251,9 +317,9 @@ function StencilMesh() {
       return plateBrush.geometry
     } catch (error) {
       console.error('CSG Error:', error)
-      return createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness)
+      return createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius)
     }
-  }, [fontMap, size, baseThickness, textItems, plateShape, plateWidth, plateHeight, platePosition, plateRotation])
+  }, [fontMap, size, baseThickness, textItems, plateShape, plateWidth, plateHeight, platePosition, plateRotation, plateCornerRadius])
 
   if (!resultGeometry) return null
   

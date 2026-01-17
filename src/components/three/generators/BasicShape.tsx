@@ -4,13 +4,13 @@ import { useModelStore } from "@/lib/store"
 
 export function BasicShape() {
   const { parameters } = useModelStore()
-  const { shapeType, size, height, segments } = parameters
+  const { shapeType, size, height, segments, showShadows } = parameters
 
-  // Common mesh properties
-  const meshProps = {
+  // Mesh properties - shadows controlled by showShadows param
+  const meshProps = showShadows ? {
     castShadow: true,
     receiveShadow: true,
-  }
+  } : {}
 
   if (shapeType === 'cube') {
     return (

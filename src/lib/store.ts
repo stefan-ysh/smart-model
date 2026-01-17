@@ -43,6 +43,9 @@ export interface ModelParams {
   baseThickness: number
   hasBase: boolean
   
+  // Display options
+  showShadows: boolean
+  
   // System
   exportTrigger: number
 }
@@ -59,6 +62,10 @@ interface ModelStore {
   addTextItem: () => void
   removeTextItem: (id: string) => void
   updateTextItem: (id: string, updates: Partial<TextItem>) => void
+  
+  // View control
+  viewPreset: string | null
+  setViewPreset: (preset: string | null) => void
 }
 
 // Stencil fonts (fonts with connected strokes for 3D printing)
@@ -125,12 +132,16 @@ const defaultParams: ModelParams = {
 
   baseThickness: 2,
   hasBase: false,
+  showShadows: false,
   exportTrigger: 0,
 }
 
 export const useModelStore = create<ModelStore>((set) => ({
   currentMode: 'basic',
   setMode: (mode) => set({ currentMode: mode }),
+  
+  viewPreset: null,
+  setViewPreset: (preset) => set({ viewPreset: preset }),
   
   parameters: defaultParams,
   updateParam: (key, value) => 

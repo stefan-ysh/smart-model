@@ -297,9 +297,31 @@ export function Panel() {
            </div>
            
            <div>
-              <Label>浮雕高度</Label>
-              <Slider value={parameters.reliefHeight} min={1} max={20} step={0.5}
-                onChange={(val) => updateParam('reliefHeight', val)} />
+              <Label>底板角度 (°)</Label>
+              <Slider value={parameters.plateRotation} min={-180} max={180} step={1}
+                onChange={(val) => updateParam('plateRotation', val)} />
+           </div>
+           
+           <div>
+              <Label>底板位置</Label>
+              <div className="space-y-3">
+                 <div>
+                    <div className="flex justify-between mb-1">
+                       <span className="text-xs text-muted-foreground">横向 (X)</span>
+                       <span className="text-xs text-muted-foreground tabular-nums">{parameters.platePosition.x}</span>
+                    </div>
+                    <Slider value={parameters.platePosition.x} min={-100} max={100} step={1}
+                      onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, x: val })} showInput={false} />
+                 </div>
+                 <div>
+                    <div className="flex justify-between mb-1">
+                       <span className="text-xs text-muted-foreground">纵向 (Y)</span>
+                       <span className="text-xs text-muted-foreground tabular-nums">{parameters.platePosition.y}</span>
+                    </div>
+                    <Slider value={parameters.platePosition.y} min={-100} max={100} step={1}
+                      onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, y: val })} showInput={false} />
+                 </div>
+              </div>
            </div>
         </div>
         
@@ -351,6 +373,12 @@ export function Panel() {
                 </div>
                 
                 <div>
+                   <Label>浮雕高度</Label>
+                   <Slider value={item.reliefHeight} min={1} max={20} step={0.5}
+                     onChange={(val) => updateTextItem(item.id, { reliefHeight: val })} />
+                </div>
+                
+                <div>
                    <Label>角度 (°)</Label>
                    <Slider value={item.rotation} min={-180} max={180} step={1}
                      onChange={(val) => updateTextItem(item.id, { rotation: val })} />
@@ -358,16 +386,22 @@ export function Panel() {
                 
                 <div>
                    <Label>位置</Label>
-                   <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                         <span className="text-xs text-muted-foreground w-8">横向</span>
+                   <div className="space-y-3">
+                      <div>
+                         <div className="flex justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">横向 (X)</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{item.position.x}</span>
+                         </div>
                          <Slider value={item.position.x} min={-200} max={200} step={1}
-                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} />
+                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} showInput={false} />
                       </div>
-                      <div className="flex items-center gap-2">
-                         <span className="text-xs text-muted-foreground w-8">纵向</span>
+                      <div>
+                         <div className="flex justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">纵向 (Y)</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{item.position.y}</span>
+                         </div>
                          <Slider value={item.position.y} min={-200} max={200} step={1}
-                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} />
+                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} showInput={false} />
                       </div>
                    </div>
                 </div>
@@ -465,6 +499,34 @@ export function Panel() {
               <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
                 onChange={(val) => updateParam('baseThickness', val)} />
            </div>
+           
+           <div>
+              <Label>底板角度 (°)</Label>
+              <Slider value={parameters.plateRotation} min={-180} max={180} step={1}
+                onChange={(val) => updateParam('plateRotation', val)} />
+           </div>
+           
+           <div>
+              <Label>底板位置</Label>
+              <div className="space-y-3">
+                 <div>
+                    <div className="flex justify-between mb-1">
+                       <span className="text-xs text-muted-foreground">横向 (X)</span>
+                       <span className="text-xs text-muted-foreground tabular-nums">{parameters.platePosition.x}</span>
+                    </div>
+                    <Slider value={parameters.platePosition.x} min={-100} max={100} step={1}
+                      onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, x: val })} showInput={false} />
+                 </div>
+                 <div>
+                    <div className="flex justify-between mb-1">
+                       <span className="text-xs text-muted-foreground">纵向 (Y)</span>
+                       <span className="text-xs text-muted-foreground tabular-nums">{parameters.platePosition.y}</span>
+                    </div>
+                    <Slider value={parameters.platePosition.y} min={-100} max={100} step={1}
+                      onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, y: val })} showInput={false} />
+                 </div>
+              </div>
+           </div>
         </div>
         
         {/* Text Items Section */}
@@ -522,16 +584,22 @@ export function Panel() {
                 
                 <div>
                    <Label>位置</Label>
-                   <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                         <span className="text-xs text-muted-foreground w-8">横向</span>
+                   <div className="space-y-3">
+                      <div>
+                         <div className="flex justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">横向 (X)</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{item.position.x}</span>
+                         </div>
                          <Slider value={item.position.x} min={-200} max={200} step={1}
-                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} />
+                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} showInput={false} />
                       </div>
-                      <div className="flex items-center gap-2">
-                         <span className="text-xs text-muted-foreground w-8">纵向</span>
+                      <div>
+                         <div className="flex justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">纵向 (Y)</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{item.position.y}</span>
+                         </div>
                          <Slider value={item.position.y} min={-200} max={200} step={1}
-                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} />
+                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} showInput={false} />
                       </div>
                    </div>
                 </div>

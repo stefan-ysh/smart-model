@@ -186,6 +186,7 @@ function StencilMesh() {
   const { 
     size, baseThickness, textItems, 
     plateShape, plateWidth, plateHeight,
+    platePosition, plateRotation,
     plateColor, roughness, metalness
   } = parameters
 
@@ -198,34 +199,49 @@ function StencilMesh() {
     if (Object.keys(fontMap).length === 0) return null
 
     try {
-      // 1. Create plate geometry
+      // Create plate brush
       const plateGeo = createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness)
-      
-      // Add UV to plate if missing
-      if (!plateGeo.attributes.uv) {
-        const positions = plateGeo.attributes.position
-        const uvs = new Float32Array(positions.count * 2)
-        plateGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2))
-      }
-      
-      let plateBrush = new Brush(plateGeo)
-      plateBrush.updateMatrixWorld()
+      const plateBrush = new Brush(plateGeo)
       
       const evaluator = new Evaluator()
+      evaluator.useGroups = false
       
-      // 2. Subtract each text item
+      // Calculate inverse plate transform to keep text holes in world coordinates
+      const plateRotRad = (plateRotation * Math.PI) / 180
+      const cosR = Math.cos(-plateRotRad) // Inverse rotation
+      const sinR = Math.sin(-plateRotRad)
+      
+      // Subtract each text from plate
       for (const item of textItems) {
         const font = fontMap[item.fontUrl]
         if (!font) continue
         
-        const textGeo = createTextGeometry(font, item, baseThickness)
+        // Transform text world position to plate-local position
+        // First, offset by inverse plate position
+        const localX = item.position.x - platePosition.x
+        const localY = item.position.y - platePosition.y
+        
+        // Then rotate by inverse plate rotation
+        const rotatedX = localX * cosR - localY * sinR
+        const rotatedY = localX * sinR + localY * cosR
+        
+        // Create modified text item with local position
+        const localItem = {
+          ...item,
+          position: { ...item.position, x: rotatedX, y: rotatedY },
+          rotation: item.rotation - plateRotation // Also compensate text rotation
+        }
+        
+        const textGeo = createTextGeometry(font, localItem, baseThickness)
         if (!textGeo) continue
         
         const textBrush = new Brush(textGeo)
-        textBrush.updateMatrixWorld()
         
-        const result = evaluator.evaluate(plateBrush, textBrush, SUBTRACTION)
-        plateBrush = result
+        try {
+          evaluator.evaluate(plateBrush, textBrush, SUBTRACTION, plateBrush)
+        } catch (err) {
+          console.warn('CSG subtraction failed for text:', item.content, err)
+        }
         
         textGeo.dispose()
       }
@@ -237,12 +253,15 @@ function StencilMesh() {
       console.error('CSG Error:', error)
       return createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness)
     }
-  }, [fontMap, size, baseThickness, textItems, plateShape, plateWidth, plateHeight])
+  }, [fontMap, size, baseThickness, textItems, plateShape, plateWidth, plateHeight, platePosition, plateRotation])
 
   if (!resultGeometry) return null
-
+  
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, baseThickness / 2, 0]}>
+    <group 
+      rotation={[-Math.PI / 2, 0, (plateRotation * Math.PI) / 180]} 
+      position={[platePosition.x, baseThickness / 2, platePosition.y]}
+    >
       <mesh geometry={resultGeometry}>
         <meshStandardMaterial 
           color={plateColor} 

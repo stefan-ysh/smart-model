@@ -135,17 +135,26 @@ function createPlateGeometry(shape: PlateShape, size: number, width: number, hei
 function ReliefMesh() {
   const { parameters } = useModelStore()
   const { 
-    size, baseThickness, textItems, reliefHeight,
+    size, baseThickness, textItems,
     plateShape, plateWidth, plateHeight,
+    platePosition, plateRotation,
     plateColor, textColor, roughness, metalness
   } = parameters
 
   // Load all unique fonts needed
   const fontUrls = [...new Set(textItems.map(item => item.fontUrl))]
   const fonts = useLoader(FontLoader, fontUrls)
-  const fontMap = Object.fromEntries(fontUrls.map((url, i) => [url, fonts[i]]))
+  
+  // Create font map
+  const fontMap = useMemo(() => {
+    const map: Record<string, any> = {}
+    fontUrls.forEach((url, i) => {
+      map[url] = fonts[i]
+    })
+    return map
+  }, [fonts, fontUrls])
 
-  // Create text meshes
+  // Create text meshes - each with its own reliefHeight
   const textMeshes = useMemo(() => {
     if (Object.keys(fontMap).length === 0) return []
 
@@ -157,8 +166,8 @@ function ReliefMesh() {
         const textGeo = new TextGeometry(item.content || ' ', {
           font: font,
           size: item.fontSize,
-          height: reliefHeight,
-          curveSegments: 8,
+          height: item.reliefHeight, // Use per-item reliefHeight
+          curveSegments: 4,
           bevelEnabled: false,
         })
 
@@ -174,6 +183,7 @@ function ReliefMesh() {
           geometry: textGeo,
           position: item.position,
           rotation: item.rotation,
+          reliefHeight: item.reliefHeight,
           id: item.id
         }
       } catch (e) {
@@ -181,7 +191,7 @@ function ReliefMesh() {
         return null
       }
     }).filter(Boolean)
-  }, [fontMap, textItems, reliefHeight])
+  }, [fontMap, textItems])
 
   // Create plate geometry
   const plateGeo = useMemo(() => {
@@ -189,25 +199,38 @@ function ReliefMesh() {
   }, [plateShape, size, plateWidth, plateHeight, baseThickness])
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, baseThickness / 2, 0]}>
-      {/* Base Plate */}
-      <mesh geometry={plateGeo}>
-        <meshStandardMaterial color={plateColor} roughness={roughness} metalness={metalness} />
-      </mesh>
+    <>
+      {/* Base Plate - independent transform */}
+      <group 
+        rotation={[-Math.PI / 2, 0, (plateRotation * Math.PI) / 180]} 
+        position={[platePosition.x, baseThickness / 2, platePosition.y]}
+      >
+        <mesh geometry={plateGeo}>
+          <meshStandardMaterial 
+            color={plateColor} 
+            roughness={roughness} 
+            metalness={metalness} 
+          />
+        </mesh>
+      </group>
 
-      {/* Embossed Text Items */}
+      {/* Text Items - independent transforms */}
       {textMeshes.map((item: any) => (
         <group 
           key={item.id}
-          position={[item.position.x, item.position.y, baseThickness / 2 + item.position.z]}
-          rotation={[0, 0, (item.rotation * Math.PI) / 180]}
+          rotation={[-Math.PI / 2, 0, (item.rotation * Math.PI) / 180]}
+          position={[item.position.x, baseThickness / 2 + item.reliefHeight / 2 + 0.1, item.position.y]}
         >
           <mesh geometry={item.geometry}>
-            <meshStandardMaterial color={textColor} roughness={roughness} metalness={metalness} />
+            <meshStandardMaterial 
+              color={textColor} 
+              roughness={roughness} 
+              metalness={metalness} 
+            />
           </mesh>
         </group>
       ))}
-    </group>
+    </>
   )
 }
 

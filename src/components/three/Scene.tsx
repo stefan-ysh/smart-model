@@ -100,10 +100,20 @@ function CurrentModel() {
 
 export function Scene() {
   const controlsRef = useRef<any>(null)
-  const { parameters } = useModelStore()
+  const { parameters, isLoadingFont } = useModelStore()
   
   return (
     <div className="relative w-full h-full">
+      {/* Loading overlay */}
+      {isLoadingFont && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 bg-background/90 px-8 py-6 rounded-lg shadow-lg border border-border">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-muted-foreground">加载字体中...</span>
+          </div>
+        </div>
+      )}
+      
       {/* View preset buttons */}
       <ViewControls />
       
@@ -123,7 +133,16 @@ export function Scene() {
           />
           
           {/* Model - positioned so it sits on the grid */}
-          <group name="export-target">
+          <group 
+            name="export-target"
+            onClick={(e) => {
+              // Click on empty space to deselect
+              const { setSelectedLayer, isTransformEnabled } = useModelStore.getState()
+              if (isTransformEnabled && e.eventObject === e.object) {
+                setSelectedLayer(null)
+              }
+            }}
+          >
             <CurrentModel />
           </group>
           

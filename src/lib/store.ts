@@ -12,6 +12,7 @@ export interface TextItem {
   fontUrl: string
   position: { x: number, y: number, z: number } // 3D coordinates
   rotation: number // Rotation in degrees
+  reliefHeight: number // Height of the relief/extrusion
 }
 
 export interface ModelParams {
@@ -37,6 +38,8 @@ export interface ModelParams {
   plateShape: PlateShape
   plateWidth: number  // For rectangle
   plateHeight: number // For rectangle
+  platePosition: { x: number, y: number }  // Plate XY offset
+  plateRotation: number  // Plate rotation in degrees
   textItems: TextItem[]
   
   // Common
@@ -56,6 +59,8 @@ export interface ModelParams {
   exportTrigger: number
 }
 
+export type TransformMode = 'translate' | 'rotate' | 'scale'
+
 interface ModelStore {
   currentMode: GeneratorMode
   setMode: (mode: GeneratorMode) => void
@@ -72,6 +77,20 @@ interface ModelStore {
   // View control
   viewPreset: string | null
   setViewPreset: (preset: string | null) => void
+  
+  // Transform controls
+  transformMode: TransformMode
+  setTransformMode: (mode: TransformMode) => void
+  isTransformEnabled: boolean
+  setTransformEnabled: (enabled: boolean) => void
+  
+  // Layer selection (for Relief/Hollow modes)
+  selectedLayerId: string | null  // 'base' for base plate, or textItem.id
+  setSelectedLayer: (id: string | null) => void
+  
+  // Font loading state
+  isLoadingFont: boolean
+  setLoadingFont: (loading: boolean) => void
 }
 
 // Font groups for categorized selection
@@ -80,24 +99,53 @@ export const FONT_GROUPS = {
     label: '中文字体',
     fonts: [
       { value: '/fonts/连筋字体.json', label: '连筋字体 (中英文)' },
+      { value: '/fonts/连筋中文.json', label: '连筋中文' },
       { value: '/fonts/条形码字体.json', label: '条形码字体' },
+      { value: '/fonts/Rampart One_Regular.json', label: 'Rampart One' },
+    ]
+  },
+  stencil: {
+    label: '连筋英文',
+    fonts: [
+      { value: '/fonts/连筋英文_01.json', label: '连筋英文 01' },
+      { value: '/fonts/连筋英文_02.json', label: '连筋英文 02' },
+      { value: '/fonts/连筋英文_03.json', label: '连筋英文 03' },
+      { value: '/fonts/连筋英文_04.json', label: '连筋英文 04' },
+      { value: '/fonts/连筋英文_05.json', label: '连筋英文 05' },
+      { value: '/fonts/连筋英文_06.json', label: '连筋英文 06' },
+      { value: '/fonts/连筋英文_07.json', label: '连筋英文 07' },
+      { value: '/fonts/连筋英文_08.json', label: '连筋英文 08' },
+      { value: '/fonts/连筋英文_09.json', label: '连筋英文 09' },
+      { value: '/fonts/连筋英文_10.json', label: '连筋英文 10' },
+      { value: '/fonts/连筋英文_11.json', label: '连筋英文 11' },
+      { value: '/fonts/连筋英文_12.json', label: '连筋英文 12' },
+    ]
+  },
+  decorative: {
+    label: '装饰字体',
+    fonts: [
+      { value: '/fonts/Bungee Shade_Regular.json', label: 'Bungee Shade' },
+      { value: '/fonts/Doto Black_Regular.json', label: 'Doto Black' },
+      { value: '/fonts/Eater_Regular.json', label: 'Eater' },
+      { value: '/fonts/Flavors_Regular.json', label: 'Flavors' },
+      { value: '/fonts/Frijole_Regular.json', label: 'Frijole' },
+      { value: '/fonts/Hanalei_Regular.json', label: 'Hanalei' },
+      { value: '/fonts/Henny Penny_Regular.json', label: 'Henny Penny' },
+      { value: '/fonts/Honk_Regular.json', label: 'Honk' },
+      { value: '/fonts/Kablammo_Regular.json', label: 'Kablammo' },
+      { value: '/fonts/Macondo_Regular.json', label: 'Macondo' },
+      { value: '/fonts/Raleway Dots_Regular.json', label: 'Raleway Dots' },
+      { value: '/fonts/Rubik Bubbles_Regular.json', label: 'Rubik Bubbles' },
+      { value: '/fonts/Rubik Iso_Regular.json', label: 'Rubik Iso' },
+      { value: '/fonts/Rubik Wet Paint_Regular.json', label: 'Rubik Wet Paint' },
+      { value: '/fonts/Gravitas One_Regular.json', label: 'Gravitas One' },
     ]
   },
   english: {
-    label: '英文字体',
+    label: '经典英文',
     fonts: [
-      { value: '/fonts/连筋英文_01.json', label: '连筋英文_01' },
-      { value: '/fonts/连筋英文_02.json', label: '连筋英文_02' },
-      { value: '/fonts/连筋英文_03.json', label: '连筋英文_03' },
-      { value: '/fonts/连筋英文_04.json', label: '连筋英文_04' },
-      { value: '/fonts/连筋英文_05.json', label: '连筋英文_05' },
-      { value: '/fonts/连筋英文_06.json', label: '连筋英文_06' },
-      { value: '/fonts/连筋英文_07.json', label: '连筋英文_07' },
-      { value: '/fonts/连筋英文_08.json', label: '连筋英文_08' },
-      { value: '/fonts/连筋英文_09.json', label: '连筋英文_09' },
-      { value: '/fonts/连筋英文_10.json', label: '连筋英文_10' },
-      { value: '/fonts/连筋英文_11.json', label: '连筋英文_11' },
-      { value: '/fonts/连筋英文_12.json', label: '连筋英文_12' },
+      { value: '/fonts/Moirai One_Regular.json', label: 'Moirai One' },
+
       { value: '/fonts/helvetiker_bold.json', label: 'Helvetiker Bold' },
       { value: '/fonts/helvetiker_regular.json', label: 'Helvetiker Regular' },
       { value: '/fonts/optimer_bold.json', label: 'Optimer Bold' },
@@ -115,6 +163,8 @@ export const FONT_GROUPS = {
 // Flat list of all fonts for compatibility
 export const ALL_FONTS = [
   ...FONT_GROUPS.chinese.fonts,
+  ...FONT_GROUPS.stencil.fonts,
+  ...FONT_GROUPS.decorative.fonts,
   ...FONT_GROUPS.english.fonts,
 ]
 
@@ -139,6 +189,8 @@ const defaultParams: ModelParams = {
   plateShape: 'square',
   plateWidth: 80,
   plateHeight: 50,
+  platePosition: { x: 0, y: 0 },
+  plateRotation: 0,
   textItems: [
     {
       id: generateId(),
@@ -146,7 +198,8 @@ const defaultParams: ModelParams = {
       fontSize: 12,
       fontUrl: '/fonts/helvetiker_bold.json',
       position: { x: 0, y: 0, z: 0 },
-      rotation: 0
+      rotation: 0,
+      reliefHeight: 5
     }
   ],
 
@@ -191,7 +244,8 @@ export const useModelStore = create<ModelStore>((set) => ({
           fontSize: 12,
           fontUrl: '/fonts/helvetiker_bold.json',
           position: { x: 0, y: (state.parameters.textItems.length * 15) % 30 - 15, z: 0 },
-          rotation: 0
+          rotation: 0,
+          reliefHeight: 5
         }
       ]
     }
@@ -212,4 +266,18 @@ export const useModelStore = create<ModelStore>((set) => ({
       )
     }
   })),
+  
+  // Transform controls
+  transformMode: 'translate',
+  setTransformMode: (mode) => set({ transformMode: mode }),
+  isTransformEnabled: false,
+  setTransformEnabled: (enabled) => set({ isTransformEnabled: enabled }),
+  
+  // Layer selection
+  selectedLayerId: null,
+  setSelectedLayer: (id) => set({ selectedLayerId: id }),
+  
+  // Font loading  
+  isLoadingFont: false,
+  setLoadingFont: (loading) => set({ isLoadingFont: loading }),
 }))

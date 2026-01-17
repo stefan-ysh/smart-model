@@ -1,82 +1,64 @@
 "use client"
 
-import { useModelStore, ShapeType, GeneratorMode, ALL_FONTS } from "@/lib/store"
+import { useModelStore, ShapeType, GeneratorMode } from "@/lib/store"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { FontSelect } from "./FontSelect"
+import { SliderWithInput } from "./SliderWithInput"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-// Enhanced UI Components
-
-const Label = ({ children, hint }: { children: React.ReactNode, hint?: string }) => (
+// Helper wrapper for Label with hint
+const LabelWithHint = ({ children, hint }: { children: React.ReactNode, hint?: string }) => (
   <div className="mb-2">
-    <label className="text-sm font-medium text-foreground block">{children}</label>
-    {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+    <Label className="text-sm font-medium text-foreground">{children}</Label>
+    {hint && <span className="text-xs text-muted-foreground ml-2">{hint}</span>}
   </div>
 )
 
+// Slider wrapper using our SliderWithInput
 const Slider = ({ 
   value, min, max, step, onChange, unit = '', showInput = true 
 }: { 
   value: number, min: number, max: number, step: number, 
   onChange: (val: number) => void, unit?: string, showInput?: boolean 
-}) => {
-  const [inputValue, setInputValue] = useState(value.toString())
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value)
-    const num = parseFloat(e.target.value)
-    if (!isNaN(num) && num >= min && num <= max) {
-      onChange(num)
-    }
-  }
-  
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const num = parseFloat(e.target.value)
-    onChange(num)
-    setInputValue(num.toString())
-  }
-  
-  return (
-    <div className="flex items-center gap-3">
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={handleSliderChange}
-        className="flex-1 h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-      />
-      {showInput ? (
-        <div className="flex items-center">
-          <input
-            type="number"
-            value={inputValue}
-            onChange={handleInputChange}
-            onBlur={() => setInputValue(value.toString())}
-            min={min}
-            max={max}
-            step={step}
-            className="w-16 px-2 py-1 text-sm bg-secondary rounded border border-border text-right focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-          {unit && <span className="text-xs text-muted-foreground ml-1">{unit}</span>}
-        </div>
-      ) : (
-        <span className="text-sm w-14 text-right tabular-nums">{value}{unit}</span>
-      )}
-    </div>
-  )
-}
+}) => (
+  <SliderWithInput 
+    value={value} 
+    min={min} 
+    max={max} 
+    step={step} 
+    onChange={onChange} 
+    unit={unit} 
+    showInput={showInput} 
+  />
+)
 
-const Select = ({ value, options, onChange }: { value: string, options: { value: string, label: string }[], onChange: (val: string) => void }) => (
-  <select
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    className="w-full px-3 py-2.5 bg-secondary rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-  >
-    {options.map(opt => (
-      <option key={opt.value} value={opt.value}>{opt.label}</option>
-    ))}
-  </select>
+// Simple Select wrapper for compatibility
+const SimpleSelect = ({ value, options, onChange }: { 
+  value: string, 
+  options: { value: string, label: string }[], 
+  onChange: (val: string) => void 
+}) => (
+  <Select value={value} onValueChange={onChange}>
+    <SelectTrigger className="w-full">
+      <SelectValue>{options.find(o => o.value === value)?.label}</SelectValue>
+    </SelectTrigger>
+    <SelectContent>
+      {options.map(opt => (
+        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
 )
 
 // Plate shape icons
@@ -114,11 +96,11 @@ const ColorInput = ({ value, onChange, label }: { value: string, onChange: (val:
       onChange={(e) => onChange(e.target.value)}
       className="w-10 h-10 rounded cursor-pointer border border-border"
     />
-    <input
+    <Input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="flex-1 px-2 py-1 text-sm bg-secondary rounded border border-border font-mono"
+      className="flex-1 font-mono"
       placeholder="#000000"
     />
   </div>
@@ -146,7 +128,7 @@ export function Panel() {
         <div className="space-y-4">
           <div>
             <Label>形状类型</Label>
-            <Select
+            <SimpleSelect
               value={parameters.shapeType}
               options={[
                 { value: 'cube', label: '立方体 (Cube)' },
@@ -212,20 +194,18 @@ export function Panel() {
         <div className="space-y-4">
            <div>
               <Label>字体 (Font)</Label>
-              <Select
+              <FontSelect
                 value={parameters.fontUrl}
-                options={ALL_FONTS}
                 onChange={(val) => updateParam('fontUrl', val)}
               />
            </div>
            
            <div>
               <Label>文字内容</Label>
-              <input 
+              <Input 
                 type="text" 
                 value={parameters.textContent}
                 onChange={(e) => updateParam('textContent', e.target.value)}
-                className="w-full px-3 py-2 bg-secondary rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
               />
            </div>
            
@@ -349,19 +329,17 @@ export function Panel() {
                    )}
                 </div>
                 
-                <input 
+                <Input 
                   type="text" 
                   value={item.content}
                   onChange={(e) => updateTextItem(item.id, { content: e.target.value })}
                   placeholder="输入文字..."
-                  className="w-full px-3 py-2 bg-background rounded-md border border-border text-sm" 
                 />
                 
                 <div>
                    <Label>字体</Label>
-                   <Select
+                   <FontSelect
                      value={item.fontUrl}
-                     options={ALL_FONTS}
                      onChange={(val) => updateTextItem(item.id, { fontUrl: val })}
                    />
                 </div>
@@ -515,19 +493,17 @@ export function Panel() {
                    )}
                 </div>
                 
-                <input 
+                <Input 
                   type="text" 
                   value={item.content}
                   onChange={(e) => updateTextItem(item.id, { content: e.target.value })}
                   placeholder="输入文字..."
-                  className="w-full px-3 py-2 bg-background rounded-md border border-border text-sm" 
                 />
                 
                 <div>
                    <Label>字体</Label>
-                   <Select
+                   <FontSelect
                      value={item.fontUrl}
-                     options={ALL_FONTS}
                      onChange={(val) => updateTextItem(item.id, { fontUrl: val })}
                    />
                 </div>

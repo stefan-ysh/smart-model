@@ -74,20 +74,48 @@ interface ModelStore {
   setViewPreset: (preset: string | null) => void
 }
 
-// All available fonts
+// Font groups for categorized selection
+export const FONT_GROUPS = {
+  chinese: {
+    label: '中文字体',
+    fonts: [
+      { value: '/fonts/连筋字体.json', label: '连筋字体 (中英文)' },
+      { value: '/fonts/条形码字体.json', label: '条形码字体' },
+    ]
+  },
+  english: {
+    label: '英文字体',
+    fonts: [
+      { value: '/fonts/连筋英文_01.json', label: '连筋英文_01' },
+      { value: '/fonts/连筋英文_02.json', label: '连筋英文_02' },
+      { value: '/fonts/连筋英文_03.json', label: '连筋英文_03' },
+      { value: '/fonts/连筋英文_04.json', label: '连筋英文_04' },
+      { value: '/fonts/连筋英文_05.json', label: '连筋英文_05' },
+      { value: '/fonts/连筋英文_06.json', label: '连筋英文_06' },
+      { value: '/fonts/连筋英文_07.json', label: '连筋英文_07' },
+      { value: '/fonts/连筋英文_08.json', label: '连筋英文_08' },
+      { value: '/fonts/连筋英文_09.json', label: '连筋英文_09' },
+      { value: '/fonts/连筋英文_10.json', label: '连筋英文_10' },
+      { value: '/fonts/连筋英文_11.json', label: '连筋英文_11' },
+      { value: '/fonts/连筋英文_12.json', label: '连筋英文_12' },
+      { value: '/fonts/helvetiker_bold.json', label: 'Helvetiker Bold' },
+      { value: '/fonts/helvetiker_regular.json', label: 'Helvetiker Regular' },
+      { value: '/fonts/optimer_bold.json', label: 'Optimer Bold' },
+      { value: '/fonts/optimer_regular.json', label: 'Optimer Regular' },
+      { value: '/fonts/gentilis_bold.json', label: 'Gentilis Bold' },
+      { value: '/fonts/gentilis_regular.json', label: 'Gentilis Regular' },
+      { value: '/fonts/droid_sans_bold.json', label: 'Droid Sans Bold' },
+      { value: '/fonts/droid_sans_regular.json', label: 'Droid Sans Regular' },
+      { value: '/fonts/droid_serif_bold.json', label: 'Droid Serif Bold' },
+      { value: '/fonts/droid_serif_regular.json', label: 'Droid Serif Regular' },
+    ]
+  }
+}
+
+// Flat list of all fonts for compatibility
 export const ALL_FONTS = [
-  { value: '/fonts/连筋中文.json', label: '连筋中文' },
-  { value: '/fonts/连筋英文.json', label: '连筋英文' },
-  { value: '/fonts/helvetiker_bold.json', label: 'Helvetiker Bold' },
-  { value: '/fonts/helvetiker_regular.json', label: 'Helvetiker Regular' },
-  { value: '/fonts/optimer_bold.json', label: 'Optimer Bold' },
-  { value: '/fonts/optimer_regular.json', label: 'Optimer Regular' },
-  { value: '/fonts/gentilis_bold.json', label: 'Gentilis Bold' },
-  { value: '/fonts/gentilis_regular.json', label: 'Gentilis Regular' },
-  { value: '/fonts/droid_sans_bold.json', label: 'Droid Sans Bold' },
-  { value: '/fonts/droid_sans_regular.json', label: 'Droid Sans Regular' },
-  { value: '/fonts/droid_serif_bold.json', label: 'Droid Serif Bold' },
-  { value: '/fonts/droid_serif_regular.json', label: 'Droid Serif Regular' },
+  ...FONT_GROUPS.chinese.fonts,
+  ...FONT_GROUPS.english.fonts,
 ]
 
 const generateId = () => Math.random().toString(36).substring(2, 9)

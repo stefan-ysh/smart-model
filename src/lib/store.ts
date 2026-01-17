@@ -145,7 +145,7 @@ export const FONT_GROUPS = {
     label: '经典英文',
     fonts: [
       { value: '/fonts/Moirai One_Regular.json', label: 'Moirai One' },
-
+      { value: '/fonts/Monoton_Regular.json', label: 'Monoton' },
       { value: '/fonts/helvetiker_bold.json', label: 'Helvetiker Bold' },
       { value: '/fonts/helvetiker_regular.json', label: 'Helvetiker Regular' },
       { value: '/fonts/optimer_bold.json', label: 'Optimer Bold' },

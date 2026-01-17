@@ -12,6 +12,7 @@ import { ReliefGenerator } from "@/components/three/generators/Relief"
 import { StencilGenerator } from "@/components/three/generators/Stencil"
 
 import { ExportHandler } from "@/components/three/ExportHandler"
+import { Spinner } from "@/components/ui/spinner"
 
 // Loading indicator component
 function Loader() {
@@ -21,13 +22,8 @@ function Loader() {
   return (
     <Html center>
       <div className="flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg border border-border">
-        <div className="w-32 h-2 bg-secondary rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-primary transition-all duration-300" 
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <span className="text-sm text-muted-foreground mt-2">
+        <Spinner size="lg" />
+        <span className="text-sm text-muted-foreground mt-3">
           加载中... {progress.toFixed(0)}%
         </span>
       </div>
@@ -108,7 +104,7 @@ export function Scene() {
       {isLoadingFont && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3 bg-background/90 px-8 py-6 rounded-lg shadow-lg border border-border">
-            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            <Spinner size="md" />
             <span className="text-sm text-muted-foreground">加载字体中...</span>
           </div>
         </div>

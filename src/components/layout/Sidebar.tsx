@@ -33,9 +33,9 @@ export function Sidebar() {
   const { currentMode, setMode } = useModelStore()
 
   const items: { mode: GeneratorMode; icon: React.ElementType; label: string }[] = [
-    { mode: 'basic', icon: Box, label: '基础模型' },
-    { mode: 'text', icon: Type, label: '文字3D' },
-    { mode: 'relief', icon: ImageIcon, label: '浮雕/相框' },
+    { mode: 'basic', icon: Box, label: '基础' },
+    { mode: 'text', icon: Type, label: '3D文本' },
+    { mode: 'relief', icon: ImageIcon, label: '浮雕板' },
     { mode: 'hollow', icon: Grid3x3, label: '镂空板' },
     { mode: 'template', icon: Folder, label: '模板库' },
   ]

@@ -173,7 +173,7 @@ const generateId = () => Math.random().toString(36).substring(2, 9)
 
 const defaultParams: ModelParams = {
   shapeType: 'cube',
-  size: 50,
+  size: 20,
   height: 50,
   segments: 32,
   textContent: 'Hello',

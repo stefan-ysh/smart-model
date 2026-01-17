@@ -285,7 +285,10 @@ function StencilMesh() {
         // Transform text world position to plate-local position
         // First, offset by inverse plate position
         const localX = item.position.x - platePosition.x
-        const localY = item.position.y - platePosition.y
+        // Plate Y (local) maps to World -Z. platePosition.y is World Z.
+        // To keep World Z constant: -LocalY + PlateZ = const.
+        // So LocalY should compensate PlateZ.
+        const localY = item.position.y + platePosition.y
         
         // Then rotate by inverse plate rotation
         const rotatedX = localX * cosR - localY * sinR

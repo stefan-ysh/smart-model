@@ -107,9 +107,14 @@ const ColorInput = ({ value, onChange, label }: { value: string, onChange: (val:
 )
 
 // Section component for better organization
+// Section component with modern styling
 const Section = ({ title, children, collapsible = false }: { title: string, children: React.ReactNode, collapsible?: boolean }) => (
-  <div className="space-y-3 border-b border-border pb-4 last:border-0">
-    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+  <div className="space-y-3 border-b border-white/5 pb-4 last:border-0">
+    <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+      <span className="h-px flex-1 bg-gradient-to-r from-primary/50 to-transparent" />
+      {title}
+      <span className="h-px flex-1 bg-gradient-to-l from-primary/50 to-transparent" />
+    </h3>
     {children}
   </div>
 )
@@ -119,10 +124,10 @@ export function Panel() {
 
   if (currentMode === 'basic') {
     return (
-      <div className="p-6 space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold mb-1">基础模型参数</h2>
-          <p className="text-sm text-muted-foreground">调整几何体的大小和形状</p>
+      <div className="p-5 space-y-5">
+        <div className="pb-3 border-b border-white/5">
+          <h2 className="text-base font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">基础模型参数</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">调整几何体的大小和形状</p>
         </div>
         
         <div className="space-y-4">
@@ -185,10 +190,10 @@ export function Panel() {
 
   if (currentMode === 'text') {
     return (
-      <div className="p-6 space-y-6">
-        <div>
-           <h2 className="text-lg font-semibold mb-1">文字3D参数</h2>
-           <p className="text-sm text-muted-foreground">输入文字并调整大小与厚度</p>
+      <div className="p-5 space-y-5">
+        <div className="pb-3 border-b border-white/5">
+           <h2 className="text-base font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">文字3D参数</h2>
+           <p className="text-xs text-muted-foreground mt-0.5">输入文字并调整大小与厚度</p>
         </div>
         
         <div className="space-y-4">
@@ -239,15 +244,15 @@ export function Panel() {
     const { addTextItem, removeTextItem, updateTextItem } = useModelStore.getState()
     
     return (
-      <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-100px)]">
-        <div>
-           <h2 className="text-lg font-semibold mb-1">文字浮雕板</h2>
-           <p className="text-sm text-muted-foreground">选择板形并添加多个凸起文字</p>
+      <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-100px)]">
+        <div className="pb-3 border-b border-white/5">
+           <h2 className="text-base font-semibold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">文字浮雕板</h2>
+           <p className="text-xs text-muted-foreground mt-0.5">选择板形并添加多个凸起文字</p>
         </div>
         
         {/* Plate Shape Section */}
-        <div className="space-y-4 border-b border-border pb-4">
-           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">底板形状</h3>
+        <div className="space-y-4 border-b border-white/5 pb-4">
+           <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">底板形状</h3>
            
            <div className="grid grid-cols-4 gap-2">
               {[
@@ -457,15 +462,15 @@ export function Panel() {
     const { addTextItem, removeTextItem, updateTextItem } = useModelStore.getState()
     
     return (
-      <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-100px)]">
-        <div>
-           <h2 className="text-lg font-semibold mb-1">文字镂空板</h2>
-           <p className="text-sm text-muted-foreground">选择板形并添加多个文字</p>
+      <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-100px)]">
+        <div className="pb-3 border-b border-white/5">
+           <h2 className="text-base font-semibold bg-gradient-to-r from-white to-emerald-200 bg-clip-text text-transparent">文字镂空板</h2>
+           <p className="text-xs text-muted-foreground mt-0.5">选择板形并添加多个文字</p>
         </div>
         
         {/* Plate Shape Section */}
-        <div className="space-y-4 border-b border-border pb-4">
-           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">底板形状</h3>
+        <div className="space-y-4 border-b border-white/5 pb-4">
+           <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">底板形状</h3>
            
            <div className="grid grid-cols-4 gap-2">
               {[

@@ -15,7 +15,7 @@ export function TransformableObject({
   children, 
   onTransformChange 
 }: TransformableObjectProps) {
-  const groupRef = useRef<THREE.Group>(null)
+  const [group, setGroup] = useState<THREE.Group | null>(null)
   const controlsRef = useRef<any>(null)
   const { gl, camera } = useThree()
   
@@ -34,20 +34,20 @@ export function TransformableObject({
   // Track transform changes
   useEffect(() => {
     const controls = controlsRef.current
-    if (!controls || !groupRef.current) return
+    if (!controls || !group) return
     
     const handleChange = () => {
-      if (groupRef.current && onTransformChange) {
+      if (group && onTransformChange) {
         onTransformChange(
-          groupRef.current.position.clone(),
-          groupRef.current.rotation.clone()
+          group.position.clone(),
+          group.rotation.clone()
         )
       }
     }
     
     controls.addEventListener('change', handleChange)
     return () => controls.removeEventListener('change', handleChange)
-  }, [onTransformChange])
+  }, [onTransformChange, group])
   
   // Disable orbit controls while transforming
   useEffect(() => {
@@ -69,16 +69,16 @@ export function TransformableObject({
   return (
     <>
       <group 
-        ref={groupRef} 
+        ref={setGroup} 
         onClick={handleClick}
       >
         {children}
       </group>
       
-      {isTransformEnabled && groupRef.current && (
+      {isTransformEnabled && group && (
         <TransformControls
           ref={controlsRef}
-          object={groupRef.current}
+          object={group}
           mode={transformMode}
           size={0.8}
         />

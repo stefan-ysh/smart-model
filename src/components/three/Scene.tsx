@@ -39,7 +39,8 @@ function CameraController({
   controlsRef: React.RefObject<any> 
 }) {
   const { camera } = useThree()
-  const { viewPreset, setViewPreset } = useModelStore()
+  const viewPreset = useModelStore(state => state.viewPreset)
+  const setViewPreset = useModelStore(state => state.setViewPreset)
   
   useEffect(() => {
     if (!viewPreset || !controlsRef.current) return
@@ -71,10 +72,7 @@ function CameraController({
 
 // Current model renderer
 function CurrentModel() {
-  const { currentMode, parameters } = useModelStore()
-  const { showShadows } = parameters
-
-  const shadowProps = showShadows ? { castShadow: true, receiveShadow: true } : {}
+  const currentMode = useModelStore(state => state.currentMode)
 
   if (currentMode === 'basic') {
     return <BasicShape />
@@ -101,7 +99,8 @@ function CurrentModel() {
 
 export function Scene() {
   const controlsRef = useRef<any>(null)
-  const { parameters, isLoadingFont } = useModelStore()
+  const showShadows = useModelStore(state => state.parameters.showShadows)
+  const isLoadingFont = useModelStore(state => state.isLoadingFont)
   
   return (
     <div className="relative w-full h-full">
@@ -119,7 +118,7 @@ export function Scene() {
       <ViewControls />
       
       <Canvas 
-        shadows={parameters.showShadows}
+        shadows={showShadows}
         camera={{ position: [80, 80, 80], fov: 45, near: 0.1, far: 10000 }}
         gl={{ antialias: true }}
       >
@@ -129,7 +128,7 @@ export function Scene() {
           <directionalLight 
             position={[50, 100, 50]} 
             intensity={1} 
-            castShadow={parameters.showShadows}
+            castShadow={showShadows}
             shadow-mapSize={[1024, 1024]}
           />
           
@@ -186,7 +185,7 @@ export function Scene() {
 
 // View controls overlay
 function ViewControls() {
-  const { setViewPreset } = useModelStore()
+  const setViewPreset = useModelStore(state => state.setViewPreset)
   
   const views = [
     { key: 'iso', label: '等轴', icon: '◢' },

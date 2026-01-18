@@ -247,7 +247,11 @@ function ReliefMesh() {
   } = parameters;
 
   // Load all unique fonts needed
-  const fontUrls = [...new Set(textItems.map((item) => item.fontUrl))];
+  const fontUrls = useMemo(() => 
+    [...new Set(textItems.map((item) => item.fontUrl))],
+    [textItems]
+  );
+  
   const fonts = useLoader(FontLoader, fontUrls);
 
   // Create font map

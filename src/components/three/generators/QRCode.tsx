@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from "react"
+import { useMemo } from "react"
 import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
 import QRCode from "qrcode"
@@ -36,11 +36,9 @@ export function QRCodeGenerator() {
     baseThickness, plateColor, roughness, metalness, plateCornerRadius
   } = parameters
 
-  const [qrMatrix, setQrMatrix] = useState<number[][]>([])
-
   // Generate QR Matrix
-  useEffect(() => {
-    if (!qrText) return
+  const qrMatrix = useMemo(() => {
+    if (!qrText) return []
 
     const qr = QRCode.create(qrText, { 
       errorCorrectionLevel: 'M', 
@@ -59,7 +57,7 @@ export function QRCodeGenerator() {
         }
         matrix.push(row)
     }
-    setQrMatrix(matrix)
+    return matrix
 
   }, [qrText]) 
 

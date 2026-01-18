@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 
 export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template' | 'qr'
-export type ShapeType = 'cube' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'octahedron'
-export type PlateShape = 'square' | 'rectangle' | 'circle' | 'diamond' | 'star' | 'wave' | 'heart'
+export type ShapeType = 'cube' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'octahedron' | 'dodecahedron' | 'icosahedron' | 'tetrahedron' | 'torusKnot' | 'capsule' | 'ring'
+export type PlateShape = 'square' | 'rectangle' | 'circle' | 'diamond' | 'star' | 'wave' | 'heart' | 'hexagon' | 'pentagon' | 'oval' | 'cross' | 'cloud' | 'shield' | 'badge' | 'rounded'
 
 // Text item for multi-text support
 export interface TextItem {
@@ -69,6 +69,7 @@ export interface ModelParams {
 }
 
 export type TransformMode = 'translate' | 'rotate' | 'scale'
+export type MaterialPreset = 'default' | 'gold' | 'chrome' | 'matte' | 'glass' | 'neon'
 
 interface ModelStore {
   currentMode: GeneratorMode
@@ -100,6 +101,24 @@ interface ModelStore {
   // Font loading state
   isLoadingFont: boolean
   setLoadingFont: (loading: boolean) => void
+  
+  // Toolbar controls
+  autoRotate: boolean
+  setAutoRotate: (enabled: boolean) => void
+  wireframeMode: boolean
+  setWireframeMode: (enabled: boolean) => void
+  materialPreset: MaterialPreset
+  setMaterialPreset: (preset: MaterialPreset) => void
+  screenshotTrigger: number
+  triggerScreenshot: () => void
+  resetViewTrigger: number
+  triggerResetView: () => void
+  
+  // Effects
+  bloomEnabled: boolean
+  setBloomEnabled: (enabled: boolean) => void
+  contactShadowsEnabled: boolean
+  setContactShadowsEnabled: (enabled: boolean) => void
 }
 
 // Font groups for categorized selection
@@ -298,4 +317,22 @@ export const useModelStore = create<ModelStore>((set) => ({
   // Font loading  
   isLoadingFont: false,
   setLoadingFont: (loading) => set({ isLoadingFont: loading }),
+  
+  // Toolbar controls
+  autoRotate: false,
+  setAutoRotate: (enabled) => set({ autoRotate: enabled }),
+  wireframeMode: false,
+  setWireframeMode: (enabled) => set({ wireframeMode: enabled }),
+  materialPreset: 'default',
+  setMaterialPreset: (preset) => set({ materialPreset: preset }),
+  screenshotTrigger: 0,
+  triggerScreenshot: () => set((state) => ({ screenshotTrigger: state.screenshotTrigger + 1 })),
+  resetViewTrigger: 0,
+  triggerResetView: () => set((state) => ({ resetViewTrigger: state.resetViewTrigger + 1 })),
+  
+  // Effects
+  bloomEnabled: true,
+  setBloomEnabled: (enabled) => set({ bloomEnabled: enabled }),
+  contactShadowsEnabled: true,
+  setContactShadowsEnabled: (enabled) => set({ contactShadowsEnabled: enabled }),
 }))

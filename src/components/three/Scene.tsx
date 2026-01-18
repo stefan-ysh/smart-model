@@ -1,7 +1,8 @@
 "use client"
 
-import { Canvas, useThree } from "@react-three/fiber"
-import { OrbitControls, Grid, Center, Html, useProgress } from "@react-three/drei"
+import { Canvas, useThree, useFrame } from "@react-three/fiber"
+import { OrbitControls, Grid, Html, useProgress, Environment, ContactShadows } from "@react-three/drei"
+import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing"
 import { Suspense, useRef, useEffect, useState } from "react"
 import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
@@ -13,6 +14,8 @@ import { StencilGenerator } from "@/components/three/generators/Stencil"
 import { QRCodeGenerator } from "@/components/three/generators/QRCode"
 
 import { ExportHandler } from "@/components/three/ExportHandler"
+import { ModelToolbar } from "@/components/three/ModelToolbar"
+import { ScreenshotHandler } from "@/components/hooks/useScreenshot"
 import { Spinner } from "@/components/ui/spinner"
 
 // Loading indicator component
@@ -32,7 +35,7 @@ function Loader() {
   )
 }
 
-// Camera controller for view presets
+// Camera controller for view presets and reset
 function CameraController({ 
   controlsRef 
 }: { 
@@ -41,6 +44,7 @@ function CameraController({
   const { camera } = useThree()
   const viewPreset = useModelStore(state => state.viewPreset)
   const setViewPreset = useModelStore(state => state.setViewPreset)
+  const resetViewTrigger = useModelStore(state => state.resetViewTrigger)
   
   useEffect(() => {
     if (!viewPreset || !controlsRef.current) return
@@ -67,40 +71,127 @@ function CameraController({
     setViewPreset(null)
   }, [viewPreset, camera, controlsRef, setViewPreset])
   
+  // Handle reset view trigger
+  useEffect(() => {
+    if (resetViewTrigger > 0 && controlsRef.current) {
+      camera.position.set(80, 80, 80)
+      controlsRef.current.target.set(0, 0, 0)
+      controlsRef.current.update()
+    }
+  }, [resetViewTrigger, camera, controlsRef])
+  
   return null
+}
+
+// Model entrance animation wrapper
+function AnimatedModelWrapper({ children }: { children: React.ReactNode }) {
+  const groupRef = useRef<THREE.Group>(null)
+  const [animationProgress, setAnimationProgress] = useState(0)
+  
+  useFrame((_, delta) => {
+    if (animationProgress < 1) {
+      setAnimationProgress(prev => Math.min(1, prev + delta * 2))
+    }
+    
+    if (groupRef.current) {
+      // Elastic easing for bouncy effect
+      const t = animationProgress
+      const elastic = t < 1 
+        ? 1 - Math.pow(2, -10 * t) * Math.cos((t * 10 - 0.75) * ((2 * Math.PI) / 3))
+        : 1
+      
+      groupRef.current.scale.setScalar(elastic)
+    }
+  })
+  
+  return (
+    <group ref={groupRef} scale={0}>
+      {children}
+    </group>
+  )
 }
 
 // Current model renderer
 function CurrentModel() {
   const currentMode = useModelStore(state => state.currentMode)
-
-  if (currentMode === 'basic') {
-    return <BasicShape />
-  }
+  const [key, setKey] = useState(0)
   
-  if (currentMode === 'text') {
-    return <Text3DGenerator />
+  // Reset animation when mode changes
+  useEffect(() => {
+    setKey(prev => prev + 1)
+  }, [currentMode])
+
+  const renderModel = () => {
+    if (currentMode === 'basic') {
+      return <BasicShape />
+    }
+    
+    if (currentMode === 'text') {
+      return <Text3DGenerator />
+    }
+
+    if (currentMode === 'relief') {
+      return <ReliefGenerator />
+    }
+
+    if (currentMode === 'hollow') {
+       return <StencilGenerator />
+    }
+
+    if (currentMode === 'qr') {
+       return <QRCodeGenerator />
+    }
+
+    return null
   }
 
-  if (currentMode === 'relief') {
-    return <ReliefGenerator />
-  }
+  return (
+    <AnimatedModelWrapper key={key}>
+      {renderModel()}
+    </AnimatedModelWrapper>
+  )
+}
 
-  if (currentMode === 'hollow') {
-     return <StencilGenerator />
-  }
+// Post-processing effects
+function Effects() {
+  const bloomEnabled = useModelStore(state => state.bloomEnabled)
+  
+  return (
+    <EffectComposer enabled={true}>
+      <Bloom 
+        intensity={bloomEnabled ? 0.4 : 0} 
+        luminanceThreshold={0.7} 
+        luminanceSmoothing={0.9}
+        mipmapBlur
+      />
+      <Vignette eskil={false} offset={0.1} darkness={bloomEnabled ? 0.5 : 0} />
+    </EffectComposer>
+  )
+}
 
-  if (currentMode === 'qr') {
-     return <QRCodeGenerator />
-  }
-
-  return null
+// Ground shadows
+function GroundEffects() {
+  const contactShadowsEnabled = useModelStore(state => state.contactShadowsEnabled)
+  
+  if (!contactShadowsEnabled) return null
+  
+  return (
+    <ContactShadows 
+      position={[0, -0.5, 0]}
+      opacity={0.5}
+      scale={150}
+      blur={2.5}
+      far={50}
+      color="#000000"
+    />
+  )
 }
 
 export function Scene() {
   const controlsRef = useRef<any>(null)
   const showShadows = useModelStore(state => state.parameters.showShadows)
   const isLoadingFont = useModelStore(state => state.isLoadingFont)
+  const autoRotate = useModelStore(state => state.autoRotate)
   
   return (
     <div className="relative w-full h-full">
@@ -117,20 +208,33 @@ export function Scene() {
       {/* View preset buttons */}
       <ViewControls />
       
+      {/* Model Toolbar */}
+      <ModelToolbar />
+      
       <Canvas 
         shadows={showShadows}
         camera={{ position: [80, 80, 80], fov: 45, near: 0.1, far: 10000 }}
-        gl={{ antialias: true }}
+        gl={{ antialias: true, preserveDrawingBuffer: true }}
       >
         <Suspense fallback={<Loader />}>
+          {/* Environment for reflections */}
+          <Environment preset="city" background={false} />
+          
           {/* Lighting */}
-          <ambientLight intensity={0.6} />
+          <ambientLight intensity={0.4} />
           <directionalLight 
             position={[50, 100, 50]} 
-            intensity={1} 
+            intensity={1.2} 
             castShadow={showShadows}
-            shadow-mapSize={[1024, 1024]}
+            shadow-mapSize={[2048, 2048]}
           />
+          <directionalLight 
+            position={[-30, 50, -30]} 
+            intensity={0.3} 
+          />
+          
+          {/* Ground effects */}
+          <GroundEffects />
           
           {/* Model - positioned so it sits on the grid */}
           <group 
@@ -163,10 +267,14 @@ export function Scene() {
           />
           
           <ExportHandler />
+          <ScreenshotHandler />
           <CameraController controlsRef={controlsRef} />
+          
+          {/* Post-processing effects */}
+          <Effects />
         </Suspense>
         
-        {/* Controls with zoom limits */}
+        {/* Controls with zoom limits and auto-rotate */}
         <OrbitControls 
           ref={controlsRef}
           makeDefault 
@@ -177,6 +285,8 @@ export function Scene() {
           enableDamping
           dampingFactor={0.05}
           target={[0, 0, 0]}
+          autoRotate={autoRotate}
+          autoRotateSpeed={2}
         />
       </Canvas>
     </div>
@@ -198,12 +308,12 @@ function ViewControls() {
   ]
   
   return (
-    <div className="absolute top-4 right-4 z-10 flex flex-col gap-1 bg-background/80 backdrop-blur-sm rounded-lg p-1 border border-border shadow-lg">
+    <div className="absolute top-4 right-4 z-10 flex flex-col gap-1 bg-background/80 backdrop-blur-xl rounded-xl p-1.5 border border-white/10 shadow-xl">
       {views.map(v => (
         <button
           key={v.key}
           onClick={() => setViewPreset(v.key)}
-          className="px-2 py-1 text-xs hover:bg-secondary rounded transition-colors flex items-center gap-1"
+          className="px-2.5 py-1.5 text-xs hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
           title={v.label}
         >
           <span className="w-4 text-center">{v.icon}</span>

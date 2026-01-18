@@ -69,7 +69,9 @@ const PlateShapeButton = ({
 }) => {
   const icons: Record<string, string> = {
     square: '▢', rectangle: '▭', circle: '○', 
-    diamond: '◇', star: '☆', wave: '〰', heart: '♡'
+    diamond: '◇', star: '☆', wave: '〰', heart: '♡',
+    hexagon: '⬡', pentagon: '⬠', oval: '⬭', cross: '✚',
+    cloud: '☁', shield: '🛡', badge: '⬢', rounded: '▢'
   }
   return (
     <button
@@ -141,7 +143,13 @@ export function Panel() {
                 { value: 'cylinder', label: '圆柱体 (Cylinder)' },
                 { value: 'cone', label: '圆锥体 (Cone)' },
                 { value: 'torus', label: '圆环体 (Torus)' },
+                { value: 'torusKnot', label: '扭结环 (Torus Knot)' },
+                { value: 'capsule', label: '胶囊体 (Capsule)' },
+                { value: 'ring', label: '圆环 (Ring)' },
                 { value: 'octahedron', label: '八面体 (Octahedron)' },
+                { value: 'dodecahedron', label: '十二面体 (Dodecahedron)' },
+                { value: 'icosahedron', label: '二十面体 (Icosahedron)' },
+                { value: 'tetrahedron', label: '四面体 (Tetrahedron)' },
               ]}
               onChange={(val) => updateParam('shapeType', val as ShapeType)}
             />
@@ -258,11 +266,19 @@ export function Panel() {
               {[
                 { value: 'square', label: '正方' },
                 { value: 'rectangle', label: '长方' },
+                { value: 'rounded', label: '圆角' },
                 { value: 'circle', label: '圆形' },
+                { value: 'oval', label: '椭圆' },
                 { value: 'diamond', label: '菱形' },
+                { value: 'hexagon', label: '六边' },
+                { value: 'pentagon', label: '五边' },
                 { value: 'star', label: '五星' },
-                { value: 'wave', label: '波浪' },
                 { value: 'heart', label: '爱心' },
+                { value: 'shield', label: '盾牌' },
+                { value: 'badge', label: '徽章' },
+                { value: 'cloud', label: '云朵' },
+                { value: 'cross', label: '十字' },
+                { value: 'wave', label: '波浪' },
               ].map(shape => (
                 <PlateShapeButton
                   key={shape.value}
@@ -476,11 +492,19 @@ export function Panel() {
               {[
                 { value: 'square', label: '正方' },
                 { value: 'rectangle', label: '长方' },
+                { value: 'rounded', label: '圆角' },
                 { value: 'circle', label: '圆形' },
+                { value: 'oval', label: '椭圆' },
                 { value: 'diamond', label: '菱形' },
+                { value: 'hexagon', label: '六边' },
+                { value: 'pentagon', label: '五边' },
                 { value: 'star', label: '五星' },
-                { value: 'wave', label: '波浪' },
                 { value: 'heart', label: '爱心' },
+                { value: 'shield', label: '盾牌' },
+                { value: 'badge', label: '徽章' },
+                { value: 'cloud', label: '云朵' },
+                { value: 'cross', label: '十字' },
+                { value: 'wave', label: '波浪' },
               ].map(shape => (
                 <PlateShapeButton
                   key={shape.value}

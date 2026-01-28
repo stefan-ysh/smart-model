@@ -295,7 +295,7 @@ export function createPlateGeometry(
       // Add mounting hole
       const holeRadius = h / 4;
       const hole = new THREE.Path();
-      hole.ellipse(-w + r * 1.5, 0, holeRadius, holeRadius, 0, Math.PI * 2, false, 0);
+      hole.ellipse(-w + r * 1.5, 0, holeRadius, holeRadius, 0, Math.PI * 2, true, 0);
       npShape.holes.push(hole);
       
       return new THREE.ExtrudeGeometry(npShape, {
@@ -314,7 +314,7 @@ export function createPlateGeometry(
       // Keyring hole
       const holeR = mainR / 5;
       const hole = new THREE.Path();
-      hole.ellipse(0, mainR - holeR * 1.5, holeR, holeR, 0, Math.PI * 2, false, 0);
+      hole.ellipse(0, mainR - holeR * 1.5, holeR, holeR, 0, Math.PI * 2, true, 0);
       kcShape.holes.push(hole);
       
       return new THREE.ExtrudeGeometry(kcShape, {
@@ -344,7 +344,7 @@ export function createPlateGeometry(
       
       // Hole at top
       const hole = new THREE.Path();
-      hole.ellipse(0, th - tipH * 1.8, tipH / 2, tipH / 2, 0, Math.PI * 2, false, 0);
+      hole.ellipse(0, th - tipH * 1.8, tipH / 2, tipH / 2, 0, Math.PI * 2, true, 0);
       tagShape.holes.push(hole);
       
       return new THREE.ExtrudeGeometry(tagShape, {
@@ -390,10 +390,10 @@ export function createPlateGeometry(
       // Two mounting holes
       const hR = dh / 5;
       const hole1 = new THREE.Path();
-      hole1.ellipse(-dw + dr * 2, 0, hR, hR, 0, Math.PI * 2, false, 0);
+      hole1.ellipse(-dw + dr * 2, 0, hR, hR, 0, Math.PI * 2, true, 0);
       dsShape.holes.push(hole1);
       const hole2 = new THREE.Path();
-      hole2.ellipse(dw - dr * 2, 0, hR, hR, 0, Math.PI * 2, false, 0);
+      hole2.ellipse(dw - dr * 2, 0, hR, hR, 0, Math.PI * 2, true, 0);
       dsShape.holes.push(hole2);
       
       return new THREE.ExtrudeGeometry(dsShape, {
@@ -427,7 +427,7 @@ export function createPlateGeometry(
       
       // Center hole
       const hole = new THREE.Path();
-      hole.ellipse(0, 0, bh / 2, bh / 2, 0, Math.PI * 2, false, 0);
+      hole.ellipse(0, 0, bh / 2, bh / 2, 0, Math.PI * 2, true, 0);
       boneShape.holes.push(hole);
       
       return new THREE.ExtrudeGeometry(boneShape, {

@@ -341,8 +341,7 @@ export function Scene() {
           maxDistance={500}
           minPolarAngle={0}
           maxPolarAngle={Math.PI * 0.9}
-          enableDamping
-          dampingFactor={0.05}
+          enableDamping={false}
           target={[0, 0, 0]}
           autoRotate={autoRotate}
           autoRotateSpeed={2}

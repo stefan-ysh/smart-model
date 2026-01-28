@@ -4,7 +4,7 @@ import { useState } from "react"
 import type { LucideIcon } from "lucide-react"
 import { 
   RotateCw, Camera, Palette, Grid3X3, Maximize, Home, 
-  Sparkles, Eclipse, X, ChevronUp
+  Sparkles, Eclipse, X, ChevronUp, Grid2X2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useModelStore, MaterialPreset } from "@/lib/store"
@@ -62,6 +62,7 @@ export function ModelToolbar() {
     triggerResetView,
     bloomEnabled, setBloomEnabled,
     contactShadowsEnabled, setContactShadowsEnabled,
+    showGrid, setShowGrid,
   } = useModelStore()
 
   const handleFullscreen = () => {
@@ -163,6 +164,12 @@ export function ModelToolbar() {
           label="地面阴影" 
           active={contactShadowsEnabled}
           onClick={() => setContactShadowsEnabled(!contactShadowsEnabled)}
+        />
+        <ToolbarButton 
+          icon={Grid2X2} 
+          label="显示网格" 
+          active={showGrid}
+          onClick={() => setShowGrid(!showGrid)}
         />
         
         <div className="w-px h-6 bg-white/10 mx-1" />

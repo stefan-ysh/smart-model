@@ -119,6 +119,10 @@ interface ModelStore {
   setBloomEnabled: (enabled: boolean) => void
   contactShadowsEnabled: boolean
   setContactShadowsEnabled: (enabled: boolean) => void
+  
+  // Scene settings
+  showGrid: boolean
+  setShowGrid: (enabled: boolean) => void
 }
 
 // Font groups for categorized selection
@@ -332,7 +336,11 @@ export const useModelStore = create<ModelStore>((set) => ({
   
   // Effects
   bloomEnabled: true,
-  setBloomEnabled: (enabled) => set({ bloomEnabled: enabled }),
+  setBloomEnabled: (enabled: boolean) => set({ bloomEnabled: enabled }),
   contactShadowsEnabled: true,
-  setContactShadowsEnabled: (enabled) => set({ contactShadowsEnabled: enabled }),
+  setContactShadowsEnabled: (enabled: boolean) => set({ contactShadowsEnabled: enabled }),
+  
+  // Scene settings
+  showGrid: true,
+  setShowGrid: (enabled: boolean) => set({ showGrid: enabled }),
 }))

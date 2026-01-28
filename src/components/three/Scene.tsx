@@ -237,6 +237,7 @@ export function Scene() {
   const showShadows = useModelStore(state => state.parameters.showShadows)
   const isLoadingFont = useModelStore(state => state.isLoadingFont)
   const autoRotate = useModelStore(state => state.autoRotate)
+  const showGrid = useModelStore(state => state.showGrid)
   
   return (
     <div className="relative w-full h-full">
@@ -310,20 +311,22 @@ export function Scene() {
           </group>
           
           {/* Grid - infinite and filling the view */}
-          <Grid 
-            args={[500, 500]}
-            cellSize={5}
-            cellThickness={0.5}
-            cellColor="#6b7280"
-            sectionSize={25}
-            sectionThickness={1}
-            sectionColor="#374151"
-            fadeDistance={500}
-            fadeStrength={1}
-            followCamera={false}
-            infiniteGrid={true}
-            position={[0, -0.01, 0]}
-          />
+          {showGrid && (
+            <Grid 
+              args={[500, 500]}
+              cellSize={5}
+              cellThickness={0.5}
+              cellColor="#6b7280"
+              sectionSize={25}
+              sectionThickness={1}
+              sectionColor="#374151"
+              fadeDistance={500}
+              fadeStrength={1}
+              followCamera={false}
+              infiniteGrid={true}
+              position={[0, -0.01, 0]}
+            />
+          )}
           
           <ExportHandler />
           <ScreenshotHandler />

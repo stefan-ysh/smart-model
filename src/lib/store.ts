@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template' | 'qr'
 export type ShapeType = 'cube' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'octahedron' | 'dodecahedron' | 'icosahedron' | 'tetrahedron' | 'torusKnot' | 'capsule' | 'ring'
-export type PlateShape = 'square' | 'rectangle' | 'circle' | 'diamond' | 'star' | 'wave' | 'heart' | 'hexagon' | 'pentagon' | 'oval' | 'cross' | 'cloud' | 'shield' | 'badge' | 'rounded'
+export type PlateShape = 'square' | 'rectangle' | 'circle' | 'diamond' | 'star' | 'wave' | 'heart' | 'hexagon' | 'pentagon' | 'oval' | 'cross' | 'cloud' | 'shield' | 'badge' | 'rounded' | 'nameplate' | 'keychain' | 'tag' | 'coaster' | 'doorSign' | 'petBone' | 'trophy' | 'frame'
 
 // Text item for multi-text support
 export interface TextItem {

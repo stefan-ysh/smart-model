@@ -48,7 +48,6 @@ export function Sidebar() {
     { mode: 'relief', icon: ImageIcon, label: '浮雕板' },
     { mode: 'hollow', icon: Grid3x3, label: '镂空板' },
     { mode: 'qr', icon: QrCode, label: '二维码' },
-    { mode: 'template', icon: Folder, label: '模板库' },
   ]
 
   return (

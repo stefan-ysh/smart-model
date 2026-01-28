@@ -16,6 +16,7 @@ import { QRCodeGenerator } from "@/components/three/generators/QRCode"
 import { ExportHandler } from "@/components/three/ExportHandler"
 import { ModelToolbar } from "@/components/three/ModelToolbar"
 import { ScreenshotHandler } from "@/components/hooks/useScreenshot"
+import { ArrayLayout } from "@/components/three/ArrayLayout"
 
 // Loading indicator component
 function Loader() {
@@ -192,7 +193,9 @@ function CurrentModel() {
 
   return (
     <AnimatedModelWrapper key={key}>
-      {renderModel()}
+      <ArrayLayout>
+        {renderModel()}
+      </ArrayLayout>
     </AnimatedModelWrapper>
   )
 }

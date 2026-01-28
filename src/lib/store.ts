@@ -3,6 +3,7 @@ import { create } from 'zustand'
 export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template' | 'qr'
 export type ShapeType = 'cube' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'octahedron' | 'dodecahedron' | 'icosahedron' | 'tetrahedron' | 'torusKnot' | 'capsule' | 'ring'
 export type PlateShape = 'square' | 'rectangle' | 'circle' | 'diamond' | 'star' | 'wave' | 'heart' | 'hexagon' | 'pentagon' | 'oval' | 'cross' | 'cloud' | 'shield' | 'badge' | 'rounded' | 'nameplate' | 'keychain' | 'tag' | 'coaster' | 'doorSign' | 'petBone' | 'trophy' | 'frame'
+export type ArrayType = 'none' | 'rectangular' | 'circular'
 
 // Text item for multi-text support
 export interface TextItem {
@@ -63,6 +64,15 @@ export interface ModelParams {
   
   // Display options
   showShadows: boolean
+  
+  // Array/Pattern settings
+  arrayType: ArrayType
+  arrayCountX: number
+  arrayCountY: number
+  arraySpacingX: number
+  arraySpacingY: number
+  arrayCircularCount: number
+  arrayCircularRadius: number
   
   // System
   exportTrigger: number
@@ -254,6 +264,16 @@ const defaultParams: ModelParams = {
   metalness: 0.1,
   
   showShadows: false,
+  
+  // Array defaults
+  arrayType: 'none',
+  arrayCountX: 3,
+  arrayCountY: 1,
+  arraySpacingX: 60,
+  arraySpacingY: 60,
+  arrayCircularCount: 6,
+  arrayCircularRadius: 60,
+  
   exportTrigger: 0,
 }
 

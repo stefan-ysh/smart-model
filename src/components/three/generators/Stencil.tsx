@@ -57,6 +57,9 @@ function createTextGeometry(
   }
 }
 
+// Global cache for expensive CSG geometries
+const geometryCache = new Map<string, THREE.BufferGeometry>()
+
 function StencilMesh() {
   const { parameters } = useModelStore()
   const { 
@@ -73,6 +76,17 @@ function StencilMesh() {
 
   const resultGeometry = useMemo(() => {
     if (Object.keys(fontMap).length === 0) return null
+
+    // Create a unique key based on parameters that affect the geometry
+    const cacheKey = JSON.stringify({
+      size, baseThickness, textItems, 
+      plateShape, plateWidth, plateHeight,
+      platePosition, plateRotation, plateCornerRadius
+    })
+
+    if (geometryCache.has(cacheKey)) {
+      return geometryCache.get(cacheKey)!
+    }
 
     try {
       // Create plate brush
@@ -93,11 +107,7 @@ function StencilMesh() {
         if (!font) continue
         
         // Transform text world position to plate-local position
-        // First, offset by inverse plate position
         const localX = item.position.x - platePosition.x
-        // Plate Y (local) maps to World -Z. platePosition.y is World Z.
-        // To keep World Z constant: -LocalY + PlateZ = const.
-        // So LocalY should compensate PlateZ.
         const localY = item.position.y + platePosition.y
         
         // Then rotate by inverse plate rotation
@@ -108,7 +118,7 @@ function StencilMesh() {
         const localItem = {
           ...item,
           position: { ...item.position, x: rotatedX, y: rotatedY },
-          rotation: item.rotation - plateRotation // Also compensate text rotation
+          rotation: item.rotation - plateRotation
         }
         
         const textGeo = createTextGeometry(font, localItem, baseThickness)
@@ -127,7 +137,22 @@ function StencilMesh() {
       
       plateGeo.dispose()
       
-      return plateBrush.geometry
+      const result = plateBrush.geometry
+      
+      // Store in cache
+      geometryCache.set(cacheKey, result)
+      
+      // Limit cache size to avoid memory leaks
+      if (geometryCache.size > 20) {
+        const firstKey = geometryCache.keys().next().value
+        if (firstKey) {
+          const oldGeo = geometryCache.get(firstKey)
+          if (oldGeo) oldGeo.dispose()
+          geometryCache.delete(firstKey)
+        }
+      }
+
+      return result
     } catch (error) {
       console.error('CSG Error:', error)
       return createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius)

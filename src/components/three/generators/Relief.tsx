@@ -10,6 +10,10 @@ import { createPlateGeometry } from "./plateShapes";
 // Create plate geometry based on shape type (same as Stencil)
 // Now imported from ./plateShapes
 
+// Global caches for expensive geometries
+const plateCache = new Map<string, THREE.BufferGeometry>()
+const textGeoCache = new Map<string, THREE.BufferGeometry>()
+
 function ReliefMesh() {
   const { parameters } = useModelStore();
   const {
@@ -54,43 +58,75 @@ function ReliefMesh() {
         const font = fontMap[item.fontUrl];
         if (!font) return null;
 
-        try {
-          const textGeo = new TextGeometry(item.content || " ", {
-            font: font,
-            size: item.fontSize,
-            height: item.reliefHeight, // Use per-item reliefHeight
-            curveSegments: 4,
-            bevelEnabled: false,
-          });
+        const cacheKey = JSON.stringify({
+          content: item.content,
+          fontUrl: item.fontUrl,
+          fontSize: item.fontSize,
+          reliefHeight: item.reliefHeight,
+        })
 
-          // Center the text
-          textGeo.computeBoundingBox();
-          if (textGeo.boundingBox) {
-            const centerX =
-              (textGeo.boundingBox.max.x - textGeo.boundingBox.min.x) / 2;
-            const centerY =
-              (textGeo.boundingBox.max.y - textGeo.boundingBox.min.y) / 2;
-            textGeo.translate(-centerX, -centerY, 0);
+        let textGeo: THREE.BufferGeometry
+        if (textGeoCache.has(cacheKey)) {
+          textGeo = textGeoCache.get(cacheKey)!
+        } else {
+          try {
+            textGeo = new TextGeometry(item.content || " ", {
+              font: font,
+              size: item.fontSize,
+              height: item.reliefHeight,
+              curveSegments: 4,
+              bevelEnabled: false,
+            });
+
+            // Center the text
+            textGeo.computeBoundingBox();
+            if (textGeo.boundingBox) {
+              const centerX =
+                (textGeo.boundingBox.max.x - textGeo.boundingBox.min.x) / 2;
+              const centerY =
+                (textGeo.boundingBox.max.y - textGeo.boundingBox.min.y) / 2;
+              textGeo.translate(-centerX, -centerY, 0);
+            }
+
+            textGeoCache.set(cacheKey, textGeo)
+            
+            // Limit cache size
+            if (textGeoCache.size > 100) {
+              const firstKey = textGeoCache.keys().next().value
+              if (firstKey) {
+                const oldGeo = textGeoCache.get(firstKey)
+                if (oldGeo) oldGeo.dispose()
+                textGeoCache.delete(firstKey)
+              }
+            }
+          } catch (e) {
+            console.error("Error creating text geometry:", e);
+            return null;
           }
-
-          return {
-            geometry: textGeo,
-            position: item.position,
-            rotation: item.rotation,
-            reliefHeight: item.reliefHeight,
-            id: item.id,
-          };
-        } catch (e) {
-          console.error("Error creating text geometry:", e);
-          return null;
         }
+
+        return {
+          geometry: textGeo,
+          position: item.position,
+          rotation: item.rotation,
+          reliefHeight: item.reliefHeight,
+          id: item.id,
+        };
       })
       .filter(Boolean);
   }, [fontMap, textItems]);
 
   // Create plate geometry
   const plateGeo = useMemo(() => {
-    return createPlateGeometry(
+    const cacheKey = JSON.stringify({
+      plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius
+    })
+
+    if (plateCache.has(cacheKey)) {
+      return plateCache.get(cacheKey)!
+    }
+
+    const geo = createPlateGeometry(
       plateShape,
       size,
       plateWidth,
@@ -98,6 +134,20 @@ function ReliefMesh() {
       baseThickness,
       plateCornerRadius,
     );
+
+    plateCache.set(cacheKey, geo)
+    
+    // Limit cache size
+    if (plateCache.size > 20) {
+      const firstKey = plateCache.keys().next().value
+      if (firstKey) {
+        const oldGeo = plateCache.get(firstKey)
+        if (oldGeo) oldGeo.dispose()
+        plateCache.delete(firstKey)
+      }
+    }
+
+    return geo
   }, [plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius]);
 
   return (

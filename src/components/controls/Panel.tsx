@@ -1,5 +1,7 @@
 "use client"
 
+import { AlertTriangle } from "lucide-react"
+
 import { useModelStore, ShapeType } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { FontSelect } from "./FontSelect"
@@ -137,6 +139,121 @@ const Section = ({ title, children }: { title: string, children: React.ReactNode
   </div>
 )
 
+// Layout options for array patterns
+function LayoutSection() {
+  const { currentMode, parameters, updateParam } = useModelStore()
+  
+  const isExpensiveMode = currentMode === 'hollow' || currentMode === 'relief'
+  const isLargeArray = parameters.arrayType !== 'none' && (
+    (parameters.arrayType === 'rectangular' && parameters.arrayCountX * parameters.arrayCountY > 9) ||
+    (parameters.arrayType === 'circular' && parameters.arrayCircularCount > 8)
+  )
+  
+  return (
+    <Section title="排列布局 (Pattern)">
+      <div className="space-y-4">
+        <div>
+          <Label>排列类型</Label>
+          <div className="grid grid-cols-3 gap-2 mt-1.5">
+            {[
+              { value: 'none', label: '单个' },
+              { value: 'rectangular', label: '矩形阵列' },
+              { value: 'circular', label: '环形阵列' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => updateParam('arrayType', opt.value)}
+                className={cn(
+                  "px-2 py-1.5 text-[10px] rounded-lg border transition-all",
+                  parameters.arrayType === opt.value
+                    ? "bg-primary/20 border-primary text-primary"
+                    : "border-white/5 bg-white/5 text-muted-foreground hover:bg-white/10"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {parameters.arrayType === 'rectangular' && (
+          <div className="space-y-4 pt-2 border-t border-white/5">
+            <div>
+              <Label>X轴数量</Label>
+              <Slider 
+                value={parameters.arrayCountX} 
+                min={1} max={10} step={1}
+                onChange={(val) => updateParam('arrayCountX', val)} 
+              />
+            </div>
+            <div>
+              <Label>Y轴数量</Label>
+              <Slider 
+                value={parameters.arrayCountY} 
+                min={1} max={10} step={1}
+                onChange={(val) => updateParam('arrayCountY', val)} 
+              />
+            </div>
+            <div>
+              <Label>X轴间距 (mm)</Label>
+              <Slider 
+                value={parameters.arraySpacingX} 
+                min={10} max={200} step={1}
+                onChange={(val) => updateParam('arraySpacingX', val)} 
+              />
+            </div>
+            <div>
+              <Label>Y轴间距 (mm)</Label>
+              <Slider 
+                value={parameters.arraySpacingY} 
+                min={10} max={200} step={1}
+                onChange={(val) => updateParam('arraySpacingY', val)} 
+              />
+            </div>
+          </div>
+        )}
+
+        {parameters.arrayType === 'circular' && (
+          <div className="space-y-4 pt-2 border-t border-white/5">
+            <div>
+              <Label>环形数量</Label>
+              <Slider 
+                value={parameters.arrayCircularCount} 
+                min={2} max={20} step={1}
+                onChange={(val) => updateParam('arrayCircularCount', val)} 
+              />
+            </div>
+            <div>
+              <Label>阵列半径 (mm)</Label>
+              <Slider 
+                value={parameters.arrayCircularRadius} 
+                min={10} max={200} step={1}
+                onChange={(val) => updateParam('arrayCircularRadius', val)} 
+              />
+            </div>
+          </div>
+        )}
+
+        {isExpensiveMode && parameters.arrayType !== 'none' && (
+          <div className={cn(
+            "p-2 rounded-lg border flex items-start gap-2 text-[10px] leading-tight transition-all",
+            isLargeArray 
+              ? "bg-amber-500/10 border-amber-500/20 text-amber-200/80"
+              : "bg-blue-500/10 border-blue-500/20 text-blue-200/80"
+          )}>
+            <AlertTriangle className={cn("h-3 w-3 mt-0.5 shrink-0", isLargeArray ? "text-amber-400" : "text-blue-400")} />
+            <p>
+              {isLargeArray 
+                ? "由于镂空/浮雕计算量大，当前阵列规模较大，调整参数可能会有明显延迟。已开启几何缓存加速。"
+                : "已针对镂空/浮雕模式开启阵列性能优化（几何缓存）。"}
+            </p>
+          </div>
+        )}
+      </div>
+    </Section>
+  )
+}
+
 export function Panel() {
   const { currentMode, parameters, updateParam } = useModelStore()
 
@@ -208,6 +325,8 @@ export function Panel() {
             </div>
           )}
         </div>
+
+        <LayoutSection />
       </div>
     )
   }
@@ -260,6 +379,8 @@ export function Panel() {
               />
            </div>
         </div>
+
+        <LayoutSection />
       </div>
     )
   }
@@ -494,6 +615,7 @@ export function Panel() {
                 onChange={(val) => updateParam('metalness', val)} />
            </div>
         </div>
+        <LayoutSection />
       </div>
     )
   }
@@ -539,11 +661,11 @@ export function Panel() {
                 { value: 'frame', label: '相框' },
               ].map(shape => (
                 <PlateShapeButton
-                  key={shape.value}
-                  shape={shape.value}
-                  label={shape.label}
-                  selected={parameters.plateShape === shape.value}
-                  onClick={() => updateParam('plateShape', shape.value)}
+                   key={shape.value}
+                   shape={shape.value}
+                   label={shape.label}
+                   selected={parameters.plateShape === shape.value}
+                   onClick={() => updateParam('plateShape', shape.value)}
                 />
               ))}
            </div>
@@ -645,10 +767,10 @@ export function Panel() {
                 </div>
                 
                 <Input 
-                  type="text" 
-                  value={item.content}
-                  onChange={(e) => updateTextItem(item.id, { content: e.target.value })}
-                  placeholder="输入文字..."
+                   type="text" 
+                   value={item.content}
+                   onChange={(e) => updateTextItem(item.id, { content: e.target.value })}
+                   placeholder="输入文字..."
                 />
                 
                 <div>
@@ -717,6 +839,7 @@ export function Panel() {
                 onChange={(val) => updateParam('metalness', val)} />
            </div>
         </div>
+        <LayoutSection />
       </div>
     )
   }
@@ -865,6 +988,7 @@ export function Panel() {
               </div>
            </Section>
         </div>
+        <LayoutSection />
       </div>
     )
   }

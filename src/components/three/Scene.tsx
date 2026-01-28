@@ -16,7 +16,6 @@ import { QRCodeGenerator } from "@/components/three/generators/QRCode"
 import { ExportHandler } from "@/components/three/ExportHandler"
 import { ModelToolbar } from "@/components/three/ModelToolbar"
 import { ScreenshotHandler } from "@/components/hooks/useScreenshot"
-import { Spinner } from "@/components/ui/spinner"
 
 // Loading indicator component
 function Loader() {
@@ -25,11 +24,57 @@ function Loader() {
   
   return (
     <Html center>
-      <div className="flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg px-6 py-4 shadow-lg border border-border">
-        <Spinner size="lg" />
-        <span className="text-sm text-muted-foreground mt-3">
-          加载中... {progress.toFixed(0)}%
-        </span>
+      <div className="relative flex flex-col items-center justify-center pointer-events-none select-none">
+        {/* Outer Glow */}
+        <div className="absolute h-40 w-40 animate-pulse rounded-full bg-blue-500/10 blur-[60px]" />
+        
+        {/* Progress Container */}
+        <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl border border-white/10 bg-zinc-950/40 backdrop-blur-xl shadow-2xl">
+          <div className="absolute inset-0 bg-linear-to-b from-white/5 to-transparent rounded-3xl" />
+          
+          {/* SVG Progress Circle */}
+          <svg className="h-20 w-20 -rotate-90 transform">
+            <circle
+              cx="40"
+              cy="40"
+              r="34"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              fill="transparent"
+              className="text-white/5"
+            />
+            <circle
+              cx="40"
+              cy="40"
+              r="34"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              fill="transparent"
+              strokeDasharray={213.6}
+              strokeDashoffset={213.6 - (213.6 * progress) / 100}
+              className="text-blue-500 transition-all duration-500 ease-out"
+              strokeLinecap="round"
+            />
+          </svg>
+          
+          <div className="absolute flex flex-col items-center">
+            <span className="text-xl font-bold text-white tabular-nums tracking-tighter">
+              {progress.toFixed(0)}<span className="text-[10px] ml-0.5 opacity-50">%</span>
+            </span>
+          </div>
+        </div>
+        
+        <div className="mt-6 flex flex-col items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-blue-500 animate-ping" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400">
+              Initializing Engine
+            </span>
+          </div>
+          <span className="text-[9px] text-zinc-500 uppercase tracking-widest">
+            Loading 3D Assets & Resources
+          </span>
+        </div>
       </div>
     </Html>
   )
@@ -197,10 +242,24 @@ export function Scene() {
     <div className="relative w-full h-full">
       {/* Loading overlay */}
       {isLoadingFont && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3 bg-background/90 px-8 py-6 rounded-lg shadow-lg border border-border">
-            <Spinner size="md" />
-            <span className="text-sm text-muted-foreground">加载字体中...</span>
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-md">
+          <div className="relative flex flex-col items-center justify-center">
+            <div className="absolute h-40 w-40 animate-pulse rounded-full bg-purple-500/10 blur-[60px]" />
+            <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl border border-white/10 bg-zinc-950/40 backdrop-blur-xl shadow-2xl">
+              <div className="absolute inset-0 bg-linear-to-b from-white/5 to-transparent rounded-3xl" />
+              <div className="h-12 w-12 animate-spin rounded-full border-2 border-purple-500/30 border-t-purple-500" />
+            </div>
+            <div className="mt-6 flex flex-col items-center gap-1.5">
+              <div className="flex items-center gap-2">
+                <div className="h-1 w-1 rounded-full bg-purple-500 animate-ping" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-400">
+                  Global Typography
+                </span>
+              </div>
+              <span className="text-[9px] text-zinc-500 uppercase tracking-widest">
+                Optimizing Visual Assets
+              </span>
+            </div>
           </div>
         </div>
       )}

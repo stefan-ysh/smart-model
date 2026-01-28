@@ -1,12 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { Box, Type, Image as ImageIcon, Grid3x3, Folder, QrCode } from "lucide-react"
+import { Box, Type, Image as ImageIcon, Grid3x3, QrCode } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useModelStore, GeneratorMode } from "@/lib/store"
-
 interface SidebarItemProps {
-  icon: any
+  icon: React.ElementType
   label: string
   isActive: boolean
   onClick: () => void
@@ -17,24 +16,38 @@ const SidebarItem = ({ icon: Icon, label, isActive, onClick }: SidebarItemProps)
     <button
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col items-center justify-center p-3 w-full transition-all duration-300 rounded-xl mb-2",
-        "hover:scale-105 hover:-translate-y-0.5",
+        "group relative flex flex-col items-center justify-center p-3 w-full transition-all duration-500 rounded-2xl mb-3",
+        "hover:bg-white/5",
         isActive
-          ? "bg-gradient-to-br from-primary/90 to-purple-600/90 text-primary-foreground shadow-lg shadow-primary/25"
-          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+          ? "text-white"
+          : "text-zinc-500 hover:text-zinc-200"
       )}
     >
-      {/* Glow effect for active state */}
+      {/* Active Highlight Background */}
       {isActive && (
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-purple-600/20 blur-xl -z-10" />
+        <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 shadow-[0_0_20px_rgba(59,130,246,0.5)] z-0 animate-in fade-in zoom-in duration-300" />
       )}
       
-      <Icon className={cn(
-        "h-5 w-5 mb-1.5 transition-transform duration-300",
-        "group-hover:scale-110",
-        isActive && "drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]"
-      )} />
-      <span className="text-[10px] font-medium tracking-wide">{label}</span>
+      {/* Icon with potential glow */}
+      <div className="relative z-10 transition-transform duration-500 group-hover:-translate-y-1">
+        <Icon className={cn(
+          "h-6 w-6 transition-all duration-500",
+          isActive ? "scale-110 drop-shadow-[0_0_8px_white]" : "group-hover:text-white"
+        )} />
+      </div>
+      
+      {/* Label */}
+      <span className={cn(
+        "relative z-10 text-[10px] font-bold mt-2 uppercase tracking-widest transition-opacity duration-500",
+        isActive ? "opacity-100" : "opacity-40 group-hover:opacity-100"
+      )}>
+        {label}
+      </span>
+      
+      {/* Border indicator for inactive hover */}
+      {!isActive && (
+        <div className="absolute inset-x-3 bottom-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      )}
     </button>
   )
 }
@@ -44,22 +57,16 @@ export function Sidebar() {
 
   const items: { mode: GeneratorMode; icon: React.ElementType; label: string }[] = [
     { mode: 'basic', icon: Box, label: '基础' },
-    { mode: 'text', icon: Type, label: '3D文本' },
-    { mode: 'relief', icon: ImageIcon, label: '浮雕板' },
-    { mode: 'hollow', icon: Grid3x3, label: '镂空板' },
+    { mode: 'text', icon: Type, label: '文字' },
+    { mode: 'relief', icon: ImageIcon, label: '浮雕' },
+    { mode: 'hollow', icon: Grid3x3, label: '镂空' },
     { mode: 'qr', icon: QrCode, label: '二维码' },
   ]
 
   return (
-    <aside className="w-20 h-full bg-sidebar/80 backdrop-blur-xl border-r border-white/5 flex flex-col items-center py-4">
-      {/* Logo */}
-      <div className="mb-6 p-2">
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center text-primary-foreground font-bold text-lg ">
-        </div>
-      </div>
-      
+    <aside className="w-24 h-full bg-zinc-950 border-r border-white/5 flex flex-col items-center py-6 relative z-50">
       {/* Navigation */}
-      <nav className="flex-1 w-full px-2 space-y-1">
+      <nav className="flex-1 w-full px-3 space-y-1">
         {items.map((item) => (
           <SidebarItem
             key={item.mode}
@@ -71,9 +78,9 @@ export function Sidebar() {
         ))}
       </nav>
       
-      {/* Bottom indicator */}
-      <div className="px-3 pb-2 w-full">
-        <div className="h-1 w-full rounded-full bg-gradient-to-r from-primary/50 via-purple-500/50 to-cyan-500/50" />
+      {/* Bottom Visual Element */}
+      <div className="w-12 h-1 rounded-full bg-zinc-900 overflow-hidden">
+        <div className="h-full w-1/2 bg-blue-500 animate-[loading_2s_infinite_linear]" />
       </div>
     </aside>
   )

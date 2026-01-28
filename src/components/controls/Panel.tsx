@@ -1,18 +1,15 @@
 "use client"
 
-import { useModelStore, ShapeType, GeneratorMode } from "@/lib/store"
+import { useModelStore, ShapeType } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { FontSelect } from "./FontSelect"
 import { SliderWithInput } from "./SliderWithInput"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -61,7 +58,7 @@ const SimpleSelect = ({ value, options, onChange }: {
   </Select>
 )
 
-// Plate shape icons
+// Plate shape icons with premium styling
 const PlateShapeButton = ({ 
   shape, selected, onClick, label 
 }: { 
@@ -79,45 +76,62 @@ const PlateShapeButton = ({
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all min-w-[60px]",
+        "group relative flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all duration-300 min-w-[64px] min-h-[64px]",
         selected 
-          ? "border-primary bg-primary/10 text-primary" 
-          : "border-border bg-secondary/50 text-muted-foreground hover:border-primary/50"
+          ? "border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]" 
+          : "border-white/5 bg-white/5 text-zinc-500 hover:border-white/20 hover:text-zinc-200"
       )}
     >
-      <span className="text-xl">{icons[shape] || '□'}</span>
-      <span className="text-xs mt-1">{label}</span>
+      {selected && (
+        <div className="absolute inset-x-0 -bottom-1 h-0.5 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+      )}
+      <span className={cn(
+        "text-2xl transition-transform duration-300",
+        selected ? "scale-110" : "group-hover:scale-110"
+      )}>
+        {icons[shape] || '□'}
+      </span>
+      <span className="text-[9px] font-bold mt-2 uppercase tracking-tighter opacity-70">{label}</span>
     </button>
   )
 }
 
-// Color picker component
-const ColorInput = ({ value, onChange, label }: { value: string, onChange: (val: string) => void, label?: string }) => (
-  <div className="flex items-center gap-2">
-    <input
-      type="color"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-10 h-10 rounded cursor-pointer border border-border"
-    />
-    <Input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="flex-1 font-mono"
-      placeholder="#000000"
-    />
+// Color picker component with modern styling
+const ColorInput = ({ value, onChange }: { value: string, onChange: (val: string) => void, label?: string }) => (
+  <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/5 transition-all hover:border-white/10 group">
+    <div className="relative h-10 w-10 shrink-0">
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+      />
+      <div 
+        className="h-full w-full rounded-lg border border-white/10 shadow-inner" 
+        style={{ backgroundColor: value }}
+      />
+    </div>
+    <div className="flex flex-col flex-1">
+      <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest group-hover:text-zinc-400 transition-colors">HEX Code</span>
+      <Input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-6 border-0 bg-transparent p-0 font-mono text-sm focus-visible:ring-0 focus-visible:border-0 shadow-none"
+        placeholder="#000000"
+      />
+    </div>
   </div>
 )
 
 // Section component for better organization
 // Section component with modern styling
-const Section = ({ title, children, collapsible = false }: { title: string, children: React.ReactNode, collapsible?: boolean }) => (
+const Section = ({ title, children }: { title: string, children: React.ReactNode, collapsible?: boolean }) => (
   <div className="space-y-3 border-b border-white/5 pb-4 last:border-0">
     <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-      <span className="h-px flex-1 bg-gradient-to-r from-primary/50 to-transparent" />
+      <span className="h-px flex-1 bg-linear-to-r from-primary/50 to-transparent" />
       {title}
-      <span className="h-px flex-1 bg-gradient-to-l from-primary/50 to-transparent" />
+      <span className="h-px flex-1 bg-linear-to-l from-primary/50 to-transparent" />
     </h3>
     {children}
   </div>
@@ -130,7 +144,7 @@ export function Panel() {
     return (
       <div className="p-5 space-y-5">
         <div className="pb-3 border-b border-white/5">
-          <h2 className="text-base font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">基础模型参数</h2>
+          <h2 className="text-base font-semibold bg-linear-to-r from-white to-purple-200 bg-clip-text text-transparent">基础模型参数</h2>
           <p className="text-xs text-muted-foreground mt-0.5">调整几何体的大小和形状</p>
         </div>
         
@@ -202,7 +216,7 @@ export function Panel() {
     return (
       <div className="p-5 space-y-5">
         <div className="pb-3 border-b border-white/5">
-           <h2 className="text-base font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">文字3D参数</h2>
+           <h2 className="text-base font-semibold bg-linear-to-r from-white to-purple-200 bg-clip-text text-transparent">文字3D参数</h2>
            <p className="text-xs text-muted-foreground mt-0.5">输入文字并调整大小与厚度</p>
         </div>
         
@@ -256,7 +270,7 @@ export function Panel() {
     return (
       <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-100px)]">
         <div className="pb-3 border-b border-white/5">
-           <h2 className="text-base font-semibold bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">文字浮雕板</h2>
+           <h2 className="text-base font-semibold bg-linear-to-r from-white to-cyan-200 bg-clip-text text-transparent">文字浮雕板</h2>
            <p className="text-xs text-muted-foreground mt-0.5">选择板形并添加多个凸起文字</p>
         </div>
         
@@ -490,7 +504,7 @@ export function Panel() {
     return (
       <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-100px)]">
         <div className="pb-3 border-b border-white/5">
-           <h2 className="text-base font-semibold bg-gradient-to-r from-white to-emerald-200 bg-clip-text text-transparent">文字镂空板</h2>
+           <h2 className="text-base font-semibold bg-linear-to-r from-white to-emerald-200 bg-clip-text text-transparent">文字镂空板</h2>
            <p className="text-xs text-muted-foreground mt-0.5">选择板形并添加多个文字</p>
         </div>
         
@@ -711,7 +725,7 @@ export function Panel() {
     return (
       <div className="p-5 space-y-5">
         <div className="pb-3 border-b border-white/5">
-           <h2 className="text-base font-semibold bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">二维码参数</h2>
+           <h2 className="text-base font-semibold bg-linear-to-r from-white to-sky-200 bg-clip-text text-transparent">二维码参数</h2>
            <p className="text-xs text-muted-foreground mt-0.5">生成可Print的 3D 二维码</p>
         </div>
         
@@ -968,7 +982,7 @@ export function Panel() {
     return (
       <div className="p-5 space-y-5">
         <div className="pb-3 border-b border-white/5">
-          <h2 className="text-base font-semibold bg-gradient-to-r from-white to-amber-200 bg-clip-text text-transparent">模板库</h2>
+          <h2 className="text-base font-semibold bg-linear-to-r from-white to-amber-200 bg-clip-text text-transparent">模板库</h2>
           <p className="text-xs text-muted-foreground mt-0.5">选择预设模板快速开始</p>
         </div>
         

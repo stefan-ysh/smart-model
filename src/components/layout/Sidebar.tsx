@@ -5,7 +5,7 @@ import { Box, Type, Image as ImageIcon, Grid3x3, QrCode } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useModelStore, GeneratorMode } from "@/lib/store"
 interface SidebarItemProps {
-  icon: React.ElementType
+  icon: React.ComponentType<{ className?: string }>
   label: string
   isActive: boolean
   onClick: () => void
@@ -55,7 +55,7 @@ const SidebarItem = ({ icon: Icon, label, isActive, onClick }: SidebarItemProps)
 export function Sidebar() {
   const { currentMode, setMode } = useModelStore()
 
-  const items: { mode: GeneratorMode; icon: React.ElementType; label: string }[] = [
+  const items: { mode: GeneratorMode; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
     { mode: 'basic', icon: Box, label: '基础' },
     { mode: 'text', icon: Type, label: '文字' },
     { mode: 'relief', icon: ImageIcon, label: '浮雕' },

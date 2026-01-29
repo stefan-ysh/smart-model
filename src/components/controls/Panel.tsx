@@ -1362,80 +1362,13 @@ function PanelContent() {
 }
 
 export function Panel() {
-  const { parameters, updateParam, setParameters } = useModelStore()
-
-  // Save/Load Configuration
-  const handleExportConfig = () => {
-    const config = JSON.stringify(parameters, null, 2)
-    const blob = new Blob([config], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `smart-model-config-${new Date().toISOString().slice(0,10)}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    
-    const reader = new FileReader()
-    reader.onload = (event) => {
-        try {
-            const result = event.target?.result as string
-            const importedParams = JSON.parse(result)
-            
-            // Exclude triggers from import to avoid side effects
-            if ('exportTrigger' in importedParams) delete importedParams.exportTrigger
-            if ('screenshotTrigger' in importedParams) delete importedParams.screenshotTrigger
-            if ('resetViewTrigger' in importedParams) delete importedParams.resetViewTrigger
-            
-            // Atomic update
-            setParameters(importedParams)
-            
-            // Reset value so same file can be loaded again if needed
-            e.target.value = ''
-        } catch (err) {
-            console.error("Failed to parse config", err)
-            alert("配置文件格式错误")
-        }
-    }
-    reader.readAsText(file)
-  }
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <PanelContent />
       </div>
       
-      {/* Footer Config Actions */}
-      <div className="p-4 border-t border-white/5 bg-black/20 backdrop-blur-md shrink-0">
-         <div className="grid grid-cols-2 gap-3">
-            <button
-               onClick={handleExportConfig}
-               className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-white/10 bg-white/5 text-xs font-medium hover:bg-white/10 transition-colors"
-            >
-               <span>💾</span> <span className="opacity-90">保存参数 (Export)</span>
-            </button>
-            <div className="relative">
-               <button
-                  className="flex items-center justify-center gap-2 py-2 px-4 w-full rounded-lg border border-white/10 bg-white/5 text-xs font-medium hover:bg-white/10 transition-colors"
-               >
-                  <span>📂</span> <span className="opacity-90">导入参数 (Import)</span>
-               </button>
-               <input 
-                 type="file"
-                 accept=".json"
-                 onChange={handleImportConfig}
-                 className="absolute inset-0 opacity-0 cursor-pointer"
-               />
-            </div>
-         </div>
-      </div>
+
     </div>
   )
 }

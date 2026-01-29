@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { FontSelect } from "./FontSelect"
 import { SliderWithInput } from "./SliderWithInput"
 import { FileUpload } from "@/components/ui/file-upload"
+import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import {
@@ -27,10 +28,10 @@ const LabelWithHint = ({ children, hint }: { children: React.ReactNode, hint?: s
 
 // Slider wrapper using our SliderWithInput
 const Slider = ({ 
-  value, min, max, step, onChange, unit = '', showInput = true 
+  value, min, max, step, onChange, unit = '', showInput = false, compact = false 
 }: { 
   value: number, min: number, max: number, step: number, 
-  onChange: (val: number) => void, unit?: string, showInput?: boolean 
+  onChange: (val: number) => void, unit?: string, showInput?: boolean, compact?: boolean
 }) => (
   <SliderWithInput 
     value={value} 
@@ -40,6 +41,7 @@ const Slider = ({
     onChange={onChange} 
     unit={unit} 
     showInput={showInput} 
+    compact={compact}
   />
 )
 
@@ -120,14 +122,13 @@ const ColorInput = ({ value, onChange }: { value: string, onChange: (val: string
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-6 border-0 bg-transparent p-0 font-mono text-sm focus-visible:ring-0 focus-visible:border-0 shadow-none"
+        className="h-6 border-0 bg-transparent p-0 font-mono text-sm focus-visible:ring-0 focus-visible:border-0 shadow-none text-zinc-300 placeholder:text-zinc-700"
         placeholder="#000000"
       />
     </div>
   </div>
 )
 
-// Section component for better organization
 // Section component with modern styling
 const Section = ({ title, children }: { title: string, children: React.ReactNode, collapsible?: boolean }) => (
   <div className="space-y-3 border-b border-white/5 pb-4 last:border-0">
@@ -154,8 +155,8 @@ function LayoutSection() {
     <Section title="排列布局">
       <div className="space-y-4">
         <div>
-          <Label>排列类型</Label>
-          <div className="grid grid-cols-3 gap-2 mt-1.5">
+          <Label className="text-[10px] text-zinc-400 mb-2 block">排列类型</Label>
+          <div className="grid grid-cols-3 gap-2">
             {[
               { value: 'none', label: '单个' },
               { value: 'rectangular', label: '矩形阵列' },
@@ -178,58 +179,64 @@ function LayoutSection() {
         </div>
 
         {parameters.arrayType === 'rectangular' && (
-          <div className="space-y-4 pt-2 border-t border-white/5">
-            <div>
-              <Label>X轴数量</Label>
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">X轴数量</Label>
               <Slider 
                 value={parameters.arrayCountX} 
                 min={1} max={10} step={1}
                 onChange={(val) => updateParam('arrayCountX', val)} 
+                compact
               />
             </div>
-            <div>
-              <Label>Y轴数量</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">Y轴数量</Label>
               <Slider 
                 value={parameters.arrayCountY} 
                 min={1} max={10} step={1}
                 onChange={(val) => updateParam('arrayCountY', val)} 
+                compact
               />
             </div>
-            <div>
-              <Label>X轴间距 (mm)</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">X轴间距</Label>
               <Slider 
                 value={parameters.arraySpacingX} 
                 min={10} max={200} step={1}
                 onChange={(val) => updateParam('arraySpacingX', val)} 
+                compact
               />
             </div>
-            <div>
-              <Label>Y轴间距 (mm)</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">Y轴间距</Label>
               <Slider 
                 value={parameters.arraySpacingY} 
                 min={10} max={200} step={1}
                 onChange={(val) => updateParam('arraySpacingY', val)} 
+                compact
               />
             </div>
           </div>
         )}
 
         {parameters.arrayType === 'circular' && (
-          <div className="space-y-4 pt-2 border-t border-white/5">
-            <div>
-              <Label>环形数量</Label>
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">环形数量</Label>
               <Slider 
                 value={parameters.arrayCircularCount} 
                 min={2} max={20} step={1}
                 onChange={(val) => updateParam('arrayCircularCount', val)} 
+                compact
               />
             </div>
-            <div>
-              <Label>阵列半径 (mm)</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">阵列半径</Label>
               <Slider 
                 value={parameters.arrayCircularRadius} 
                 min={10} max={200} step={1}
                 onChange={(val) => updateParam('arrayCircularRadius', val)} 
+                compact
               />
             </div>
           </div>
@@ -266,9 +273,9 @@ function PanelContent() {
           <p className="text-xs text-muted-foreground mt-0.5">调整几何体的大小和形状</p>
         </div>
         
-        <div className="space-y-4">
-          <div>
-            <Label>形状类型</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2">
+            <Label className="text-[10px] text-zinc-400">形状类型</Label>
             <SimpleSelect
               value={parameters.shapeType}
               options={[
@@ -289,39 +296,57 @@ function PanelContent() {
             />
           </div>
 
-          <div>
-            <Label>尺寸</Label>
+          <div className={cn(
+            "space-y-1.5",
+            // Full width for shapes that only show Size (Cube, Polyhedrons), or odd ones
+            (parameters.shapeType === 'cube' || 
+             parameters.shapeType === 'capsule' || 
+             parameters.shapeType === 'ring' || 
+             parameters.shapeType === 'octahedron' || 
+             parameters.shapeType === 'dodecahedron' || 
+             parameters.shapeType === 'icosahedron' || 
+             parameters.shapeType === 'tetrahedron' ||
+             parameters.shapeType === 'torusKnot') && "col-span-2"
+          )}>
+            <Label className="text-[10px] text-zinc-400">尺寸</Label>
             <Slider
               value={parameters.size}
               min={10}
-              max={200}
+              max={300}
               step={1}
               onChange={(val) => updateParam('size', val)}
+              compact
             />
           </div>
 
           {(parameters.shapeType === 'cylinder' || parameters.shapeType === 'cone') && (
-            <div>
-              <Label>高度</Label>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">高度</Label>
               <Slider
                 value={parameters.height}
                 min={10}
-                max={200}
+                max={300}
                 step={1}
                 onChange={(val) => updateParam('height', val)}
+                compact
               />
             </div>
           )}
 
           {(parameters.shapeType === 'sphere' || parameters.shapeType === 'cylinder' || parameters.shapeType === 'cone' || parameters.shapeType === 'torus') && (
-            <div>
-              <Label>分段数</Label>
+            <div className={cn(
+               "space-y-1.5",
+               // Full width for Segments if it's the last odd item (Cylinder, Cone have 3 items: Size, Height, Segments)
+               (parameters.shapeType === 'cylinder' || parameters.shapeType === 'cone') && "col-span-2"
+            )}>
+              <Label className="text-[10px] text-zinc-400">分段数</Label>
               <Slider
                 value={parameters.segments}
                 min={3}
                 max={128}
                 step={1}
                 onChange={(val) => updateParam('segments', val)}
+                compact
               />
             </div>
           )}
@@ -341,16 +366,17 @@ function PanelContent() {
         </div>
         
         <div className="space-y-4">
-           <div>
-              <Label>字体</Label>
+        <div className="grid grid-cols-2 gap-3">
+           <div className="col-span-2 space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">字体</Label>
               <FontSelect
                 value={parameters.fontUrl}
                 onChange={(val) => updateParam('fontUrl', val)}
               />
            </div>
            
-           <div>
-              <Label>文字内容</Label>
+           <div className="col-span-2 space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">文字内容</Label>
               <Input 
                 type="text" 
                 value={parameters.textContent}
@@ -358,27 +384,30 @@ function PanelContent() {
               />
            </div>
            
-           <div>
-              <Label>文字大小</Label>
+           <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">文字大小</Label>
               <Slider
                 value={parameters.fontSize}
                 min={10}
                 max={100}
                 step={1}
                 onChange={(val) => updateParam('fontSize', val)}
+                compact
               />
            </div>
            
-           <div>
-              <Label>厚度</Label>
+           <div className="space-y-1.5">
+              <Label className="text-[10px] text-zinc-400">厚度</Label>
               <Slider
                 value={parameters.thickness}
                 min={1}
                 max={50}
                 step={0.5}
                 onChange={(val) => updateParam('thickness', val)}
+                compact
               />
            </div>
+        </div>
         </div>
 
         <LayoutSection />
@@ -392,7 +421,7 @@ function PanelContent() {
     return (
       <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-100px)]">
         <div className="pb-3 border-b border-white/5">
-           <h2 className="text-base font-semibold bg-linear-to-r from-white to-cyan-200 bg-clip-text text-transparent">文字浮雕板</h2>
+           <h2 className="text-base font-semibold bg-linear-to-r from-white to-cyan-200 bg-clip-text text-transparent">浮雕板</h2>
            <p className="text-xs text-muted-foreground mt-0.5">选择板形并添加多个凸起文字</p>
         </div>
         
@@ -437,72 +466,68 @@ function PanelContent() {
            </div>
 
            {parameters.plateShape === 'rectangle' ? (
-             <>
-               <div>
-                  <Label>宽度</Label>
-                  <Slider value={parameters.plateWidth} min={20} max={200} step={1}
-                    onChange={(val) => updateParam('plateWidth', val)} />
+             <div className="grid grid-cols-2 gap-3">
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">宽度</Label>
+                  <Slider value={parameters.plateWidth} min={20} max={300} step={1}
+                    onChange={(val) => updateParam('plateWidth', val)} compact />
                </div>
-               <div>
-                  <Label>高度</Label>
-                  <Slider value={parameters.plateHeight} min={20} max={200} step={1}
-                    onChange={(val) => updateParam('plateHeight', val)} />
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">高度</Label>
+                  <Slider value={parameters.plateHeight} min={20} max={300} step={1}
+                    onChange={(val) => updateParam('plateHeight', val)} compact />
                </div>
-               <div>
-                  <Label>圆角半径</Label>
+               <div className="col-span-2 space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">圆角半径</Label>
                   <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
-                    onChange={(val) => updateParam('plateCornerRadius', val)} />
+                    onChange={(val) => updateParam('plateCornerRadius', val)} compact />
                </div>
-             </>
+             </div>
            ) : (
-             <div>
-                <Label>尺寸</Label>
-                <Slider value={parameters.size} min={20} max={200} step={1}
-                  onChange={(val) => updateParam('size', val)} />
+             <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">尺寸</Label>
+                <Slider value={parameters.size} min={20} max={300} step={1}
+                  onChange={(val) => updateParam('size', val)} compact />
              </div>
            )}
 
            {/* Corner radius for all non-circle shapes */}
            {parameters.plateShape !== 'rectangle' && parameters.plateShape !== 'circle' && (
-             <div>
-                <Label>圆角半径</Label>
+             <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">圆角半径</Label>
                 <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
-                  onChange={(val) => updateParam('plateCornerRadius', val)} />
+                  onChange={(val) => updateParam('plateCornerRadius', val)} compact />
              </div>
            )}
 
-           <div>
-              <Label>底板厚度</Label>
-              <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
-                onChange={(val) => updateParam('baseThickness', val)} />
-           </div>
-           
-           <div>
-              <Label>底板角度 (°)</Label>
-              <Slider value={parameters.plateRotation} min={-180} max={180} step={1}
-                onChange={(val) => updateParam('plateRotation', val)} />
-           </div>
-           
-           <div>
-              <Label>底板位置</Label>
-              <div className="space-y-3">
-                 <div>
-                    <div className="flex justify-between mb-1">
-                       <span className="text-xs text-muted-foreground">横向 (X)</span>
-                       <span className="text-xs text-muted-foreground tabular-nums">{parameters.platePosition.x}</span>
-                    </div>
-                    <Slider value={parameters.platePosition.x} min={-100} max={100} step={1}
-                      onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, x: val })} showInput={false} />
-                 </div>
-                 <div>
-                    <div className="flex justify-between mb-1">
-                       <span className="text-xs text-muted-foreground">纵向 (Y)</span>
-                       <span className="text-xs text-muted-foreground tabular-nums">{parameters.platePosition.y}</span>
-                    </div>
-                    <Slider value={parameters.platePosition.y} min={-100} max={100} step={1}
-                      onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, y: val })} showInput={false} />
-                 </div>
-              </div>
+           <div className="grid grid-cols-2 gap-3 mt-3">
+             <div className="col-span-2 space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">底板厚度</Label>
+                <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
+                  onChange={(val) => updateParam('baseThickness', val)} compact />
+             </div>
+             
+             <div className="col-span-2 space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">底板角度 (°)</Label>
+                <Slider value={parameters.plateRotation} min={-180} max={180} step={1}
+                  onChange={(val) => updateParam('plateRotation', val)} compact />
+             </div>
+
+             <div className="col-span-2 space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">底板位置</Label>
+                <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                         <Label className="text-[10px] text-zinc-400">横向 (X)</Label>
+                         <Slider value={parameters.platePosition.x} min={-300} max={300} step={1}
+                           onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, x: val })} compact />
+                      </div>
+                      <div className="space-y-1.5">
+                         <Label className="text-[10px] text-zinc-400">纵向 (Y)</Label>
+                         <Slider value={parameters.platePosition.y} min={-300} max={300} step={1}
+                           onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, y: val })} compact />
+                      </div>
+                </div>
+             </div>
            </div>
         </div>
         
@@ -539,50 +564,46 @@ function PanelContent() {
                   placeholder="输入文字..."
                 />
                 
-                <div>
-                   <Label>字体</Label>
-                   <FontSelect
-                     value={item.fontUrl}
-                     onChange={(val) => updateTextItem(item.id, { fontUrl: val })}
-                   />
-                </div>
-                
-                <div>
-                   <Label>字号</Label>
-                   <Slider value={item.fontSize} min={5} max={50} step={1}
-                     onChange={(val) => updateTextItem(item.id, { fontSize: val })} />
-                </div>
-                
-                <div>
-                   <Label>浮雕高度</Label>
-                   <Slider value={item.reliefHeight} min={1} max={20} step={0.5}
-                     onChange={(val) => updateTextItem(item.id, { reliefHeight: val })} />
-                </div>
-                
-                <div>
-                   <Label>角度 (°)</Label>
-                   <Slider value={item.rotation} min={-180} max={180} step={1}
-                     onChange={(val) => updateTextItem(item.id, { rotation: val })} />
-                </div>
-                
-                <div>
-                   <Label>位置</Label>
-                   <div className="space-y-3">
-                      <div>
-                         <div className="flex justify-between mb-1">
-                            <span className="text-xs text-muted-foreground">横向 (X)</span>
-                            <span className="text-xs text-muted-foreground tabular-nums">{item.position.x}</span>
+                <div className="grid grid-cols-2 gap-3">
+                   <div className="col-span-2 space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">字体</Label>
+                      <FontSelect
+                        value={item.fontUrl}
+                        onChange={(val) => updateTextItem(item.id, { fontUrl: val })}
+                      />
+                   </div>
+                   
+                   <div className="space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">字号</Label>
+                      <Slider value={item.fontSize} min={5} max={100} step={1}
+                        onChange={(val) => updateTextItem(item.id, { fontSize: val })} compact />
+                   </div>
+                   
+                   <div className="space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">高度</Label>
+                      <Slider value={item.reliefHeight} min={1} max={20} step={0.5}
+                        onChange={(val) => updateTextItem(item.id, { reliefHeight: val })} compact />
+                   </div>
+                   
+                   <div className="col-span-2 space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">角度 (°)</Label>
+                      <Slider value={item.rotation} min={-180} max={180} step={1}
+                        onChange={(val) => updateTextItem(item.id, { rotation: val })} compact />
+                   </div>
+                   
+                   <div className="col-span-2 space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">位置</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                         <div className="space-y-1.5">
+                            <Label className="text-[10px] text-zinc-400">横向 (X)</Label>
+                            <Slider value={item.position.x} min={-300} max={300} step={1}
+                              onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} compact />
                          </div>
-                         <Slider value={item.position.x} min={-200} max={200} step={1}
-                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} showInput={false} />
-                      </div>
-                      <div>
-                         <div className="flex justify-between mb-1">
-                            <span className="text-xs text-muted-foreground">纵向 (Y)</span>
-                            <span className="text-xs text-muted-foreground tabular-nums">{item.position.y}</span>
+                         <div className="space-y-1.5">
+                            <Label className="text-[10px] text-zinc-400">纵向 (Y)</Label>
+                            <Slider value={item.position.y} min={-300} max={300} step={1}
+                              onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} compact />
                          </div>
-                         <Slider value={item.position.y} min={-200} max={200} step={1}
-                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} showInput={false} />
                       </div>
                    </div>
                 </div>
@@ -594,26 +615,28 @@ function PanelContent() {
         <div className="space-y-4 border-t border-border pt-4">
            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">材质设置</h3>
            
-           <div>
-              <Label>底板颜色</Label>
-              <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
-           </div>
-           
-           <div>
-              <Label>文字颜色</Label>
-              <ColorInput value={parameters.textColor} onChange={(val) => updateParam('textColor', val)} />
-           </div>
-           
-           <div>
-              <Label>粗糙度</Label>
-              <Slider value={parameters.roughness} min={0} max={1} step={0.05}
-                onChange={(val) => updateParam('roughness', val)} />
-           </div>
-           
-           <div>
-              <Label>金属度</Label>
-              <Slider value={parameters.metalness} min={0} max={1} step={0.05}
-                onChange={(val) => updateParam('metalness', val)} />
+           <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">底板颜色</Label>
+                 <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
+              </div>
+              
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">文字颜色</Label>
+                 <ColorInput value={parameters.textColor} onChange={(val) => updateParam('textColor', val)} />
+              </div>
+              
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">粗糙度</Label>
+                 <Slider value={parameters.roughness} min={0} max={1} step={0.05}
+                   onChange={(val) => updateParam('roughness', val)} compact />
+              </div>
+              
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">金属度</Label>
+                 <Slider value={parameters.metalness} min={0} max={1} step={0.05}
+                   onChange={(val) => updateParam('metalness', val)} compact />
+              </div>
            </div>
         </div>
         <LayoutSection />
@@ -668,103 +691,111 @@ function PanelContent() {
             </div>
           </div>
 
-          <div>
-             <Label>阈值</Label>
-             <Slider
-               value={parameters.imageThreshold}
-               min={1}
-               max={254}
-               step={1}
-               onChange={(val) => updateParam('imageThreshold', val)}
-             />
-             <p className="text-[10px] text-muted-foreground mt-1">
-               调整黑色提取的敏感度 (1-254)
-             </p>
+          
+          {/* Settings Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+               <Label className="text-xs text-muted-foreground/50 uppercase tracking-wider font-bold mb-2 block">提取设置</Label>
+            </div>
+            
+            <div className="space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">阈值</Label>
+               <SliderWithInput
+                 value={parameters.imageThreshold}
+                 min={1}
+                 max={254}
+                 step={1}
+                 onChange={(val) => updateParam('imageThreshold', val)}
+                 compact
+               />
+            </div>
+
+            <div className="space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">平滑度</Label>
+               <SliderWithInput
+                 value={parameters.imageSmoothing}
+                 min={0}
+                 max={5}
+                 step={1}
+                 onChange={(val) => updateParam('imageSmoothing', val)}
+                 compact
+               />
+            </div>
+
+            <div className="col-span-2 pt-2">
+               <Label className="text-xs text-muted-foreground/50 uppercase tracking-wider font-bold mb-2 block">几何设置</Label>
+            </div>
+
+            <div className="space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">尺寸 (Size)</Label>
+               <SliderWithInput
+                 value={parameters.imageSize}
+                 min={10}
+                 max={300}
+                 step={1}
+                 onChange={(val) => updateParam('imageSize', val)}
+                 compact
+               />
+            </div>
+
+            <div className="space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">厚度</Label>
+               <SliderWithInput
+                 value={parameters.imageThickness}
+                 min={1}
+                 max={50}
+                 step={0.5}
+                 onChange={(val) => updateParam('imageThickness', val)}
+                 compact
+               />
+            </div>
+            
+            <div className="space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">风格</Label>
+               <SimpleSelect
+                 value={parameters.imageStyle}
+                 options={[
+                   { value: 'voxel', label: '体素' },
+                   { value: 'smooth', label: '平滑' },
+                 ]}
+                 onChange={(val) => updateParam('imageStyle', val)}
+               />
+            </div>
+
+            <div className="space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">精度 (Resolution)</Label>
+               <SliderWithInput
+                 value={parameters.imageResolution}
+                 min={32}
+                 max={300}
+                 step={16}
+                 onChange={(val) => updateParam('imageResolution', val)}
+                 compact
+               />
+            </div>
           </div>
 
-          <div>
-             <Label>平滑度</Label>
-             <Slider
-               value={parameters.imageSmoothing}
-               min={0}
-               max={5}
-               step={1}
-               onChange={(val) => updateParam('imageSmoothing', val)}
+          <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
+             <Switch
+               id="invert-mode"
+               checked={parameters.imageInvert}
+               onCheckedChange={(val) => updateParam('imageInvert', val)}
              />
-          </div>
-
-          <div>
-             <Label>风格</Label>
-             <SimpleSelect
-               value={parameters.imageStyle}
-               options={[
-                 { value: 'voxel', label: '体素' },
-                 { value: 'smooth', label: '平滑' },
-               ]}
-               onChange={(val) => updateParam('imageStyle', val)}
-             />
-          </div>
-
-          <div>
-             <Label>精度</Label>
-             <Slider
-               value={parameters.imageResolution}
-               min={32}
-               max={300} // Cap at 300 for perf
-               step={16}
-               onChange={(val) => updateParam('imageResolution', val)}
-             />
-             <p className="text-[10px] text-muted-foreground mt-1">
-               网格细分密度 (32-300). 高精度会增加计算量.
-             </p>
-          </div>
-
-          <div>
-             <Label>尺寸</Label>
-             <Slider
-               value={parameters.imageSize}
-               min={10}
-               max={300}
-               step={1}
-               onChange={(val) => updateParam('imageSize', val)}
-             />
-          </div>
-
-          <div>
-             <Label>厚度</Label>
-             <Slider
-               value={parameters.imageThickness}
-               min={1}
-               max={50}
-               step={0.5}
-               onChange={(val) => updateParam('imageThickness', val)}
-             />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="invert-mode"
-              checked={parameters.imageInvert}
-              onChange={(e) => updateParam('imageInvert', e.target.checked)}
-              className="rounded border-white/10 bg-white/5"
-            />
-            <Label htmlFor="invert-mode" className="mb-0">反转颜色</Label>
+             <Label htmlFor="invert-mode" className="mb-0 text-xs font-medium cursor-pointer">反转颜色 (Invert)</Label>
           </div>
         </div>
 
         {/* Plate Controls Reuse */}
         <Section title="底板设置">
           <div className="space-y-4">
-             <div className="flex items-center gap-2 mb-2">
-                <input
-                  type="checkbox"
+
+             <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5 mb-2">
+                <Switch
                   id="has-base-mode"
                   checked={parameters.hasBase}
-                  onChange={(e) => updateParam('hasBase', e.target.checked)}
-                  className="rounded border-white/10 bg-white/5"
+                  onCheckedChange={(val) => updateParam('hasBase', val)}
                 />
-                <Label htmlFor="has-base-mode" className="mb-0">显示底板</Label>
+                <Label htmlFor="has-base-mode" className="mb-0 text-xs font-medium cursor-pointer">显示底板</Label>
              </div>
              
              {parameters.hasBase && (
@@ -787,38 +818,39 @@ function PanelContent() {
              </div>
              
              {parameters.plateShape === 'rectangle' ? (
-               <>
-                 <div>
-                    <Label>宽度</Label>
+               <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] text-zinc-400">宽度</Label>
                     <Slider value={parameters.plateWidth} min={20} max={300} step={1}
-                      onChange={(val) => updateParam('plateWidth', val)} />
+                      onChange={(val) => updateParam('plateWidth', val)} compact />
                  </div>
-                 <div>
-                    <Label>高度</Label>
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] text-zinc-400">高度</Label>
                     <Slider value={parameters.plateHeight} min={20} max={300} step={1}
-                      onChange={(val) => updateParam('plateHeight', val)} />
+                      onChange={(val) => updateParam('plateHeight', val)} compact />
                  </div>
-               </>
+               </div>
              ) : (
-                <div>
-                   <Label>底板尺寸 (Plate Size)</Label>
+                <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">底板尺寸 (Plate Size)</Label>
                    <Slider value={parameters.size} min={20} max={300} step={1}
-                     onChange={(val) => updateParam('size', val)} />
+                     onChange={(val) => updateParam('size', val)} compact />
                 </div>
              )}
 
-             <div>
-                <Label>底板厚度</Label>
-                <Slider value={parameters.baseThickness} min={1} max={20} step={0.5}
-                  onChange={(val) => updateParam('baseThickness', val)} />
+             <div className="grid grid-cols-2 gap-3 pb-2 mb-2 border-b border-white/5">
+                <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">底板厚度</Label>
+                   <Slider value={parameters.baseThickness} min={1} max={20} step={0.5}
+                     onChange={(val) => updateParam('baseThickness', val)} compact />
+                </div>
+                <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">底板颜色</Label>
+                   <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
+                </div>
              </div>
-
-             <div className="pt-2 border-t border-white/5">
-                <Label>底板颜色</Label>
-                <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
-             </div>
-             <div>
-                <Label>文字/图案颜色</Label>
+             <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">文字/图案颜色</Label>
                 <ColorInput value={parameters.textColor} onChange={(val) => updateParam('textColor', val)} />
              </div>
              </>
@@ -837,7 +869,7 @@ function PanelContent() {
     return (
       <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-100px)]">
         <div className="pb-3 border-b border-white/5">
-           <h2 className="text-base font-semibold bg-linear-to-r from-white to-emerald-200 bg-clip-text text-transparent">文字镂空板</h2>
+           <h2 className="text-base font-semibold bg-linear-to-r from-white to-emerald-200 bg-clip-text text-transparent">镂空板</h2>
            <p className="text-xs text-muted-foreground mt-0.5">选择板形并添加多个文字</p>
         </div>
         
@@ -882,72 +914,68 @@ function PanelContent() {
            </div>
 
            {parameters.plateShape === 'rectangle' ? (
-             <>
-               <div>
-                  <Label>宽度</Label>
-                  <Slider value={parameters.plateWidth} min={20} max={200} step={1}
-                    onChange={(val) => updateParam('plateWidth', val)} />
+             <div className="grid grid-cols-2 gap-3">
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">宽度</Label>
+                  <Slider value={parameters.plateWidth} min={20} max={300} step={1}
+                    onChange={(val) => updateParam('plateWidth', val)} compact />
                </div>
-               <div>
-                  <Label>高度</Label>
-                  <Slider value={parameters.plateHeight} min={20} max={200} step={1}
-                    onChange={(val) => updateParam('plateHeight', val)} />
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">高度</Label>
+                  <Slider value={parameters.plateHeight} min={20} max={300} step={1}
+                    onChange={(val) => updateParam('plateHeight', val)} compact />
                </div>
-               <div>
-                  <Label>圆角半径</Label>
+               <div className="col-span-2 space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">圆角半径</Label>
                   <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
-                    onChange={(val) => updateParam('plateCornerRadius', val)} />
+                    onChange={(val) => updateParam('plateCornerRadius', val)} compact />
                </div>
-             </>
+             </div>
            ) : (
-             <div>
-                <Label>尺寸</Label>
-                <Slider value={parameters.size} min={20} max={200} step={1}
-                  onChange={(val) => updateParam('size', val)} />
+             <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">尺寸</Label>
+                <Slider value={parameters.size} min={20} max={300} step={1}
+                  onChange={(val) => updateParam('size', val)} compact />
              </div>
            )}
 
            {/* Corner radius for all non-circle shapes */}
            {parameters.plateShape !== 'rectangle' && parameters.plateShape !== 'circle' && (
-             <div>
-                <Label>圆角半径</Label>
+             <div className="space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">圆角半径</Label>
                 <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
-                  onChange={(val) => updateParam('plateCornerRadius', val)} />
+                  onChange={(val) => updateParam('plateCornerRadius', val)} compact />
              </div>
            )}
 
-           <div>
-              <Label>厚度</Label>
-              <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
-                onChange={(val) => updateParam('baseThickness', val)} />
-           </div>
-           
-           <div>
-              <Label>底板角度 (°)</Label>
-              <Slider value={parameters.plateRotation} min={-180} max={180} step={1}
-                onChange={(val) => updateParam('plateRotation', val)} />
-           </div>
-           
-           <div>
-              <Label>底板位置</Label>
-              <div className="space-y-3">
-                 <div>
-                    <div className="flex justify-between mb-1">
-                       <span className="text-xs text-muted-foreground">横向 (X)</span>
-                       <span className="text-xs text-muted-foreground tabular-nums">{parameters.platePosition.x}</span>
-                    </div>
-                    <Slider value={parameters.platePosition.x} min={-100} max={100} step={1}
-                      onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, x: val })} showInput={false} />
-                 </div>
-                 <div>
-                    <div className="flex justify-between mb-1">
-                       <span className="text-xs text-muted-foreground">纵向 (Y)</span>
-                       <span className="text-xs text-muted-foreground tabular-nums">{parameters.platePosition.y}</span>
-                    </div>
-                    <Slider value={parameters.platePosition.y} min={-100} max={100} step={1}
-                      onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, y: val })} showInput={false} />
-                 </div>
-              </div>
+           <div className="grid grid-cols-2 gap-3 mt-3">
+             <div className="col-span-2 space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">厚度</Label>
+                <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
+                  onChange={(val) => updateParam('baseThickness', val)} compact />
+             </div>
+             
+             <div className="col-span-2 space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">底板角度 (°)</Label>
+                <Slider value={parameters.plateRotation} min={-180} max={180} step={1}
+                  onChange={(val) => updateParam('plateRotation', val)} compact />
+             </div>
+
+             <div className="col-span-2 space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">底板位置</Label>
+                <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                         <Label className="text-[10px] text-zinc-400">横向 (X)</Label>
+                         <Slider value={parameters.platePosition.x} min={-300} max={300} step={1}
+                           onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, x: val })} compact />
+                      </div>
+                      <div className="space-y-1.5">
+                         <Label className="text-[10px] text-zinc-400">纵向 (Y)</Label>
+                         <Slider value={parameters.platePosition.y} min={-300} max={300} step={1}
+                           onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, y: val })} compact />
+                      </div>
+                </div>
+             </div>
            </div>
         </div>
         
@@ -984,44 +1012,40 @@ function PanelContent() {
                    placeholder="输入文字..."
                 />
                 
-                <div>
-                   <Label>字体</Label>
-                   <FontSelect
-                     value={item.fontUrl}
-                     onChange={(val) => updateTextItem(item.id, { fontUrl: val })}
-                   />
-                </div>
-                
-                <div>
-                   <Label>字号</Label>
-                   <Slider value={item.fontSize} min={5} max={50} step={1}
-                     onChange={(val) => updateTextItem(item.id, { fontSize: val })} />
-                </div>
-                
-                <div>
-                   <Label>角度 (°)</Label>
-                   <Slider value={item.rotation} min={-180} max={180} step={1}
-                     onChange={(val) => updateTextItem(item.id, { rotation: val })} />
-                </div>
-                
-                <div>
-                   <Label>位置</Label>
-                   <div className="space-y-3">
-                      <div>
-                         <div className="flex justify-between mb-1">
-                            <span className="text-xs text-muted-foreground">横向 (X)</span>
-                            <span className="text-xs text-muted-foreground tabular-nums">{item.position.x}</span>
+                <div className="grid grid-cols-2 gap-3">
+                   <div className="col-span-2 space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">字体</Label>
+                      <FontSelect
+                        value={item.fontUrl}
+                        onChange={(val) => updateTextItem(item.id, { fontUrl: val })}
+                      />
+                   </div>
+                   
+                   <div className="space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">字号</Label>
+                      <Slider value={item.fontSize} min={5} max={100} step={1}
+                        onChange={(val) => updateTextItem(item.id, { fontSize: val })} compact />
+                   </div>
+                   
+                   <div className="space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">角度 (°)</Label>
+                      <Slider value={item.rotation} min={-180} max={180} step={1}
+                        onChange={(val) => updateTextItem(item.id, { rotation: val })} compact />
+                   </div>
+                   
+                   <div className="col-span-2 space-y-1.5">
+                      <Label className="text-[10px] text-zinc-400">位置</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                         <div className="space-y-1.5">
+                            <Label className="text-[10px] text-zinc-400">横向 (X)</Label>
+                            <Slider value={item.position.x} min={-300} max={300} step={1}
+                              onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} compact />
                          </div>
-                         <Slider value={item.position.x} min={-200} max={200} step={1}
-                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, x: val } })} showInput={false} />
-                      </div>
-                      <div>
-                         <div className="flex justify-between mb-1">
-                            <span className="text-xs text-muted-foreground">纵向 (Y)</span>
-                            <span className="text-xs text-muted-foreground tabular-nums">{item.position.y}</span>
+                         <div className="space-y-1.5">
+                            <Label className="text-[10px] text-zinc-400">纵向 (Y)</Label>
+                            <Slider value={item.position.y} min={-300} max={300} step={1}
+                              onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} compact />
                          </div>
-                         <Slider value={item.position.y} min={-200} max={200} step={1}
-                           onChange={(val) => updateTextItem(item.id, { position: { ...item.position, y: val } })} showInput={false} />
                       </div>
                    </div>
                 </div>
@@ -1033,21 +1057,23 @@ function PanelContent() {
         <div className="space-y-4 border-t border-border pt-4">
            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">材质设置</h3>
            
-           <div>
-              <Label>底板颜色</Label>
-              <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
-           </div>
-           
-           <div>
-              <Label>粗糙度</Label>
-              <Slider value={parameters.roughness} min={0} max={1} step={0.05}
-                onChange={(val) => updateParam('roughness', val)} />
-           </div>
-           
-           <div>
-              <Label>金属度</Label>
-              <Slider value={parameters.metalness} min={0} max={1} step={0.05}
-                onChange={(val) => updateParam('metalness', val)} />
+           <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">底板颜色</Label>
+                 <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
+              </div>
+              
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">粗糙度</Label>
+                 <Slider value={parameters.roughness} min={0} max={1} step={0.05}
+                   onChange={(val) => updateParam('roughness', val)} compact />
+              </div>
+              
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">金属度</Label>
+                 <Slider value={parameters.metalness} min={0} max={1} step={0.05}
+                   onChange={(val) => updateParam('metalness', val)} compact />
+              </div>
            </div>
         </div>
         <LayoutSection />
@@ -1063,8 +1089,8 @@ function PanelContent() {
            <p className="text-xs text-muted-foreground mt-0.5">生成可Print的 3D 二维码</p>
         </div>
         
-        <div className="space-y-4">
-          <div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2 space-y-1.5">
             <LabelWithHint hint="输入链接或文本生成二维码">链接/内容</LabelWithHint>
             <Input 
               value={parameters.qrText}
@@ -1074,26 +1100,26 @@ function PanelContent() {
             />
           </div>
 
-          <div>
-             <Label>尺寸</Label>
+          <div className="space-y-1.5">
+             <Label className="text-[10px] text-zinc-400">尺寸</Label>
              <Slider value={parameters.qrSize} min={20} max={200} step={1}
-               onChange={(val) => updateParam('qrSize', val)} unit="mm" />
+               onChange={(val) => updateParam('qrSize', val)} compact />
           </div>
 
-          <div>
-             <Label>深度</Label>
+          <div className="space-y-1.5">
+             <Label className="text-[10px] text-zinc-400">深度</Label>
              <Slider value={parameters.qrDepth} min={0.5} max={10} step={0.5}
-               onChange={(val) => updateParam('qrDepth', val)} unit="mm" />
+               onChange={(val) => updateParam('qrDepth', val)} compact />
           </div>
           
-          <div>
-             <Label>底板厚度</Label>
+          <div className="col-span-2 space-y-1.5">
+             <Label className="text-[10px] text-zinc-400">底板厚度</Label>
              <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
-               onChange={(val) => updateParam('baseThickness', val)} unit="mm" />
+               onChange={(val) => updateParam('baseThickness', val)} compact />
           </div>
           
-          <div className="bg-muted/30 p-3 rounded-lg space-y-3">
-             <Label>生成模式</Label>
+          <div className="col-span-2 bg-muted/30 p-3 rounded-lg space-y-3">
+             <Label className="text-[10px] text-zinc-400">生成模式</Label>
              <div className="flex gap-2">
                <button
                  onClick={() => updateParam('qrInvert', false)}
@@ -1123,82 +1149,86 @@ function PanelContent() {
              </p>
              
              {parameters.qrInvert && (
-                <div className="flex items-center space-x-2 pt-1 border-t border-white/10 mt-1">
-                  <input 
-                    type="checkbox" 
-                    id="qr-through"
-                    className="rounded border-gray-500 bg-transparent"
-                    checked={parameters.qrIsThrough}
-                    onChange={(e) => updateParam('qrIsThrough', e.target.checked)}
+                <div className="flex items-center gap-3 pt-3 mt-1 border-t border-white/5">
+                  <Switch 
+                     id="qr-through"
+                     checked={parameters.qrIsThrough}
+                     onCheckedChange={(val) => updateParam('qrIsThrough', val)}
                   />
-                  <label htmlFor="qr-through" className="text-xs font-medium cursor-pointer select-none">
+                  <Label htmlFor="qr-through" className="mb-0 text-xs font-medium cursor-pointer">
                     贯穿底板 (镂空)
-                  </label>
+                  </Label>
                 </div>
              )}
           </div>
-          
-          <div>
-             <Label>底板圆角</Label>
-             <Slider value={parameters.plateCornerRadius} min={0} max={parameters.qrSize/2} step={1}
-               onChange={(val) => updateParam('plateCornerRadius', val)} unit="mm" />
+          {/* Close Previous Grid */}
           </div>
 
-          <div>
-             <Label>边距</Label>
-             <Slider value={parameters.qrMargin} min={0} max={20} step={0.5}
-               onChange={(val) => updateParam('qrMargin', val)} unit="mm" />
-          </div>
-          
-           {/* Material Section Reuse */}
-           <Section title="材质设置">
-              <div>
-                <Label>底板颜色</Label>
-                <div className="flex gap-2 mt-1.5">
-                  <Input 
-                    type="color" 
-                    value={parameters.plateColor}
-                    onChange={(e) => updateParam('plateColor', e.target.value)}
-                    className="w-8 h-8 p-0 border-0 rounded-md cursor-pointer shrink-0"
-                  />
-                  <Input 
-                    value={parameters.plateColor}
-                    onChange={(e) => updateParam('plateColor', e.target.value)}
-                    className="font-mono text-xs"
-                  />
-                </div>
+           {/* Corner and Margin - NEW Grid */}
+           <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">底板圆角</Label>
+                 <Slider value={parameters.plateCornerRadius} min={0} max={parameters.qrSize/2} step={1}
+                   onChange={(val) => updateParam('plateCornerRadius', val)} compact />
               </div>
 
-              <div>
-                <Label>二维码颜色</Label>
-                <div className="flex gap-2 mt-1.5">
-                  <Input 
-                    type="color" 
-                    value={parameters.textColor}
-                    onChange={(e) => updateParam('textColor', e.target.value)}
-                    className="w-8 h-8 p-0 border-0 rounded-md cursor-pointer shrink-0"
-                  />
-                  <Input 
-                    value={parameters.textColor}
-                    onChange={(e) => updateParam('textColor', e.target.value)}
-                    className="font-mono text-xs"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                 <Label className="text-[10px] text-zinc-400">边距</Label>
+                 <Slider value={parameters.qrMargin} min={0} max={20} step={0.5}
+                   onChange={(val) => updateParam('qrMargin', val)} compact />
               </div>
-              
-              <div>
-                <Label>粗糙度</Label>
-                <Slider value={parameters.roughness} min={0} max={1} step={0.05}
-                  onChange={(val) => updateParam('roughness', val)} />
-              </div>
-              
-              <div>
-                <Label>金属度</Label>
-                <Slider value={parameters.metalness} min={0} max={1} step={0.05}
-                  onChange={(val) => updateParam('metalness', val)} />
-              </div>
-           </Section>
-        </div>
+           </div>
+           
+            {/* Material Section Reuse */}
+            <Section title="材质设置">
+               <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">底板颜色</Label>
+                   <div className="flex gap-2">
+                     <Input 
+                       type="color" 
+                       value={parameters.plateColor}
+                       onChange={(e) => updateParam('plateColor', e.target.value)}
+                       className="w-8 h-8 p-0 border-0 rounded-md cursor-pointer shrink-0"
+                     />
+                     <Input 
+                       value={parameters.plateColor}
+                       onChange={(e) => updateParam('plateColor', e.target.value)}
+                       className="font-mono text-xs h-8"
+                     />
+                   </div>
+                 </div>
+
+                 <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">二维码颜色</Label>
+                   <div className="flex gap-2">
+                     <Input 
+                       type="color" 
+                       value={parameters.textColor}
+                       onChange={(e) => updateParam('textColor', e.target.value)}
+                       className="w-8 h-8 p-0 border-0 rounded-md cursor-pointer shrink-0"
+                     />
+                     <Input 
+                       value={parameters.textColor}
+                       onChange={(e) => updateParam('textColor', e.target.value)}
+                       className="font-mono text-xs h-8"
+                     />
+                   </div>
+                 </div>
+                 
+                 <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">粗糙度</Label>
+                   <Slider value={parameters.roughness} min={0} max={1} step={0.05}
+                     onChange={(val) => updateParam('roughness', val)} compact />
+                 </div>
+                 
+                 <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">金属度</Label>
+                   <Slider value={parameters.metalness} min={0} max={1} step={0.05}
+                     onChange={(val) => updateParam('metalness', val)} compact />
+                 </div>
+               </div>
+            </Section>
         <LayoutSection />
       </div>
     )

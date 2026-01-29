@@ -24,8 +24,9 @@ export function SliderWithInput({
   onChange,
   unit = '',
   showInput = true,
-  className
-}: SliderWithInputProps) {
+  className,
+  compact = false
+}: SliderWithInputProps & { compact?: boolean }) {
   const [inputValue, setInputValue] = React.useState(value.toString())
   
   // Sync input when value changes externally
@@ -60,11 +61,17 @@ export function SliderWithInput({
   }
   
   return (
-    <div className={cn("flex flex-col gap-2.5 p-3.5 bg-white/3 rounded-2xl border border-white/5 hover:border-white/10 transition-all group", className)}>
-      <div className="flex items-center justify-between">
-        <label className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest group-hover:text-zinc-400 transition-colors"></label>
+    <div className={cn(
+      "flex flex-col rounded-2xl border border-white/5 hover:border-white/10 transition-all group",
+      compact ? "p-2.5 gap-1.5" : "p-3.5 gap-2.5 bg-white/3",
+      className
+    )}>
+      <div className="flex items-center justify-between mb-2">
         {showInput ? (
-          <div className="flex items-center gap-1.5 bg-zinc-950 border border-white/10 rounded-lg px-2 py-0.5 shadow-inner transition-colors group-hover:border-white/20">
+          <div className={cn(
+            "flex-1 flex items-center gap-1.5 bg-zinc-950 border border-white/10 rounded-lg shadow-inner transition-colors group-hover:border-white/20",
+            compact ? "px-2 py-1" : "px-3 py-1.5"
+          )}>
             <Input
               type="number"
               value={inputValue}
@@ -74,16 +81,20 @@ export function SliderWithInput({
               min={min}
               max={max}
               step={step}
-              className="w-12 h-6 border-0 bg-transparent p-0 text-xs text-right tabular-nums focus-visible:ring-0 shadow-none text-blue-400 font-black"
+              className={cn(
+                "border-0 bg-transparent p-0 flex-1 tabular-nums focus-visible:ring-0 shadow-none text-blue-400 font-bold",
+                compact ? "text-xs" : "text-sm",
+                "text-left"
+              )}
             />
-            {unit && <span className="text-[10px] text-zinc-600 font-bold">{unit}</span>}
+            {unit && <span className="text-[10px] text-zinc-600 font-bold shrink-0">{unit}</span>}
           </div>
         ) : (
-          <span className="text-xs font-bold tabular-nums text-blue-400">{value}{unit}</span>
+          <span className="text-xs font-bold tabular-nums text-blue-400 w-full text-right">{value}{unit}</span>
         )}
       </div>
       
-      <div className="px-1 py-1">
+      <div className={compact ? "px-0.5" : "px-1 py-1"}>
         <ShadcnSlider
           value={[value]}
           min={min}

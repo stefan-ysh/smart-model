@@ -161,6 +161,23 @@ export const FONT_GROUPS = {
       { value: '/fonts/连筋中文.json', label: '连筋中文' },
       { value: '/fonts/条形码字体.json', label: '条形码字体' },
       { value: '/fonts/Rampart One_Regular.json', label: 'Rampart One' },
+      // New Chinese fonts
+      { value: '/fonts/AaHouDiHei_Regular.json', label: 'Aa厚底黑' },
+      { value: '/fonts/DOUYU Font_Regular.json', label: '斗鱼字体' },
+      { value: '/fonts/LogoSC Unbounded Sans_Regular.json', label: 'LogoSC 无界黑' },
+      { value: '/fonts/MaokenAssortedSans_Regular.json', label: '猫啃什锦黑' },
+      { value: '/fonts/Nishiki-teki_Regular.json', label: '锦的字体' },
+      { value: '/fonts/Pangmenzhengdaoqingsongti_Regular.json', label: '庞门正道轻松体' },
+      { value: '/fonts/Swei Dart Sans CJK JP_Black.json', label: '狮尾镖刺黑体' },
+      { value: '/fonts/XianErTi_Regular.json', label: '仙儿体' },
+      { value: '/fonts/baotuxiaobaiti_Regular.json', label: '包图小白体' },
+      { value: '/fonts/k8x12S_Regular.json', label: 'K8像素字体' },
+      { value: '/fonts/pingfangzhangyalinheifang_常规.json', label: '平方张雅霖黑方' },
+      { value: '/fonts/zihunbiantaoti_Regular.json', label: '字魂扁桃体' },
+      { value: '/fonts/周字宋体ZhouZiSongTi_Regular.json', label: '周字宋体' },
+      { value: '/fonts/字体圈伟君黑 W3_Regular.json', label: '字体圈伟君黑' },
+      { value: '/fonts/字库江湖古风体 常规_Regular.json', label: '字库江湖古风体' },
+      { value: '/fonts/峄山碑篆体_Regular.json', label: '峄山碑篆体' },
     ]
   },
   stencil: {
@@ -262,7 +279,7 @@ const defaultParams: ModelParams = {
   ],
   
   // QR Code defaults
-  qrText: 'https://github.com/StartPoly/smart-model',
+  qrText: 'https://www.cosmorigin.com',
   qrSize: 50,
   qrDepth: 2,
   qrInvert: false,

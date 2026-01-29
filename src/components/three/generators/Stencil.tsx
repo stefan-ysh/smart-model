@@ -60,6 +60,9 @@ function createTextGeometry(
 // Global cache for expensive CSG geometries
 const geometryCache = new Map<string, THREE.BufferGeometry>()
 
+// Replace standard FontLoader with our UniversalFontLoader
+import { UniversalFontLoader, universalFontLoader } from "@/utils/fontLoaderUtils"
+
 function StencilMesh() {
   const { parameters } = useModelStore()
   const { 
@@ -70,8 +73,16 @@ function StencilMesh() {
   } = parameters
 
   // Load all unique fonts needed
-  const fontUrls = [...new Set(textItems.map(item => item.fontUrl))]
-  const fonts = useLoader(FontLoader, fontUrls)
+  // Memoize the URL array to prevent useLoader from seeing a new key every render
+  // This fixes the "Cannot update a component while rendering" error
+  // Extract dependency to simple variable for lint compliance
+  const fontUrlsHash = JSON.stringify(textItems.map(item => item.fontUrl))
+  const fontUrls = useMemo(() => {
+    return [...new Set(textItems.map(item => item.fontUrl))].sort()
+  }, [fontUrlsHash])
+
+  // Use UniversalFontLoader to support both JSON and TTF
+  const fonts = useLoader(UniversalFontLoader, fontUrls)
   const fontMap = Object.fromEntries(fontUrls.map((url, i) => [url, fonts[i]]))
 
   const resultGeometry = useMemo(() => {

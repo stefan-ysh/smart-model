@@ -17,6 +17,7 @@ import { ExportHandler } from "@/components/three/ExportHandler"
 import { ModelToolbar } from "@/components/three/ModelToolbar"
 import { ScreenshotHandler } from "@/components/hooks/useScreenshot"
 import { ArrayLayout } from "@/components/three/ArrayLayout"
+import { CalligraphyGenerator } from "@/components/three/generators/Calligraphy"
 
 // Loading indicator component
 function Loader() {
@@ -186,6 +187,10 @@ function CurrentModel() {
 
     if (currentMode === 'qr') {
        return <QRCodeGenerator />
+    }
+
+    if (currentMode === 'calligraphy') {
+       return <CalligraphyGenerator />
     }
 
     return null

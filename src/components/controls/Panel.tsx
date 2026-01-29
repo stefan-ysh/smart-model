@@ -254,7 +254,7 @@ function LayoutSection() {
   )
 }
 
-export function Panel() {
+function PanelContent() {
   const { currentMode, parameters, updateParam } = useModelStore()
 
   if (currentMode === 'basic') {
@@ -615,6 +615,204 @@ export function Panel() {
                 onChange={(val) => updateParam('metalness', val)} />
            </div>
         </div>
+        <LayoutSection />
+      </div>
+    )
+  }
+
+  if (currentMode === 'calligraphy') {
+    return (
+      <div className="p-5 space-y-5">
+        <div className="pb-3 border-b border-white/5">
+          <h2 className="text-base font-semibold bg-linear-to-r from-white to-orange-200 bg-clip-text text-transparent">书法建模</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">上传图片并提取文字生成3D模型</p>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <Label>上传书法图片 (Upload Image)</Label>
+            <div className="mt-2 text-xs text-muted-foreground">
+              <div className="flex flex-col gap-2">
+                <input
+                  type="file"
+                  accept="image/png"
+                  className="w-full text-xs p-2.5 rounded-xl border border-white/10 bg-white/5 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      const reader = new FileReader()
+                      reader.onload = (event) => {
+                        if (typeof event.target?.result === 'string') {
+                          updateParam('calligraphyImageUrl', event.target.result)
+                        }
+                      }
+                      reader.readAsDataURL(file)
+                    }
+                  }}
+                />
+                <p className="opacity-70">仅支持 PNG 格式。建议使用透明背景或白底黑字。</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+             <Label>阈值 (Threshold)</Label>
+             <Slider
+               value={parameters.calligraphyThreshold}
+               min={1}
+               max={254}
+               step={1}
+               onChange={(val) => updateParam('calligraphyThreshold', val)}
+             />
+             <p className="text-[10px] text-muted-foreground mt-1">
+               调整黑色提取的敏感度 (1-254)
+             </p>
+          </div>
+
+          <div>
+             <Label>平滑度 (Smoothing)</Label>
+             <Slider
+               value={parameters.calligraphySmoothing}
+               min={0}
+               max={5}
+               step={1}
+               onChange={(val) => updateParam('calligraphySmoothing', val)}
+             />
+          </div>
+
+          <div>
+             <Label>风格 (Style)</Label>
+             <SimpleSelect
+               value={parameters.calligraphyStyle}
+               options={[
+                 { value: 'voxel', label: '体素 (Voxel)' },
+                 { value: 'smooth', label: '平滑 (Smooth)' },
+               ]}
+               onChange={(val) => updateParam('calligraphyStyle', val)}
+             />
+          </div>
+
+          <div>
+             <Label>精度 (Resolution)</Label>
+             <Slider
+               value={parameters.calligraphyResolution}
+               min={32}
+               max={300} // Cap at 300 for perf
+               step={16}
+               onChange={(val) => updateParam('calligraphyResolution', val)}
+             />
+             <p className="text-[10px] text-muted-foreground mt-1">
+               网格细分密度 (32-300). 高精度会增加计算量.
+             </p>
+          </div>
+
+          <div>
+             <Label>尺寸 (Size)</Label>
+             <Slider
+               value={parameters.calligraphySize}
+               min={10}
+               max={300}
+               step={1}
+               onChange={(val) => updateParam('calligraphySize', val)}
+             />
+          </div>
+
+          <div>
+             <Label>厚度 (Thickness)</Label>
+             <Slider
+               value={parameters.calligraphyThickness}
+               min={1}
+               max={50}
+               step={0.5}
+               onChange={(val) => updateParam('calligraphyThickness', val)}
+             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="invert-mode"
+              checked={parameters.calligraphyInvert}
+              onChange={(e) => updateParam('calligraphyInvert', e.target.checked)}
+              className="rounded border-white/10 bg-white/5"
+            />
+            <Label htmlFor="invert-mode" className="mb-0">反转颜色 (Invert)</Label>
+          </div>
+        </div>
+
+        {/* Plate Controls Reuse */}
+        <Section title="底板设置 (Base Plate)">
+          <div className="space-y-4">
+             <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  id="has-base-mode"
+                  checked={parameters.hasBase}
+                  onChange={(e) => updateParam('hasBase', e.target.checked)}
+                  className="rounded border-white/10 bg-white/5"
+                />
+                <Label htmlFor="has-base-mode" className="mb-0">显示底板 (Show Base)</Label>
+             </div>
+             
+             {parameters.hasBase && (
+             <>
+             <div className="grid grid-cols-4 gap-2">
+                {[
+                  { value: 'square', label: '正方' },
+                  { value: 'rectangle', label: '长方' },
+                  { value: 'circle', label: '圆形' },
+                  { value: 'rounded', label: '圆角' },
+                ].map(shape => (
+                 <PlateShapeButton
+                    key={shape.value}
+                    shape={shape.value}
+                    label={shape.label}
+                    selected={parameters.plateShape === shape.value}
+                    onClick={() => updateParam('plateShape', shape.value)}
+                 />
+                ))}
+             </div>
+             
+             {parameters.plateShape === 'rectangle' ? (
+               <>
+                 <div>
+                    <Label>宽度 (Width)</Label>
+                    <Slider value={parameters.plateWidth} min={20} max={300} step={1}
+                      onChange={(val) => updateParam('plateWidth', val)} />
+                 </div>
+                 <div>
+                    <Label>高度 (Height)</Label>
+                    <Slider value={parameters.plateHeight} min={20} max={300} step={1}
+                      onChange={(val) => updateParam('plateHeight', val)} />
+                 </div>
+               </>
+             ) : (
+                <div>
+                   <Label>底板尺寸 (Plate Size)</Label>
+                   <Slider value={parameters.size} min={20} max={300} step={1}
+                     onChange={(val) => updateParam('size', val)} />
+                </div>
+             )}
+
+             <div>
+                <Label>底板厚度</Label>
+                <Slider value={parameters.baseThickness} min={1} max={20} step={0.5}
+                  onChange={(val) => updateParam('baseThickness', val)} />
+             </div>
+
+             <div className="pt-2 border-t border-white/5">
+                <Label>底板颜色</Label>
+                <ColorInput value={parameters.plateColor} onChange={(val) => updateParam('plateColor', val)} />
+             </div>
+             <div>
+                <Label>文字/图案颜色</Label>
+                <ColorInput value={parameters.textColor} onChange={(val) => updateParam('textColor', val)} />
+             </div>
+             </>
+             )}
+          </div>
+        </Section>
+        
         <LayoutSection />
       </div>
     )
@@ -1136,6 +1334,80 @@ export function Panel() {
   return (
     <div className="p-6 flex items-center justify-center text-muted-foreground text-sm">
       此模式参数面板尚未实现
+    </div>
+  )
+}
+
+export function Panel() {
+  const { parameters, updateParam } = useModelStore()
+
+  // Save/Load Configuration
+  const handleExportConfig = () => {
+    const config = JSON.stringify(parameters, null, 2)
+    const blob = new Blob([config], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `smart-model-config-${new Date().toISOString().slice(0,10)}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportConfig = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onload = (event) => {
+        try {
+            const result = event.target?.result as string
+            const importedParams = JSON.parse(result)
+            // Apply all params
+            Object.entries(importedParams).forEach(([key, value]) => {
+                updateParam(key as any, value)
+            })
+            // Reset value so same file can be loaded again if needed
+            e.target.value = ''
+        } catch (err) {
+            console.error("Failed to parse config", err)
+            alert("配置文件格式错误")
+        }
+    }
+    reader.readAsText(file)
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <PanelContent />
+      </div>
+      
+      {/* Footer Config Actions */}
+      <div className="p-4 border-t border-white/5 bg-black/20 backdrop-blur-md shrink-0">
+         <div className="grid grid-cols-2 gap-3">
+            <button
+               onClick={handleExportConfig}
+               className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-white/10 bg-white/5 text-xs font-medium hover:bg-white/10 transition-colors"
+            >
+               <span>💾</span> <span className="opacity-90">保存参数 (Export)</span>
+            </button>
+            <div className="relative">
+               <button
+                  className="flex items-center justify-center gap-2 py-2 px-4 w-full rounded-lg border border-white/10 bg-white/5 text-xs font-medium hover:bg-white/10 transition-colors"
+               >
+                  <span>📂</span> <span className="opacity-90">导入参数 (Import)</span>
+               </button>
+               <input 
+                 type="file"
+                 accept=".json"
+                 onChange={handleImportConfig}
+                 className="absolute inset-0 opacity-0 cursor-pointer"
+               />
+            </div>
+         </div>
+      </div>
     </div>
   )
 }

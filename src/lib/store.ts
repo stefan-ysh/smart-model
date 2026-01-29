@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template' | 'qr'
+export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template' | 'qr' | 'calligraphy'
 export type ShapeType = 'cube' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'octahedron' | 'dodecahedron' | 'icosahedron' | 'tetrahedron' | 'torusKnot' | 'capsule' | 'ring'
 export type PlateShape = 'square' | 'rectangle' | 'circle' | 'diamond' | 'star' | 'wave' | 'heart' | 'hexagon' | 'pentagon' | 'oval' | 'cross' | 'cloud' | 'shield' | 'badge' | 'rounded' | 'nameplate' | 'keychain' | 'tag' | 'coaster' | 'doorSign' | 'petBone' | 'trophy' | 'frame'
 export type ArrayType = 'none' | 'rectangular' | 'circular'
@@ -42,7 +42,17 @@ export interface ModelParams {
   qrInvert: boolean // false: relief (raised), true: hollow (sunken)
   qrMargin: number
   qrIsThrough: boolean
-  
+
+  // Calligraphy params
+  calligraphyImageUrl: string | null
+  calligraphyThreshold: number // 0-255
+  calligraphySize: number
+  calligraphyThickness: number
+  calligraphyInvert: boolean
+  calligraphySmoothing: number // 0-5 for smoothing steps
+  calligraphyStyle: 'voxel' | 'smooth'
+  calligraphyResolution: number // 32-512
+
   // Hollow/Stencil plate params
   plateShape: PlateShape
   plateWidth: number  // For rectangle
@@ -253,6 +263,16 @@ const defaultParams: ModelParams = {
   qrInvert: false,
   qrMargin: 1,
   qrIsThrough: false,
+
+  // Calligraphy defaults
+  calligraphyImageUrl: null,
+  calligraphyThreshold: 128,
+  calligraphySize: 100,
+  calligraphyThickness: 5,
+  calligraphyInvert: false,
+  calligraphySmoothing: 1,
+  calligraphyStyle: 'voxel',
+  calligraphyResolution: 150,
 
   baseThickness: 2,
   hasBase: false,

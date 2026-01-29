@@ -61,7 +61,7 @@ export function Sidebar() {
     { mode: 'relief', icon: ImageIcon, label: '浮雕' },
     { mode: 'hollow', icon: Grid3x3, label: '镂空' },
     { mode: 'qr', icon: QrCode, label: '二维码' },
-    { mode: 'calligraphy', icon: Brush, label: '书法' },
+    { mode: 'image', icon: Brush, label: '图片浮雕' },
   ]
 
   return (

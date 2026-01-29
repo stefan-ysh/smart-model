@@ -17,17 +17,19 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-export function CalligraphyGenerator() {
+export function ImageReliefGenerator() {
   const { parameters } = useModelStore()
   const [mergedGeometry, setMergedGeometry] = useState<THREE.BufferGeometry | null>(null)
   
   const { 
-    calligraphyImageUrl, 
-    calligraphyThreshold, 
-    calligraphySize, 
-    calligraphyThickness, 
-    calligraphyInvert,
-    calligraphySmoothing,
+    imageUrl: calligraphyImageUrl, // Alias for backward compatibility if needed, using generic imageUrl
+    imageThreshold: calligraphyThreshold, 
+    imageSize: calligraphySize, 
+    imageThickness: calligraphyThickness, 
+    imageInvert: calligraphyInvert,
+    imageSmoothing: calligraphySmoothing,
+    imageStyle: calligraphyStyle,
+    imageResolution: calligraphyResolution,
     
     // Plate params
     plateShape,
@@ -41,6 +43,11 @@ export function CalligraphyGenerator() {
     metalness
   } = parameters
 
+  // Alias internally to avoid rewriting all logic below right now
+  // Or actually, cleaner to just use new names?
+  // I will use aliases above to keep the rest of the file logic working with minimal diffs.
+  // Note: I am aliasing `image*` props to `calligraphy*` variables.
+
   // 1. Generate Base Geometry
   const baseGeo = useMemo(() => {
     return createPlateGeometry(
@@ -48,9 +55,10 @@ export function CalligraphyGenerator() {
         size, 
         plateWidth, 
         plateHeight, 
-        2 // corner radius default
+        baseThickness,
+        parameters.plateCornerRadius || 0
     )
-  }, [plateShape, size, plateWidth, plateHeight, baseThickness])
+  }, [plateShape, size, plateWidth, plateHeight, baseThickness, parameters.plateCornerRadius])
 
   // 2. Process Image and Merge
   useEffect(() => {
@@ -70,7 +78,7 @@ export function CalligraphyGenerator() {
         const effectiveHeight = calligraphySize / aspect
 
         // Use user resolution, but cap for safety if needed
-        const resultRes = Math.min(parameters.calligraphyResolution || 150, 512)
+        const resultRes = Math.min(calligraphyResolution || 150, 512)
         
         const canvas = document.createElement('canvas')
         canvas.width = resultRes
@@ -104,7 +112,7 @@ export function CalligraphyGenerator() {
         // --- GEOMETRY GENERATION ---
         let textGeo: THREE.BufferGeometry
         
-        if (parameters.calligraphyStyle === 'smooth') {
+        if (calligraphyStyle === 'smooth') {
              // SMOOTH MODE: Displaced Plane
              const positions: number[] = []
              const normals: number[] = []
@@ -162,9 +170,28 @@ export function CalligraphyGenerator() {
                      const y0 = offsetY - y * stepY
                      const y1 = offsetY - (y+1) * stepY
                      
-                     const zBase = baseThickness
+                     const zBase = parameters.hasBase ? baseThickness / 2 : 0
                      
-                     // Tri 1
+                     // Helper to push a quad (2 triangles)
+                     const pushQuad = (
+                        x1:number, y1:number, z1:number,
+                        x2:number, y2:number, z2:number,
+                        x3:number, y3:number, z3:number,
+                        x4:number, y4:number, z4:number,
+                        nx:number, ny:number, nz:number
+                     ) => {
+                         // Tri 1: 1-2-4
+                         positions.push(x1, y1, z1); uvs.push(0,0); normals.push(nx,ny,nz);
+                         positions.push(x2, y2, z2); uvs.push(1,0); normals.push(nx,ny,nz);
+                         positions.push(x4, y4, z4); uvs.push(0,1); normals.push(nx,ny,nz);
+                         
+                         // Tri 2: 2-3-4
+                         positions.push(x2, y2, z2); uvs.push(1,0); normals.push(nx,ny,nz);
+                         positions.push(x3, y3, z3); uvs.push(1,1); normals.push(nx,ny,nz);
+                         positions.push(x4, y4, z4); uvs.push(0,1); normals.push(nx,ny,nz);
+                     }
+
+                     // Tri 1 (Top Surface)
                      pushTri(
                          x0, y0, zBase + Math.max(0, hTL),
                          x0, y1, zBase + Math.max(0, hBL),
@@ -173,7 +200,7 @@ export function CalligraphyGenerator() {
                          x/resultRes, 1-(y+1)/resultRes,
                          (x+1)/resultRes, 1-y/resultRes
                      )
-                     // Tri 2
+                     // Tri 2 (Top Surface)
                      pushTri(
                          x0, y1, zBase + Math.max(0, hBL),
                          x1, y1, zBase + Math.max(0, hBR),
@@ -182,6 +209,80 @@ export function CalligraphyGenerator() {
                          (x+1)/resultRes, 1-(y+1)/resultRes,
                          (x+1)/resultRes, 1-y/resultRes
                      )
+                     
+                     // Bottom Surface (Facing Down)
+                     // v1(x0,y0), v2(x1,y0), v3(x1,y1), v4(x0,y1) at zBase
+                     // Clockwise for down: 1-4-2, 4-3-2?
+                     // Normal: 0, 0, -1
+                     pushTri(
+                        x0, y0, zBase,
+                        x1, y0, zBase,
+                        x0, y1, zBase,
+                        0,0, 1,0, 0,1 // UVs dummy
+                     )
+                     pushTri(
+                        x0, y1, zBase,
+                        x1, y0, zBase,
+                        x1, y1, zBase,
+                        0,1, 1,0, 1,1
+                     )
+
+                     // --- Side Wall Generation (Watertight) ---
+                     
+                     // Helper to check if a neighbor quad is visible (exists)
+                     const isVisible = (nx: number, ny: number) => {
+                        if (nx < 0 || nx >= resultRes || ny < 0 || ny >= resultRes) return false
+                        const val1 = getB(nx, ny)
+                        const val2 = getB(nx+1, ny)
+                        const val3 = getB(nx, ny+1)
+                        const val4 = getB(nx+1, ny+1)
+                        // If all corners are below threshold, the quad is skipped (invisible)
+                        return Math.max(val1, val2, val3, val4) >= calligraphyThreshold
+                     }
+
+                     // Top Edge (Neighbor at y-1 is empty/out)
+                     if (!isVisible(x, y-1)) {
+                         pushQuad(
+                             x0, y0, zBase,                // Bottom Left
+                             x0, y0, zBase + hTL,          // Top Left
+                             x1, y0, zBase + hTR,          // Top Right
+                             x1, y0, zBase,                // Bottom Right
+                             0, 1, 0
+                         )
+                     }
+                     
+                     // Bottom Edge (Neighbor at y+1 is empty/out)
+                     if (!isVisible(x, y+1)) {
+                         pushQuad(
+                             x0, y1, zBase + hBL,
+                             x0, y1, zBase,
+                             x1, y1, zBase,
+                             x1, y1, zBase + hBR,
+                             0, -1, 0
+                         )
+                     }
+
+                     // Left Edge (Neighbor at x-1 is empty/out)
+                     if (!isVisible(x-1, y)) {
+                         pushQuad(
+                             x0, y1, zBase,              // Bottom Front (low y)
+                             x0, y1, zBase + hBL,        // Top Front
+                             x0, y0, zBase + hTL,        // Top Back
+                             x0, y0, zBase,              // Bottom Back (high y)
+                             -1, 0, 0
+                         )
+                     }
+
+                     // Right Edge (Neighbor at x+1 is empty/out)
+                     if (!isVisible(x+1, y)) {
+                         pushQuad(
+                             x1, y0, zBase,
+                             x1, y0, zBase + hTR,
+                             x1, y1, zBase + hBR,
+                             x1, y1, zBase,
+                             1, 0, 0
+                         )
+                     }
                  }
              }
              
@@ -302,8 +403,9 @@ export function CalligraphyGenerator() {
       calligraphyInvert, 
       calligraphySmoothing,
       baseThickness,
-      parameters.calligraphyStyle,
-      parameters.calligraphyResolution
+      calligraphyStyle, // using destructured alias
+      calligraphyResolution, // using destructured alias
+      parameters.hasBase
   ])
 
   if (!mergedGeometry) return null

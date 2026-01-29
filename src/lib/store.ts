@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template' | 'qr' | 'calligraphy'
+export type GeneratorMode = 'basic' | 'text' | 'relief' | 'hollow' | 'template' | 'qr' | 'image'
 export type ShapeType = 'cube' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'octahedron' | 'dodecahedron' | 'icosahedron' | 'tetrahedron' | 'torusKnot' | 'capsule' | 'ring'
 export type PlateShape = 'square' | 'rectangle' | 'circle' | 'diamond' | 'star' | 'wave' | 'heart' | 'hexagon' | 'pentagon' | 'oval' | 'cross' | 'cloud' | 'shield' | 'badge' | 'rounded' | 'nameplate' | 'keychain' | 'tag' | 'coaster' | 'doorSign' | 'petBone' | 'trophy' | 'frame'
 export type ArrayType = 'none' | 'rectangular' | 'circular'
@@ -30,29 +30,10 @@ export interface ModelParams {
   fontUrl: string
   textPosition: { x: number, y: number }
   
-  // Relief params
-  imageUrl: string | null
-  invert: boolean
+  // Relief params (Text based)
+  // Removed imageUrl from here as it is specific to Image Relief now
   reliefHeight: number
   
-  // QR Code params
-  qrText: string
-  qrSize: number
-  qrDepth: number
-  qrInvert: boolean // false: relief (raised), true: hollow (sunken)
-  qrMargin: number
-  qrIsThrough: boolean
-
-  // Calligraphy params
-  calligraphyImageUrl: string | null
-  calligraphyThreshold: number // 0-255
-  calligraphySize: number
-  calligraphyThickness: number
-  calligraphyInvert: boolean
-  calligraphySmoothing: number // 0-5 for smoothing steps
-  calligraphyStyle: 'voxel' | 'smooth'
-  calligraphyResolution: number // 32-512
-
   // Hollow/Stencil plate params
   plateShape: PlateShape
   plateWidth: number  // For rectangle
@@ -64,19 +45,44 @@ export interface ModelParams {
   
   // Common
   baseThickness: number
-  hasBase: boolean
   
   // Material settings
   plateColor: string
   textColor: string
-  roughness: number
-  metalness: number
   
   // Display options
   showShadows: boolean
+
+  // QR Code params
+  qrText: string
+  qrSize: number
+  qrDepth: number
+  qrInvert: boolean // false: relief (raised), true: hollow (sunken)
+  qrMargin: number
+  qrIsThrough: boolean
+
+  // Image Relief params
+  imageUrl: string | null
+  imageThreshold: number // 0-255
+  imageSize: number
+  imageThickness: number
+  imageInvert: boolean
+  imageSmoothing: number // 0-5 for smoothing steps
+  imageStyle: 'voxel' | 'smooth'
+  imageResolution: number // 32-512
+
+
+
+
+  // Generic
+  roughness: number
+  metalness: number
   
-  // Array/Pattern settings
-  arrayType: ArrayType
+  // Base Plate
+  hasBase: boolean // Global toggle for base plate
+  
+  // Advanced Pattern
+  arrayType: 'none' | 'rectangular' | 'circular'
   arrayCountX: number
   arrayCountY: number
   arraySpacingX: number
@@ -97,6 +103,7 @@ interface ModelStore {
   
   parameters: ModelParams
   updateParam: (key: keyof ModelParams, value: any) => void
+  setParameters: (params: Partial<ModelParams>) => void
   triggerExport: () => void
   
   // Text items management
@@ -233,8 +240,6 @@ const defaultParams: ModelParams = {
   fontUrl: '/fonts/helvetiker_bold.json',
   textPosition: { x: 0, y: 0 },
   
-  imageUrl: null,
-  invert: false,
   reliefHeight: 2,
   
   // Hollow plate defaults
@@ -264,15 +269,15 @@ const defaultParams: ModelParams = {
   qrMargin: 1,
   qrIsThrough: false,
 
-  // Calligraphy defaults
-  calligraphyImageUrl: null,
-  calligraphyThreshold: 128,
-  calligraphySize: 100,
-  calligraphyThickness: 5,
-  calligraphyInvert: false,
-  calligraphySmoothing: 1,
-  calligraphyStyle: 'voxel',
-  calligraphyResolution: 150,
+  // Image Relief defaults
+  imageUrl: null,
+  imageThreshold: 128,
+  imageSize: 100,
+  imageThickness: 5,
+  imageInvert: false,
+  imageSmoothing: 1,
+  imageStyle: 'voxel',
+  imageResolution: 150,
 
   baseThickness: 2,
   hasBase: false,
@@ -308,6 +313,10 @@ export const useModelStore = create<ModelStore>((set) => ({
   updateParam: (key, value) => 
     set((state) => ({ 
       parameters: { ...state.parameters, [key]: value } 
+    })),
+  setParameters: (params) =>
+    set((state) => ({
+      parameters: { ...state.parameters, ...params }
     })),
   triggerExport: () => set((state) => ({ 
       parameters: { ...state.parameters, exportTrigger: state.parameters.exportTrigger + 1 } 

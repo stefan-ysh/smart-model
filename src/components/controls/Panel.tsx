@@ -620,17 +620,17 @@ function PanelContent() {
     )
   }
 
-  if (currentMode === 'calligraphy') {
+  if (currentMode === 'image') {
     return (
       <div className="p-5 space-y-5">
         <div className="pb-3 border-b border-white/5">
-          <h2 className="text-base font-semibold bg-linear-to-r from-white to-orange-200 bg-clip-text text-transparent">书法建模</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">上传图片并提取文字生成3D模型</p>
+          <h2 className="text-base font-semibold bg-linear-to-r from-white to-pink-200 bg-clip-text text-transparent">图片浮雕参数</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">上传图片生成浮雕或书法模型</p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <Label>上传书法图片 (Upload Image)</Label>
+            <Label>上传图片 (Upload Image)</Label>
             <div className="mt-2 text-xs text-muted-foreground">
               <div className="flex flex-col gap-2">
                 <input
@@ -643,7 +643,30 @@ function PanelContent() {
                       const reader = new FileReader()
                       reader.onload = (event) => {
                         if (typeof event.target?.result === 'string') {
-                          updateParam('calligraphyImageUrl', event.target.result)
+                           // Resize to avoid "Max payload size" error
+                           const img = new Image()
+                           img.onload = () => {
+                              const MAX_SIZE = 512
+                              let w = img.width
+                              let h = img.height
+                              
+                              if (w > MAX_SIZE || h > MAX_SIZE) {
+                                 const ratio = Math.min(MAX_SIZE/w, MAX_SIZE/h)
+                                 w = Math.floor(w * ratio)
+                                 h = Math.floor(h * ratio)
+                              }
+                              
+                              const canvas = document.createElement('canvas')
+                              canvas.width = w
+                              canvas.height = h
+                              const ctx = canvas.getContext('2d')
+                              if (ctx) {
+                                 ctx.drawImage(img, 0, 0, w, h)
+                                 // Store resized image
+                                 updateParam('imageUrl', canvas.toDataURL('image/png'))
+                              }
+                           }
+                           img.src = event.target.result
                         }
                       }
                       reader.readAsDataURL(file)
@@ -658,11 +681,11 @@ function PanelContent() {
           <div>
              <Label>阈值 (Threshold)</Label>
              <Slider
-               value={parameters.calligraphyThreshold}
+               value={parameters.imageThreshold}
                min={1}
                max={254}
                step={1}
-               onChange={(val) => updateParam('calligraphyThreshold', val)}
+               onChange={(val) => updateParam('imageThreshold', val)}
              />
              <p className="text-[10px] text-muted-foreground mt-1">
                调整黑色提取的敏感度 (1-254)
@@ -672,34 +695,34 @@ function PanelContent() {
           <div>
              <Label>平滑度 (Smoothing)</Label>
              <Slider
-               value={parameters.calligraphySmoothing}
+               value={parameters.imageSmoothing}
                min={0}
                max={5}
                step={1}
-               onChange={(val) => updateParam('calligraphySmoothing', val)}
+               onChange={(val) => updateParam('imageSmoothing', val)}
              />
           </div>
 
           <div>
              <Label>风格 (Style)</Label>
              <SimpleSelect
-               value={parameters.calligraphyStyle}
+               value={parameters.imageStyle}
                options={[
                  { value: 'voxel', label: '体素 (Voxel)' },
                  { value: 'smooth', label: '平滑 (Smooth)' },
                ]}
-               onChange={(val) => updateParam('calligraphyStyle', val)}
+               onChange={(val) => updateParam('imageStyle', val)}
              />
           </div>
 
           <div>
              <Label>精度 (Resolution)</Label>
              <Slider
-               value={parameters.calligraphyResolution}
+               value={parameters.imageResolution}
                min={32}
                max={300} // Cap at 300 for perf
                step={16}
-               onChange={(val) => updateParam('calligraphyResolution', val)}
+               onChange={(val) => updateParam('imageResolution', val)}
              />
              <p className="text-[10px] text-muted-foreground mt-1">
                网格细分密度 (32-300). 高精度会增加计算量.
@@ -709,22 +732,22 @@ function PanelContent() {
           <div>
              <Label>尺寸 (Size)</Label>
              <Slider
-               value={parameters.calligraphySize}
+               value={parameters.imageSize}
                min={10}
                max={300}
                step={1}
-               onChange={(val) => updateParam('calligraphySize', val)}
+               onChange={(val) => updateParam('imageSize', val)}
              />
           </div>
 
           <div>
              <Label>厚度 (Thickness)</Label>
              <Slider
-               value={parameters.calligraphyThickness}
+               value={parameters.imageThickness}
                min={1}
                max={50}
                step={0.5}
-               onChange={(val) => updateParam('calligraphyThickness', val)}
+               onChange={(val) => updateParam('imageThickness', val)}
              />
           </div>
 
@@ -732,8 +755,8 @@ function PanelContent() {
             <input
               type="checkbox"
               id="invert-mode"
-              checked={parameters.calligraphyInvert}
-              onChange={(e) => updateParam('calligraphyInvert', e.target.checked)}
+              checked={parameters.imageInvert}
+              onChange={(e) => updateParam('imageInvert', e.target.checked)}
               className="rounded border-white/10 bg-white/5"
             />
             <Label htmlFor="invert-mode" className="mb-0">反转颜色 (Invert)</Label>
@@ -1339,7 +1362,7 @@ function PanelContent() {
 }
 
 export function Panel() {
-  const { parameters, updateParam } = useModelStore()
+  const { parameters, updateParam, setParameters } = useModelStore()
 
   // Save/Load Configuration
   const handleExportConfig = () => {
@@ -1364,10 +1387,15 @@ export function Panel() {
         try {
             const result = event.target?.result as string
             const importedParams = JSON.parse(result)
-            // Apply all params
-            Object.entries(importedParams).forEach(([key, value]) => {
-                updateParam(key as any, value)
-            })
+            
+            // Exclude triggers from import to avoid side effects
+            if ('exportTrigger' in importedParams) delete importedParams.exportTrigger
+            if ('screenshotTrigger' in importedParams) delete importedParams.screenshotTrigger
+            if ('resetViewTrigger' in importedParams) delete importedParams.resetViewTrigger
+            
+            // Atomic update
+            setParameters(importedParams)
+            
             // Reset value so same file can be loaded again if needed
             e.target.value = ''
         } catch (err) {

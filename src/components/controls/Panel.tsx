@@ -6,6 +6,7 @@ import { useModelStore, ShapeType } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { FontSelect } from "./FontSelect"
 import { SliderWithInput } from "./SliderWithInput"
+import { FileUpload } from "@/components/ui/file-upload"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import {
@@ -623,58 +624,47 @@ function PanelContent() {
   if (currentMode === 'image') {
     return (
       <div className="p-5 space-y-5">
-        <div className="pb-3 border-b border-white/5">
-          <h2 className="text-base font-semibold bg-linear-to-r from-white to-pink-200 bg-clip-text text-transparent">图片浮雕参数</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">上传图片生成浮雕或书法模型</p>
-        </div>
-
         <div className="space-y-4">
           <div>
-            <Label>上传图片</Label>
-            <div className="mt-2 text-xs text-muted-foreground">
-              <div className="flex flex-col gap-2">
-                <input
-                  type="file"
-                  accept="image/png"
-                  className="w-full text-xs p-2.5 rounded-xl border border-white/10 bg-white/5 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      const reader = new FileReader()
-                      reader.onload = (event) => {
-                        if (typeof event.target?.result === 'string') {
-                           // Resize to avoid "Max payload size" error
-                           const img = new Image()
-                           img.onload = () => {
-                              const MAX_SIZE = 512
-                              let w = img.width
-                              let h = img.height
-                              
-                              if (w > MAX_SIZE || h > MAX_SIZE) {
-                                 const ratio = Math.min(MAX_SIZE/w, MAX_SIZE/h)
-                                 w = Math.floor(w * ratio)
-                                 h = Math.floor(h * ratio)
-                              }
-                              
-                              const canvas = document.createElement('canvas')
-                              canvas.width = w
-                              canvas.height = h
-                              const ctx = canvas.getContext('2d')
-                              if (ctx) {
-                                 ctx.drawImage(img, 0, 0, w, h)
-                                 // Store resized image
-                                 updateParam('imageUrl', canvas.toDataURL('image/png'))
-                              }
-                           }
-                           img.src = event.target.result
-                        }
+            <div className="mt-2 w-full">
+              <FileUpload
+                onChange={(files) => {
+                  const file = files[0]
+                  if (file) {
+                    const reader = new FileReader()
+                    reader.onload = (event) => {
+                      if (typeof event.target?.result === 'string') {
+                         // Resize to avoid "Max payload size" error
+                         const img = new Image()
+                         img.onload = () => {
+                            const MAX_SIZE = 512
+                            let w = img.width
+                            let h = img.height
+                            
+                            if (w > MAX_SIZE || h > MAX_SIZE) {
+                               const ratio = Math.min(MAX_SIZE/w, MAX_SIZE/h)
+                               w = Math.floor(w * ratio)
+                               h = Math.floor(h * ratio)
+                            }
+                            
+                            const canvas = document.createElement('canvas')
+                            canvas.width = w
+                            canvas.height = h
+                            const ctx = canvas.getContext('2d')
+                            if (ctx) {
+                               ctx.drawImage(img, 0, 0, w, h)
+                               // Store resized image
+                               updateParam('imageUrl', canvas.toDataURL('image/png'))
+                            }
+                         }
+                         img.src = event.target.result
                       }
-                      reader.readAsDataURL(file)
                     }
-                  }}
-                />
-                <p className="opacity-70">仅支持 PNG 格式。建议使用透明背景或白底黑字。</p>
-              </div>
+                    reader.readAsDataURL(file)
+                  }
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-2 opacity-70">支持 PNG, JPG 等格式。建议使用高对比度图片。</p>
             </div>
           </div>
 

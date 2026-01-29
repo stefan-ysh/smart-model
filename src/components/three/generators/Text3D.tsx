@@ -3,7 +3,7 @@
 import { Text3D as DreiText3D, Center } from "@react-three/drei"
 import { useModelStore } from "@/lib/store"
 import { useLoader } from "@react-three/fiber"
-import { FontLoader } from "three-stdlib"
+import { UniversalFontLoader } from "@/utils/fontLoaderUtils"
 import { useMemo } from "react"
 
 // Filter text to only include characters that exist in the font
@@ -23,12 +23,12 @@ export function Text3DGenerator() {
   const { parameters } = useModelStore()
   const { textContent, fontSize, thickness, fontUrl } = parameters
   
-  // Load font to check available glyphs
-  const font = useLoader(FontLoader, fontUrl)
+  // Load font using UniversalFontLoader for shared cache
+  const font = useLoader(UniversalFontLoader, fontUrl)
   
   // Filter text to only include supported characters
   const safeText = useMemo(() => {
-    return filterSupportedChars(textContent || "Text", font)
+    return filterSupportedChars(textContent || "Text", font as { data?: { glyphs?: Record<string, unknown> } })
   }, [textContent, font])
 
   return (

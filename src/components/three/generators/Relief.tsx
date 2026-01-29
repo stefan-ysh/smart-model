@@ -3,9 +3,10 @@
 import * as THREE from "three";
 import { useMemo, Suspense } from "react";
 import { useLoader } from "@react-three/fiber";
-import { FontLoader, TextGeometry } from "three-stdlib";
+import { TextGeometry } from "three-stdlib";
 import { useModelStore, TextItem } from "@/lib/store";
 import { createPlateGeometry } from "./plateShapes";
+import { UniversalFontLoader } from "@/utils/fontLoaderUtils";
 
 // Create plate geometry based on shape type (same as Stencil)
 // Now imported from ./plateShapes
@@ -38,7 +39,8 @@ function ReliefMesh() {
     [textItems]
   );
   
-  const fonts = useLoader(FontLoader, fontUrls);
+  // Use UniversalFontLoader to share cache with Stencil
+  const fonts = useLoader(UniversalFontLoader, fontUrls);
 
   // Create font map
   const fontMap = useMemo(() => {

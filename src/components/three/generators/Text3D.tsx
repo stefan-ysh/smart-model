@@ -5,12 +5,14 @@ import { useModelStore } from "@/lib/store"
 import { useLoader } from "@react-three/fiber"
 import { UniversalFontLoader } from "@/utils/fontLoaderUtils"
 import { useMemo } from "react"
+import { Font } from "three-stdlib"
 
 // Filter text to only include characters that exist in the font
-function filterSupportedChars(text: string, font: { data?: { glyphs?: Record<string, unknown> } }): string {
-  if (!font?.data?.glyphs) return text
+function filterSupportedChars(text: string, font: Font): string {
+  const fontData = font as unknown as { data?: { glyphs?: Record<string, unknown> } }
+  if (!fontData?.data?.glyphs) return text
   
-  const glyphs = font.data.glyphs
+  const glyphs = fontData.data.glyphs
   return text.split('').filter(char => {
     // Space is always supported
     if (char === ' ') return true
@@ -23,19 +25,19 @@ export function Text3DGenerator() {
   const { parameters } = useModelStore()
   const { textContent, fontSize, thickness, fontUrl } = parameters
   
-  // Load font using UniversalFontLoader for shared cache
-  const font = useLoader(UniversalFontLoader, fontUrl)
+  // Load font using UniversalFontLoader - this is the ONLY load
+  const font = useLoader(UniversalFontLoader, fontUrl) as Font
   
   // Filter text to only include supported characters
   const safeText = useMemo(() => {
-    return filterSupportedChars(textContent || "Text", font as { data?: { glyphs?: Record<string, unknown> } })
+    return filterSupportedChars(textContent || "Text", font)
   }, [textContent, font])
 
   return (
     <group rotation={[-Math.PI / 2, 0, 0]} position={[0, thickness / 2, 0]}>
       <Center>
         <DreiText3D
-          font={fontUrl}
+          font={font.data as unknown as string}
           size={fontSize}
           height={thickness}
           curveSegments={12}

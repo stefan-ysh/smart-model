@@ -33,6 +33,7 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.182.0",
     "three-stdlib": "^2.36.1",
+    "use-debounce": "^10.1.0",
     "zustand": "^5.0.10"
   },
   "devDependencies": {

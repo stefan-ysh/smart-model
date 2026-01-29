@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useDebouncedCallback } from "use-debounce"
 import { Slider as ShadcnSlider } from "@/components/ui/slider"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -53,10 +54,14 @@ export function SliderWithInput({
     }
   }
   
+  // Debounce store updates to prevent excessive re-renders during dragging
+  // Visual feedback (inputValue) is immediate, but expensive store updates are throttled
+  const debouncedOnChange = useDebouncedCallback(onChange, 50)
+  
   const handleSliderChange = (values: number[]) => {
     if (values[0] !== undefined) {
-      onChange(values[0])
-      setInputValue(values[0].toString())
+      setInputValue(values[0].toString()) // Immediate visual feedback
+      debouncedOnChange(values[0])        // Debounced store update
     }
   }
   

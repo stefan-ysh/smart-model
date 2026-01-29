@@ -4,8 +4,15 @@ import { useModelStore } from "@/lib/store"
 import { MATERIAL_CONFIGS } from "@/components/hooks/useMaterialPreset"
 
 export function BasicShape() {
-  const { parameters } = useModelStore()
-  const { shapeType, size, height, segments, showShadows, plateColor, roughness, metalness } = parameters
+  // Optimized: Subscribe only to basic shape-related parameters
+  const shapeType = useModelStore(state => state.parameters.shapeType)
+  const size = useModelStore(state => state.parameters.size)
+  const height = useModelStore(state => state.parameters.height)
+  const segments = useModelStore(state => state.parameters.segments)
+  const showShadows = useModelStore(state => state.parameters.showShadows)
+  const plateColor = useModelStore(state => state.parameters.plateColor)
+  const roughness = useModelStore(state => state.parameters.roughness)
+  const metalness = useModelStore(state => state.parameters.metalness)
   const wireframeMode = useModelStore(state => state.wireframeMode)
   const materialPreset = useModelStore(state => state.materialPreset)
 

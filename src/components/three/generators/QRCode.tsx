@@ -30,11 +30,19 @@ function createRoundedRectShape(width: number, height: number, radius: number) {
 }
 
 export function QRCodeGenerator() {
-  const { parameters } = useModelStore()
-  const { 
-    qrText, qrSize, qrDepth, qrInvert, qrMargin, qrIsThrough,
-    baseThickness, plateColor, roughness, metalness, plateCornerRadius
-  } = parameters
+  // Optimized: Subscribe only to QR-related parameters
+  const qrText = useModelStore(state => state.parameters.qrText)
+  const qrSize = useModelStore(state => state.parameters.qrSize)
+  const qrDepth = useModelStore(state => state.parameters.qrDepth)
+  const qrInvert = useModelStore(state => state.parameters.qrInvert)
+  const qrMargin = useModelStore(state => state.parameters.qrMargin)
+  const qrIsThrough = useModelStore(state => state.parameters.qrIsThrough)
+  const baseThickness = useModelStore(state => state.parameters.baseThickness)
+  const plateColor = useModelStore(state => state.parameters.plateColor)
+  const textColor = useModelStore(state => state.parameters.textColor)
+  const roughness = useModelStore(state => state.parameters.roughness)
+  const metalness = useModelStore(state => state.parameters.metalness)
+  const plateCornerRadius = useModelStore(state => state.parameters.plateCornerRadius)
 
   // Generate QR Matrix
   const qrMatrix = useMemo(() => {
@@ -185,7 +193,7 @@ export function QRCodeGenerator() {
        {geometry.qrGeometry && (
          <mesh geometry={geometry.qrGeometry}>
             <meshStandardMaterial 
-              color={parameters.textColor} 
+              color={textColor} 
               roughness={roughness} 
               metalness={metalness}
             />
@@ -196,7 +204,7 @@ export function QRCodeGenerator() {
        {geometry.borderGeometry && (
          <mesh geometry={geometry.borderGeometry}>
             <meshStandardMaterial 
-              color={parameters.textColor} 
+              color={textColor} 
               roughness={roughness} 
               metalness={metalness}
             />

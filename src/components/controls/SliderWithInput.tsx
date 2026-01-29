@@ -62,7 +62,7 @@ export function SliderWithInput({
   return (
     <div className={cn("flex flex-col gap-2.5 p-3.5 bg-white/3 rounded-2xl border border-white/5 hover:border-white/10 transition-all group", className)}>
       <div className="flex items-center justify-between">
-        <label className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest group-hover:text-zinc-400 transition-colors">Parameter Value</label>
+        <label className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest group-hover:text-zinc-400 transition-colors"></label>
         {showInput ? (
           <div className="flex items-center gap-1.5 bg-zinc-950 border border-white/10 rounded-lg px-2 py-0.5 shadow-inner transition-colors group-hover:border-white/20">
             <Input

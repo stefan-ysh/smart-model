@@ -150,7 +150,7 @@ function LayoutSection() {
   )
   
   return (
-    <Section title="排列布局 (Pattern)">
+    <Section title="排列布局">
       <div className="space-y-4">
         <div>
           <Label>排列类型</Label>
@@ -271,25 +271,25 @@ function PanelContent() {
             <SimpleSelect
               value={parameters.shapeType}
               options={[
-                { value: 'cube', label: '立方体 (Cube)' },
-                { value: 'sphere', label: '球体 (Sphere)' },
-                { value: 'cylinder', label: '圆柱体 (Cylinder)' },
-                { value: 'cone', label: '圆锥体 (Cone)' },
-                { value: 'torus', label: '圆环体 (Torus)' },
-                { value: 'torusKnot', label: '扭结环 (Torus Knot)' },
-                { value: 'capsule', label: '胶囊体 (Capsule)' },
-                { value: 'ring', label: '圆环 (Ring)' },
-                { value: 'octahedron', label: '八面体 (Octahedron)' },
-                { value: 'dodecahedron', label: '十二面体 (Dodecahedron)' },
-                { value: 'icosahedron', label: '二十面体 (Icosahedron)' },
-                { value: 'tetrahedron', label: '四面体 (Tetrahedron)' },
+                { value: 'cube', label: '立方体' },
+                { value: 'sphere', label: '球体' },
+                { value: 'cylinder', label: '圆柱体' },
+                { value: 'cone', label: '圆锥体' },
+                { value: 'torus', label: '圆环体' },
+                { value: 'torusKnot', label: '扭结环' },
+                { value: 'capsule', label: '胶囊体' },
+                { value: 'ring', label: '圆环' },
+                { value: 'octahedron', label: '八面体' },
+                { value: 'dodecahedron', label: '十二面体' },
+                { value: 'icosahedron', label: '二十面体' },
+                { value: 'tetrahedron', label: '四面体' },
               ]}
               onChange={(val) => updateParam('shapeType', val as ShapeType)}
             />
           </div>
 
           <div>
-            <Label>尺寸 (Size)</Label>
+            <Label>尺寸</Label>
             <Slider
               value={parameters.size}
               min={10}
@@ -301,7 +301,7 @@ function PanelContent() {
 
           {(parameters.shapeType === 'cylinder' || parameters.shapeType === 'cone') && (
             <div>
-              <Label>高度 (Height)</Label>
+              <Label>高度</Label>
               <Slider
                 value={parameters.height}
                 min={10}
@@ -314,7 +314,7 @@ function PanelContent() {
 
           {(parameters.shapeType === 'sphere' || parameters.shapeType === 'cylinder' || parameters.shapeType === 'cone' || parameters.shapeType === 'torus') && (
             <div>
-              <Label>分段数 (Segments) - 精度</Label>
+              <Label>分段数</Label>
               <Slider
                 value={parameters.segments}
                 min={3}
@@ -341,7 +341,7 @@ function PanelContent() {
         
         <div className="space-y-4">
            <div>
-              <Label>字体 (Font)</Label>
+              <Label>字体</Label>
               <FontSelect
                 value={parameters.fontUrl}
                 onChange={(val) => updateParam('fontUrl', val)}
@@ -358,7 +358,7 @@ function PanelContent() {
            </div>
            
            <div>
-              <Label>文字大小 (Font Size)</Label>
+              <Label>文字大小</Label>
               <Slider
                 value={parameters.fontSize}
                 min={10}
@@ -369,7 +369,7 @@ function PanelContent() {
            </div>
            
            <div>
-              <Label>厚度 (Extrusion)</Label>
+              <Label>厚度</Label>
               <Slider
                 value={parameters.thickness}
                 min={1}
@@ -438,12 +438,12 @@ function PanelContent() {
            {parameters.plateShape === 'rectangle' ? (
              <>
                <div>
-                  <Label>宽度 (Width)</Label>
+                  <Label>宽度</Label>
                   <Slider value={parameters.plateWidth} min={20} max={200} step={1}
                     onChange={(val) => updateParam('plateWidth', val)} />
                </div>
                <div>
-                  <Label>高度 (Height)</Label>
+                  <Label>高度</Label>
                   <Slider value={parameters.plateHeight} min={20} max={200} step={1}
                     onChange={(val) => updateParam('plateHeight', val)} />
                </div>
@@ -455,7 +455,7 @@ function PanelContent() {
              </>
            ) : (
              <div>
-                <Label>尺寸 (Size)</Label>
+                <Label>尺寸</Label>
                 <Slider value={parameters.size} min={20} max={200} step={1}
                   onChange={(val) => updateParam('size', val)} />
              </div>
@@ -630,7 +630,7 @@ function PanelContent() {
 
         <div className="space-y-4">
           <div>
-            <Label>上传图片 (Upload Image)</Label>
+            <Label>上传图片</Label>
             <div className="mt-2 text-xs text-muted-foreground">
               <div className="flex flex-col gap-2">
                 <input
@@ -679,7 +679,7 @@ function PanelContent() {
           </div>
 
           <div>
-             <Label>阈值 (Threshold)</Label>
+             <Label>阈值</Label>
              <Slider
                value={parameters.imageThreshold}
                min={1}
@@ -693,7 +693,7 @@ function PanelContent() {
           </div>
 
           <div>
-             <Label>平滑度 (Smoothing)</Label>
+             <Label>平滑度</Label>
              <Slider
                value={parameters.imageSmoothing}
                min={0}
@@ -704,19 +704,19 @@ function PanelContent() {
           </div>
 
           <div>
-             <Label>风格 (Style)</Label>
+             <Label>风格</Label>
              <SimpleSelect
                value={parameters.imageStyle}
                options={[
-                 { value: 'voxel', label: '体素 (Voxel)' },
-                 { value: 'smooth', label: '平滑 (Smooth)' },
+                 { value: 'voxel', label: '体素' },
+                 { value: 'smooth', label: '平滑' },
                ]}
                onChange={(val) => updateParam('imageStyle', val)}
              />
           </div>
 
           <div>
-             <Label>精度 (Resolution)</Label>
+             <Label>精度</Label>
              <Slider
                value={parameters.imageResolution}
                min={32}
@@ -730,7 +730,7 @@ function PanelContent() {
           </div>
 
           <div>
-             <Label>尺寸 (Size)</Label>
+             <Label>尺寸</Label>
              <Slider
                value={parameters.imageSize}
                min={10}
@@ -741,7 +741,7 @@ function PanelContent() {
           </div>
 
           <div>
-             <Label>厚度 (Thickness)</Label>
+             <Label>厚度</Label>
              <Slider
                value={parameters.imageThickness}
                min={1}
@@ -759,12 +759,12 @@ function PanelContent() {
               onChange={(e) => updateParam('imageInvert', e.target.checked)}
               className="rounded border-white/10 bg-white/5"
             />
-            <Label htmlFor="invert-mode" className="mb-0">反转颜色 (Invert)</Label>
+            <Label htmlFor="invert-mode" className="mb-0">反转颜色</Label>
           </div>
         </div>
 
         {/* Plate Controls Reuse */}
-        <Section title="底板设置 (Base Plate)">
+        <Section title="底板设置">
           <div className="space-y-4">
              <div className="flex items-center gap-2 mb-2">
                 <input
@@ -774,7 +774,7 @@ function PanelContent() {
                   onChange={(e) => updateParam('hasBase', e.target.checked)}
                   className="rounded border-white/10 bg-white/5"
                 />
-                <Label htmlFor="has-base-mode" className="mb-0">显示底板 (Show Base)</Label>
+                <Label htmlFor="has-base-mode" className="mb-0">显示底板</Label>
              </div>
              
              {parameters.hasBase && (
@@ -799,12 +799,12 @@ function PanelContent() {
              {parameters.plateShape === 'rectangle' ? (
                <>
                  <div>
-                    <Label>宽度 (Width)</Label>
+                    <Label>宽度</Label>
                     <Slider value={parameters.plateWidth} min={20} max={300} step={1}
                       onChange={(val) => updateParam('plateWidth', val)} />
                  </div>
                  <div>
-                    <Label>高度 (Height)</Label>
+                    <Label>高度</Label>
                     <Slider value={parameters.plateHeight} min={20} max={300} step={1}
                       onChange={(val) => updateParam('plateHeight', val)} />
                  </div>
@@ -894,12 +894,12 @@ function PanelContent() {
            {parameters.plateShape === 'rectangle' ? (
              <>
                <div>
-                  <Label>宽度 (Width)</Label>
+                  <Label>宽度</Label>
                   <Slider value={parameters.plateWidth} min={20} max={200} step={1}
                     onChange={(val) => updateParam('plateWidth', val)} />
                </div>
                <div>
-                  <Label>高度 (Height)</Label>
+                  <Label>高度</Label>
                   <Slider value={parameters.plateHeight} min={20} max={200} step={1}
                     onChange={(val) => updateParam('plateHeight', val)} />
                </div>
@@ -911,7 +911,7 @@ function PanelContent() {
              </>
            ) : (
              <div>
-                <Label>尺寸 (Size)</Label>
+                <Label>尺寸</Label>
                 <Slider value={parameters.size} min={20} max={200} step={1}
                   onChange={(val) => updateParam('size', val)} />
              </div>
@@ -927,7 +927,7 @@ function PanelContent() {
            )}
 
            <div>
-              <Label>厚度 (Thickness)</Label>
+              <Label>厚度</Label>
               <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
                 onChange={(val) => updateParam('baseThickness', val)} />
            </div>
@@ -1085,19 +1085,19 @@ function PanelContent() {
           </div>
 
           <div>
-             <Label>尺寸 (Size)</Label>
+             <Label>尺寸</Label>
              <Slider value={parameters.qrSize} min={20} max={200} step={1}
                onChange={(val) => updateParam('qrSize', val)} unit="mm" />
           </div>
 
           <div>
-             <Label>深度 (Depth)</Label>
+             <Label>深度</Label>
              <Slider value={parameters.qrDepth} min={0.5} max={10} step={0.5}
                onChange={(val) => updateParam('qrDepth', val)} unit="mm" />
           </div>
           
           <div>
-             <Label>底板厚度 (Base)</Label>
+             <Label>底板厚度</Label>
              <Slider value={parameters.baseThickness} min={1} max={10} step={0.5}
                onChange={(val) => updateParam('baseThickness', val)} unit="mm" />
           </div>
@@ -1155,7 +1155,7 @@ function PanelContent() {
           </div>
 
           <div>
-             <Label>边距 (Padding)</Label>
+             <Label>边距</Label>
              <Slider value={parameters.qrMargin} min={0} max={20} step={0.5}
                onChange={(val) => updateParam('qrMargin', val)} unit="mm" />
           </div>

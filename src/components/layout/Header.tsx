@@ -82,14 +82,14 @@ export function Header() {
             <button
                onClick={handleExportConfig}
                className="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border border-white/10 bg-white/5 text-[10px] font-medium hover:bg-white/10 transition-colors text-zinc-400 hover:text-zinc-200"
-               title="保存参数 (Save Config)"
+               title="保存参数"
             >
                <span className="text-xs">💾</span> <span>保存参数</span>
             </button>
             <div className="relative">
                <button
                   className="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border border-white/10 bg-white/5 text-[10px] font-medium hover:bg-white/10 transition-colors text-zinc-400 hover:text-zinc-200"
-                  title="导入参数 (Import Config)"
+                  title="导入参数"
                >
                   <span className="text-xs">📂</span> <span>导入参数</span>
                </button>

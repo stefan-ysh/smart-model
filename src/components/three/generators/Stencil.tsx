@@ -67,7 +67,7 @@ function StencilMesh() {
   const { 
     size, baseThickness, textItems, 
     plateShape, plateWidth, plateHeight,
-    platePosition, plateRotation, plateCornerRadius,
+    platePosition, plateRotation, groupRotation, plateCornerRadius,
     trayBorderWidth, trayBorderHeight,
     edgeBevelEnabled, edgeBevelType, edgeBevelSize,
     modelResolution,
@@ -494,18 +494,20 @@ function StencilMesh() {
   if (!resultGeometry) return null
   
   return (
-    <group 
-      rotation={[-Math.PI / 2, 0, (plateRotation * Math.PI) / 180]} 
-      position={[platePosition.x, baseThickness / 2, platePosition.y]}
-    >
-      <mesh geometry={resultGeometry}>
-        <meshStandardMaterial 
-          color={plateColor} 
-          roughness={roughness}
-          metalness={metalness}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
+      <group 
+        rotation={[-Math.PI / 2, 0, (plateRotation * Math.PI) / 180]} 
+        position={[platePosition.x, baseThickness / 2, platePosition.y]}
+      >
+        <mesh geometry={resultGeometry}>
+          <meshStandardMaterial 
+            color={plateColor} 
+            roughness={roughness}
+            metalness={metalness}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      </group>
     </group>
   )
 }

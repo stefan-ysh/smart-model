@@ -91,6 +91,7 @@ export interface ModelParams {
   plateHeight: number; // For rectangle
   platePosition: { x: number; y: number }; // Plate XY offset
   plateRotation: number; // Plate rotation in degrees
+  groupRotation: number; // Unified rotation for entire model group (plate + text + holes)
   plateCornerRadius: number; // Corner radius for rounded corners
   textItems: TextItem[];
   holes: HoleItem[]; // Holes in base plate
@@ -363,6 +364,7 @@ const defaultParams: ModelParams = {
   plateHeight: 50,
   platePosition: { x: 0, y: 0 },
   plateRotation: 0,
+  groupRotation: 0,
   plateCornerRadius: 0,
   textItems: [
     {

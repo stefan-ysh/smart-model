@@ -527,7 +527,7 @@ function PanelContent() {
            {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
              <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
                 <div className="flex items-center justify-between">
-                   <Label className="text-[10px] text-zinc-400">边缘倒角</Label>
+                   <Label className="text-[10px] text-zinc-400">底板边缘倒角</Label>
                    <input
                      type="checkbox"
                      checked={parameters.edgeBevelEnabled}
@@ -568,6 +568,12 @@ function PanelContent() {
                 <Label className="text-[10px] text-zinc-400">底板角度 (°)</Label>
                 <Slider value={parameters.plateRotation} min={-180} max={180} step={1}
                   onChange={(val) => updateParam('plateRotation', val)} compact />
+             </div>
+
+             <div className="col-span-2 space-y-1.5">
+                <Label className="text-[10px] text-zinc-400">整体旋转 (°)</Label>
+                <Slider value={parameters.groupRotation} min={-180} max={180} step={1}
+                  onChange={(val) => updateParam('groupRotation', val)} compact />
              </div>
 
              <div className="col-span-2 space-y-1.5">
@@ -950,7 +956,7 @@ function PanelContent() {
              {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
                <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
                   <div className="flex items-center justify-between">
-                     <Label className="text-[10px] text-zinc-400">边缘倒角</Label>
+                     <Label className="text-[10px] text-zinc-400">底板边缘倒角</Label>
                      <input
                        type="checkbox"
                        checked={parameters.edgeBevelEnabled}
@@ -1150,7 +1156,7 @@ function PanelContent() {
            {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
              <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
                 <div className="flex items-center justify-between">
-                   <Label className="text-[10px] text-zinc-400">边缘倒角</Label>
+                   <Label className="text-[10px] text-zinc-400">底板边缘倒角</Label>
                    <input
                      type="checkbox"
                      checked={parameters.edgeBevelEnabled}

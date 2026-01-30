@@ -18,6 +18,7 @@ import { ModelToolbar } from "@/components/three/ModelToolbar"
 import { ScreenshotHandler } from "@/components/hooks/useScreenshot"
 import { ArrayLayout } from "@/components/three/ArrayLayout"
 import { ImageReliefGenerator } from "@/components/three/generators/ImageRelief"
+import { DraggableHole } from "@/components/three/DraggableHole"
 
 // Loading indicator component
 function Loader() {
@@ -222,6 +223,34 @@ function Effects() {
   )
 }
 
+// Hole markers for interactive positioning
+function HoleMarkers() {
+  const currentMode = useModelStore(state => state.currentMode)
+  const holes = useModelStore(state => state.parameters.holes)
+  const baseThickness = useModelStore(state => state.parameters.baseThickness)
+  const groupRotation = useModelStore(state => state.parameters.groupRotation)
+  const updateHole = useModelStore(state => state.updateHole)
+  const isTransformEnabled = useModelStore(state => state.isTransformEnabled)
+  
+  // Only show markers in relevant modes and when transform is enabled
+  if (!isTransformEnabled) return null
+  if (!['stencil', 'relief', 'image', 'qr'].includes(currentMode)) return null
+  if (!holes || holes.length === 0) return null
+  
+  return (
+    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
+      {holes.map(hole => (
+        <DraggableHole
+          key={hole.id}
+          hole={hole}
+          baseThickness={baseThickness}
+          onPositionChange={(x, y) => updateHole(hole.id, { x, y })}
+        />
+      ))}
+    </group>
+  )
+}
+
 // Ground shadows
 function GroundEffects() {
   const contactShadowsEnabled = useModelStore(state => state.contactShadowsEnabled)
@@ -316,6 +345,7 @@ export function Scene() {
             }}
           >
             <CurrentModel />
+            <HoleMarkers />
           </group>
           
           {/* Grid - infinite and filling the view */}

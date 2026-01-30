@@ -3,33 +3,39 @@
 import * as THREE from 'three'
 import { useMemo, Suspense } from "react"
 import { useLoader } from "@react-three/fiber"
-import { FontLoader, TextGeometry } from "three-stdlib"
-import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg"
+import { mergeBufferGeometries } from "three-stdlib"
+import polygonClipping from "polygon-clipping"
 import { useModelStore, TextItem } from "@/lib/store"
-import { createPlateGeometry } from "./plateShapes"
-// Plate geometry imported from ./plateShapes
+import { createPlateGeometry, createPlateShape2D } from "./plateShapes"
 
 // Create text geometry with proper attributes
 function createTextGeometry(
   font: any, 
   item: TextItem, 
-  thickness: number
+  thickness: number,
+  trayBorderHeight: number = 0
 ): THREE.BufferGeometry | null {
   try {
-    const textGeo = new TextGeometry(item.content || ' ', {
-      font: font,
-      size: item.fontSize,
-      height: thickness * 2,
-      curveSegments: 4,
+    // Calculate the total height needed to cut through everything
+    // For tray shapes, we need to cut through base + frame
+    const cutHeight = thickness + trayBorderHeight + 10 // Extra margin for safety
+    const shapes = font.generateShapes(item.content || ' ', item.fontSize)
+    if (!shapes || shapes.length === 0) return null
+    
+    const textGeo = new THREE.ExtrudeGeometry(shapes, {
+      depth: cutHeight,
       bevelEnabled: false,
+      curveSegments: 12,
     })
     
     // Center the text first
     textGeo.computeBoundingBox()
     if (textGeo.boundingBox) {
-      const centerX = (textGeo.boundingBox.max.x - textGeo.boundingBox.min.x) / 2
-      const centerY = (textGeo.boundingBox.max.y - textGeo.boundingBox.min.y) / 2
-      textGeo.translate(-centerX, -centerY, -thickness)
+      const centerX = (textGeo.boundingBox.max.x + textGeo.boundingBox.min.x) / 2
+      const centerY = (textGeo.boundingBox.max.y + textGeo.boundingBox.min.y) / 2
+      // Position Z so the cutter starts below the plate and extends above
+      // Plate is centered at Z=0, so cutter should go from -thickness to +trayBorderHeight+margin
+      textGeo.translate(-centerX, -centerY, -thickness - 2)
     }
     
     // Apply rotation around Z axis
@@ -43,13 +49,6 @@ function createTextGeometry(
     
     textGeo.computeVertexNormals()
     
-    // Add UV if missing
-    if (!textGeo.attributes.uv) {
-      const positions = textGeo.attributes.position
-      const uvs = new Float32Array(positions.count * 2)
-      textGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2))
-    }
-    
     return textGeo
   } catch (e) {
     console.error('Error creating text geometry:', e)
@@ -61,7 +60,7 @@ function createTextGeometry(
 const geometryCache = new Map<string, THREE.BufferGeometry>()
 
 // Replace standard FontLoader with our UniversalFontLoader
-import { UniversalFontLoader, universalFontLoader } from "@/utils/fontLoaderUtils"
+import { UniversalFontLoader } from "@/utils/fontLoaderUtils"
 
 function StencilMesh() {
   const { parameters } = useModelStore()
@@ -69,13 +68,14 @@ function StencilMesh() {
     size, baseThickness, textItems, 
     plateShape, plateWidth, plateHeight,
     platePosition, plateRotation, plateCornerRadius,
+    trayBorderWidth, trayBorderHeight,
+    edgeBevelEnabled, edgeBevelType, edgeBevelSize,
+    modelResolution,
+    holes,
     plateColor, roughness, metalness
   } = parameters
 
   // Load all unique fonts needed
-  // Memoize the URL array to prevent useLoader from seeing a new key every render
-  // This fixes the "Cannot update a component while rendering" error
-  // Extract dependency to simple variable for lint compliance
   const fontUrlsHash = JSON.stringify(textItems.map(item => item.fontUrl))
   const fontUrls = useMemo(() => {
     return [...new Set(textItems.map(item => item.fontUrl))].sort()
@@ -92,7 +92,11 @@ function StencilMesh() {
     const cacheKey = JSON.stringify({
       size, baseThickness, textItems, 
       plateShape, plateWidth, plateHeight,
-      platePosition, plateRotation, plateCornerRadius
+      platePosition, plateRotation, plateCornerRadius,
+      trayBorderWidth, trayBorderHeight,
+      edgeBevelEnabled, edgeBevelType, edgeBevelSize,
+      modelResolution,
+      holes
     })
 
     if (geometryCache.has(cacheKey)) {
@@ -100,75 +104,380 @@ function StencilMesh() {
     }
 
     try {
-      // Create plate brush
-      const plateGeo = createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius)
-      const plateBrush = new Brush(plateGeo)
-      
-      const evaluator = new Evaluator()
-      evaluator.useGroups = false
-      
-      // Calculate inverse plate transform to keep text holes in world coordinates
+      // Calculate inverse plate transform
       const plateRotRad = (plateRotation * Math.PI) / 180
-      const cosR = Math.cos(-plateRotRad) // Inverse rotation
+      const cosR = Math.cos(-plateRotRad)
       const sinR = Math.sin(-plateRotRad)
       
-      // Subtract each text from plate
+      const textGeos: THREE.BufferGeometry[] = []
+
+      // Prepare all text geometries
       for (const item of textItems) {
         const font = fontMap[item.fontUrl]
         if (!font) continue
         
         // Transform text world position to plate-local position
         const localX = item.position.x - platePosition.x
-        const localY = item.position.y + platePosition.y
+        const localY = item.position.y - platePosition.y
         
         // Then rotate by inverse plate rotation
         const rotatedX = localX * cosR - localY * sinR
         const rotatedY = localX * sinR + localY * cosR
         
-        // Create modified text item with local position
         const localItem = {
           ...item,
           position: { ...item.position, x: rotatedX, y: rotatedY },
           rotation: item.rotation - plateRotation
         }
         
-        const textGeo = createTextGeometry(font, localItem, baseThickness)
-        if (!textGeo) continue
-        
-        const textBrush = new Brush(textGeo)
-        
-        try {
-          evaluator.evaluate(plateBrush, textBrush, SUBTRACTION, plateBrush)
-        } catch (err) {
-          console.warn('CSG subtraction failed for text:', item.content, err)
-        }
-        
-        textGeo.dispose()
-      }
-      
-      plateGeo.dispose()
-      
-      const result = plateBrush.geometry
-      
-      // Store in cache
-      geometryCache.set(cacheKey, result)
-      
-      // Limit cache size to avoid memory leaks
-      if (geometryCache.size > 20) {
-        const firstKey = geometryCache.keys().next().value
-        if (firstKey) {
-          const oldGeo = geometryCache.get(firstKey)
-          if (oldGeo) oldGeo.dispose()
-          geometryCache.delete(firstKey)
+        // Pass tray border height for proper cut depth calculation
+        const effectiveTrayHeight = plateShape === 'tray' ? trayBorderHeight : 0
+        const textGeo = createTextGeometry(font, localItem, baseThickness, effectiveTrayHeight)
+        if (textGeo) {
+           textGeos.push(textGeo)
         }
       }
 
-      return result
+      let result: THREE.BufferGeometry | null = null
+
+      if (plateShape === "tray") {
+        const curveSegments = 32 * Math.max(1, Math.min(5, modelResolution))
+
+        const ringArea = (ring: number[][]) => {
+          let sum = 0
+          for (let i = 0; i < ring.length - 1; i++) {
+            const [x1, y1] = ring[i]
+            const [x2, y2] = ring[i + 1]
+            sum += (x1 * y2 - x2 * y1)
+          }
+          return sum / 2
+        }
+
+        const closeRing = (ring: number[][]) => {
+          if (ring.length === 0) return ring
+          const [x0, y0] = ring[0]
+          const [xl, yl] = ring[ring.length - 1]
+          if (x0 !== xl || y0 !== yl) ring.push([x0, y0])
+          return ring
+        }
+
+        const pointsToRing = (pts: THREE.Vector2[]) =>
+          closeRing(pts.map(p => [p.x, p.y]))
+
+        const shapeToPolygon = (shape: THREE.Shape): number[][][] => {
+          const outer = pointsToRing(shape.getPoints(curveSegments))
+          const holesRings = shape.holes.map(h => pointsToRing(h.getPoints(curveSegments)))
+          return [outer, ...holesRings]
+        }
+
+        const buildShapeFromPolygon = (poly: number[][][]) => {
+          if (!poly || poly.length === 0) return null
+          const outer = poly[0].slice(0, -1)
+          if (outer.length < 3) return null
+          const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)))
+          if (ringArea(poly[0]) < 0) shape.reverse()
+
+          for (let i = 1; i < poly.length; i++) {
+            const hole = poly[i].slice(0, -1)
+            if (hole.length < 3) continue
+            const path = new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y)))
+            if (ringArea(poly[i]) > 0) path.reverse()
+            shape.holes.push(path)
+          }
+          return shape
+        }
+
+        const outerShape = createPlateShape2D(
+          "square",
+          size,
+          plateWidth,
+          plateHeight,
+          plateCornerRadius,
+          modelResolution
+        )
+
+        const innerSize = Math.max(1, size - 2 * Math.min(trayBorderWidth, size / 4))
+        const innerShape = createPlateShape2D(
+          "square",
+          innerSize,
+          innerSize,
+          innerSize,
+          0,
+          modelResolution
+        )
+
+        if (outerShape && innerShape) {
+          const outerPoly: number[][][][] = [shapeToPolygon(outerShape)]
+          const innerPoly: number[][][][] = [shapeToPolygon(innerShape)]
+
+          const clipPolys: number[][][][] = []
+
+          if (holes && holes.length > 0) {
+            holes.forEach(hole => {
+              const hShape = new THREE.Shape()
+              hShape.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false)
+              clipPolys.push([shapeToPolygon(hShape)])
+            })
+          }
+
+          for (const item of textItems) {
+            const font = fontMap[item.fontUrl]
+            if (!font) continue
+
+            const shapes = font.generateShapes(item.content || ' ', item.fontSize)
+            if (!shapes || shapes.length === 0) continue
+
+            const textGeo = new THREE.ShapeGeometry(shapes)
+            textGeo.computeBoundingBox()
+            const bbox = textGeo.boundingBox
+            let centerX = 0
+            let centerY = 0
+            if (bbox) {
+              centerX = (bbox.max.x + bbox.min.x) / 2
+              centerY = (bbox.max.y + bbox.min.y) / 2
+            }
+            textGeo.dispose()
+
+            const rad = (item.rotation * Math.PI) / 180
+            const cos = Math.cos(rad)
+            const sin = Math.sin(rad)
+
+            shapes.forEach(s => {
+              const pts = s.getPoints(curveSegments)
+              if (pts.length === 0) return
+              pts.forEach(p => {
+                const lx = p.x - centerX
+                const ly = p.y - centerY
+                const rx = lx * cos - ly * sin + item.position.x
+                const ry = lx * sin + ly * cos + item.position.y
+                p.set(rx, ry)
+              })
+
+              const holePaths = s.holes || []
+              holePaths.forEach(h => {
+                const hpts = h.getPoints(curveSegments)
+                hpts.forEach(p => {
+                  const lx = p.x - centerX
+                  const ly = p.y - centerY
+                  const rx = lx * cos - ly * sin + item.position.x
+                  const ry = lx * sin + ly * cos + item.position.y
+                  p.set(rx, ry)
+                })
+              })
+
+              const poly = shapeToPolygon(s)
+              clipPolys.push([poly])
+            })
+          }
+
+          const holesUnion = clipPolys.length > 0 ? polygonClipping.union(...clipPolys) : null
+
+          let basePoly = outerPoly
+          if (holesUnion) {
+            basePoly = polygonClipping.difference(basePoly, holesUnion)
+          }
+
+          let ringPoly = polygonClipping.difference(outerPoly, innerPoly)
+          if (holesUnion) {
+            ringPoly = polygonClipping.difference(ringPoly, holesUnion)
+          }
+
+          const baseGeos: THREE.BufferGeometry[] = []
+          for (const poly of basePoly) {
+            const shape = buildShapeFromPolygon(poly)
+            if (!shape) continue
+            const geo = new THREE.ExtrudeGeometry(shape, {
+              depth: baseThickness,
+              bevelEnabled: false,
+              curveSegments
+            }).translate(0, 0, -baseThickness / 2)
+            baseGeos.push(geo)
+          }
+
+          const ringGeos: THREE.BufferGeometry[] = []
+          for (const poly of ringPoly) {
+            const shape = buildShapeFromPolygon(poly)
+            if (!shape) continue
+            const geo = new THREE.ExtrudeGeometry(shape, {
+              depth: trayBorderHeight,
+              bevelEnabled: false,
+              curveSegments
+            }).translate(0, 0, baseThickness / 2)
+            ringGeos.push(geo)
+          }
+
+          const mergedBase = baseGeos.length === 1 ? baseGeos[0] : mergeBufferGeometries(baseGeos)
+          const mergedRing = ringGeos.length === 1 ? ringGeos[0] : mergeBufferGeometries(ringGeos)
+          const merged = mergeBufferGeometries([mergedBase, mergedRing].filter(Boolean) as THREE.BufferGeometry[])
+
+          result = merged || mergedBase || mergedRing || null
+        }
+      } else {
+        const curveSegments = 32 * Math.max(1, Math.min(5, modelResolution))
+
+        const ringArea = (ring: number[][]) => {
+          let sum = 0
+          for (let i = 0; i < ring.length - 1; i++) {
+            const [x1, y1] = ring[i]
+            const [x2, y2] = ring[i + 1]
+            sum += (x1 * y2 - x2 * y1)
+          }
+          return sum / 2
+        }
+
+        const closeRing = (ring: number[][]) => {
+          if (ring.length === 0) return ring
+          const [x0, y0] = ring[0]
+          const [xl, yl] = ring[ring.length - 1]
+          if (x0 !== xl || y0 !== yl) ring.push([x0, y0])
+          return ring
+        }
+
+        const pointsToRing = (pts: THREE.Vector2[]) =>
+          closeRing(pts.map(p => [p.x, p.y]))
+
+        const shapeToPolygon = (shape: THREE.Shape): number[][][] => {
+          const outer = pointsToRing(shape.getPoints(curveSegments))
+          const holesRings = shape.holes.map(h => pointsToRing(h.getPoints(curveSegments)))
+          return [outer, ...holesRings]
+        }
+
+        const buildShapeFromPolygon = (poly: number[][][]) => {
+          if (!poly || poly.length === 0) return null
+          const outer = poly[0].slice(0, -1)
+          if (outer.length < 3) return null
+          const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)))
+          if (ringArea(poly[0]) < 0) shape.reverse()
+
+          for (let i = 1; i < poly.length; i++) {
+            const hole = poly[i].slice(0, -1)
+            if (hole.length < 3) continue
+            const path = new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y)))
+            if (ringArea(poly[i]) > 0) path.reverse()
+            shape.holes.push(path)
+          }
+          return shape
+        }
+
+        const plateShape2D = createPlateShape2D(
+          plateShape,
+          size,
+          plateWidth,
+          plateHeight,
+          plateCornerRadius,
+          modelResolution
+        )
+
+        if (plateShape2D) {
+          let platePoly: number[][][][] = [shapeToPolygon(plateShape2D)]
+          const clipPolys: number[][][][] = []
+
+          if (holes && holes.length > 0) {
+            holes.forEach(hole => {
+              const hShape = new THREE.Shape()
+              hShape.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false)
+              clipPolys.push([shapeToPolygon(hShape)])
+            })
+          }
+
+          for (const item of textItems) {
+            const font = fontMap[item.fontUrl]
+            if (!font) continue
+
+            const shapes = font.generateShapes(item.content || ' ', item.fontSize)
+            if (!shapes || shapes.length === 0) continue
+
+            const textGeo = new THREE.ShapeGeometry(shapes)
+            textGeo.computeBoundingBox()
+            const bbox = textGeo.boundingBox
+            let centerX = 0
+            let centerY = 0
+            if (bbox) {
+              centerX = (bbox.max.x + bbox.min.x) / 2
+              centerY = (bbox.max.y + bbox.min.y) / 2
+            }
+            textGeo.dispose()
+
+            const rad = (item.rotation * Math.PI) / 180
+            const cos = Math.cos(rad)
+            const sin = Math.sin(rad)
+
+            shapes.forEach(s => {
+              const pts = s.getPoints(curveSegments)
+              if (pts.length === 0) return
+              pts.forEach(p => {
+                const lx = p.x - centerX
+                const ly = p.y - centerY
+                const rx = lx * cos - ly * sin + item.position.x
+                const ry = lx * sin + ly * cos + item.position.y
+                p.set(rx, ry)
+              })
+
+              const holePaths = s.holes || []
+              holePaths.forEach(h => {
+                const hpts = h.getPoints(curveSegments)
+                hpts.forEach(p => {
+                  const lx = p.x - centerX
+                  const ly = p.y - centerY
+                  const rx = lx * cos - ly * sin + item.position.x
+                  const ry = lx * sin + ly * cos + item.position.y
+                  p.set(rx, ry)
+                })
+              })
+
+              const poly = shapeToPolygon(s)
+              clipPolys.push([poly])
+            })
+          }
+
+          if (clipPolys.length > 0) {
+            const clipUnion = polygonClipping.union(...clipPolys)
+            platePoly = polygonClipping.difference(platePoly, clipUnion)
+          }
+
+          const extruded: THREE.BufferGeometry[] = []
+          for (const poly of platePoly) {
+            const shape = buildShapeFromPolygon(poly)
+            if (!shape) continue
+            const geo = new THREE.ExtrudeGeometry(shape, {
+              depth: baseThickness,
+              bevelEnabled: false,
+              curveSegments
+            }).translate(0, 0, -baseThickness / 2)
+            extruded.push(geo)
+          }
+
+          result = extruded.length === 1 ? extruded[0] : mergeBufferGeometries(extruded)
+        }
+      }
+
+      // Cleanup
+      textGeos.forEach(g => g.dispose())
+      
+      const finalGeo = result || new THREE.BufferGeometry()
+      
+      geometryCache.set(cacheKey, finalGeo)
+      
+      // Limit cache size
+      if (geometryCache.size > 20) {
+         const firstKey = geometryCache.keys().next().value
+         if (firstKey) geometryCache.delete(firstKey)
+      }
+      
+      return finalGeo
+
     } catch (error) {
       console.error('CSG Error:', error)
-      return createPlateGeometry(plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius)
+      return createPlateGeometry(
+        plateShape, size, plateWidth, plateHeight, baseThickness, 
+        plateCornerRadius, trayBorderWidth, trayBorderHeight, 
+        edgeBevelEnabled, edgeBevelType, edgeBevelSize, 
+        modelResolution, holes
+      )
     }
-  }, [fontMap, size, baseThickness, textItems, plateShape, plateWidth, plateHeight, platePosition, plateRotation, plateCornerRadius])
+  }, [fontMap, size, baseThickness, textItems, plateShape, plateWidth, plateHeight, 
+      platePosition, plateRotation, plateCornerRadius, trayBorderWidth, trayBorderHeight, 
+      edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes])
 
   if (!resultGeometry) return null
   

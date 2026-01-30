@@ -27,11 +27,19 @@ function ReliefMesh() {
     platePosition,
     plateRotation,
     plateCornerRadius,
+    trayBorderWidth,
+    trayBorderHeight,
+    edgeBevelEnabled,
+    edgeBevelType,
+    edgeBevelSize,
+    modelResolution,
+    holes,
     plateColor,
     textColor,
     roughness,
     metalness,
   } = parameters;
+
 
   // Load all unique fonts needed
   const fontUrls = useMemo(() => 
@@ -121,7 +129,7 @@ function ReliefMesh() {
   // Create plate geometry
   const plateGeo = useMemo(() => {
     const cacheKey = JSON.stringify({
-      plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius
+      plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius, trayBorderWidth, trayBorderHeight, edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes
     })
 
     if (plateCache.has(cacheKey)) {
@@ -135,7 +143,15 @@ function ReliefMesh() {
       plateHeight,
       baseThickness,
       plateCornerRadius,
+      trayBorderWidth,
+      trayBorderHeight,
+      edgeBevelEnabled,
+      edgeBevelType,
+      edgeBevelSize,
+      modelResolution,
+      holes
     );
+
 
     plateCache.set(cacheKey, geo)
     
@@ -150,7 +166,7 @@ function ReliefMesh() {
     }
 
     return geo
-  }, [plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius]);
+  }, [plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius, trayBorderWidth, trayBorderHeight, edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes]);
 
   return (
     <>

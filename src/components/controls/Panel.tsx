@@ -6,6 +6,7 @@ import { useModelStore, ShapeType } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { FontSelect } from "./FontSelect"
 import { SliderWithInput } from "./SliderWithInput"
+import { HolesControl } from "./HolesControl"
 import { FileUpload } from "@/components/ui/file-upload"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -75,7 +76,8 @@ const PlateShapeButton = ({
     hexagon: '⬡', pentagon: '⬠', oval: '⬭', cross: '✚',
     cloud: '☁', shield: '🛡', badge: '⬢', rounded: '▢',
     nameplate: '🏷️', keychain: '🔑', tag: '🎁', coaster: '☕',
-    doorSign: '🚪', petBone: '🐾', trophy: '🏆', frame: '🖼️'
+    doorSign: '🚪', petBone: '🐾', trophy: '🏆', frame: '🖼️',
+    tray: '⬚'
   }
   return (
     <button
@@ -263,7 +265,11 @@ function LayoutSection() {
 }
 
 function PanelContent() {
-  const { currentMode, parameters, updateParam } = useModelStore()
+  const { 
+    currentMode, parameters, updateParam,
+    addHole, removeHole, updateHole,
+    addTextItem, removeTextItem, updateTextItem
+  } = useModelStore()
 
   if (currentMode === 'basic') {
     return (
@@ -416,7 +422,6 @@ function PanelContent() {
   }
   
   if (currentMode === 'relief') {
-    const { addTextItem, removeTextItem, updateTextItem } = useModelStore.getState()
     
     return (
       <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-100px)]">
@@ -454,7 +459,9 @@ function PanelContent() {
                 { value: 'petBone', label: '宠物牌' },
                 { value: 'trophy', label: '奖杯' },
                 { value: 'frame', label: '相框' },
+                { value: 'tray', label: '托盘' },
               ].map(shape => (
+
                 <PlateShapeButton
                   key={shape.value}
                   shape={shape.value}
@@ -492,11 +499,61 @@ function PanelContent() {
            )}
 
            {/* Corner radius for all non-circle shapes */}
-           {parameters.plateShape !== 'rectangle' && parameters.plateShape !== 'circle' && (
+           {parameters.plateShape !== 'rectangle' && parameters.plateShape !== 'circle' && parameters.plateShape !== 'tray' && (
              <div className="space-y-1.5">
                 <Label className="text-[10px] text-zinc-400">圆角半径</Label>
                 <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
                   onChange={(val) => updateParam('plateCornerRadius', val)} compact />
+             </div>
+           )}
+
+           {/* Tray-specific controls */}
+           {parameters.plateShape === 'tray' && (
+             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5 mt-2">
+                <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">边框宽度</Label>
+                   <Slider value={parameters.trayBorderWidth} min={2} max={30} step={1}
+                     onChange={(val) => updateParam('trayBorderWidth', val)} compact />
+                </div>
+                <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">边框高度</Label>
+                   <Slider value={parameters.trayBorderHeight} min={1} max={30} step={0.5}
+                     onChange={(val) => updateParam('trayBorderHeight', val)} compact />
+                </div>
+             </div>
+           )}
+
+           {/* Edge bevel controls - for square, rectangle, rounded */}
+           {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
+             <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
+                <div className="flex items-center justify-between">
+                   <Label className="text-[10px] text-zinc-400">边缘倒角</Label>
+                   <input
+                     type="checkbox"
+                     checked={parameters.edgeBevelEnabled}
+                     onChange={(e) => updateParam('edgeBevelEnabled', e.target.checked)}
+                     className="w-4 h-4 rounded border-zinc-600 bg-zinc-800"
+                   />
+                </div>
+                {parameters.edgeBevelEnabled && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                       <button
+                         className={`px-2 py-1 text-[10px] rounded ${parameters.edgeBevelType === 'round' ? 'bg-sky-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}
+                         onClick={() => updateParam('edgeBevelType', 'round')}
+                       >圆角</button>
+                       <button
+                         className={`px-2 py-1 text-[10px] rounded ${parameters.edgeBevelType === 'chamfer' ? 'bg-sky-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}
+                         onClick={() => updateParam('edgeBevelType', 'chamfer')}
+                       >斜角</button>
+                    </div>
+                    <div className="space-y-1.5">
+                       <Label className="text-[10px] text-zinc-400">倒角大小</Label>
+                       <Slider value={parameters.edgeBevelSize} min={0.5} max={10} step={0.5}
+                         onChange={(val) => updateParam('edgeBevelSize', val)} compact />
+                    </div>
+                  </>
+                )}
              </div>
            )}
 
@@ -527,6 +584,23 @@ function PanelContent() {
                            onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, y: val })} compact />
                       </div>
                 </div>
+             </div>
+
+             <div className="col-span-2 space-y-1.5 pt-2 border-t border-white/5">
+                <Label className="text-[10px] text-zinc-400 flex justify-between">
+                  <span>模型精度 (影响平滑度)</span>
+                  <span className="text-zinc-500">{parameters.modelResolution || 3}级</span>
+                </Label>
+                <Slider value={parameters.modelResolution || 3} min={1} max={5} step={1}
+                  onChange={(val) => updateParam('modelResolution', val)} compact />
+             </div>
+             <div className="col-span-2">
+               <HolesControl 
+                 holes={parameters.holes}
+                 addHole={addHole}
+                 removeHole={removeHole}
+                 updateHole={updateHole}
+               />
              </div>
            </div>
         </div>
@@ -806,7 +880,9 @@ function PanelContent() {
                   { value: 'rectangle', label: '长方' },
                   { value: 'circle', label: '圆形' },
                   { value: 'rounded', label: '圆角' },
+                  { value: 'tray', label: '托盘' },
                 ].map(shape => (
+
                  <PlateShapeButton
                     key={shape.value}
                     shape={shape.value}
@@ -816,6 +892,55 @@ function PanelContent() {
                  />
                 ))}
              </div>
+             
+             {parameters.plateShape === 'tray' && (
+               <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] text-zinc-400">边框宽度</Label>
+                    <Slider value={parameters.trayBorderWidth} min={2} max={30} step={1}
+                      onChange={(val) => updateParam('trayBorderWidth', val)} compact />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] text-zinc-400">边框高度</Label>
+                    <Slider value={parameters.trayBorderHeight} min={1} max={30} step={0.5}
+                      onChange={(val) => updateParam('trayBorderHeight', val)} compact />
+                  </div>
+               </div>
+             )}
+
+             {/* Edge bevel controls - for square, rectangle, rounded */}
+             {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
+               <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
+                  <div className="flex items-center justify-between">
+                     <Label className="text-[10px] text-zinc-400">边缘倒角</Label>
+                     <input
+                       type="checkbox"
+                       checked={parameters.edgeBevelEnabled}
+                       onChange={(e) => updateParam('edgeBevelEnabled', e.target.checked)}
+                       className="w-4 h-4 rounded border-zinc-600 bg-zinc-800"
+                     />
+                  </div>
+                  {parameters.edgeBevelEnabled && (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                         <button
+                           className={`px-2 py-1 text-[10px] rounded ${parameters.edgeBevelType === 'round' ? 'bg-sky-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}
+                           onClick={() => updateParam('edgeBevelType', 'round')}
+                         >圆角</button>
+                         <button
+                           className={`px-2 py-1 text-[10px] rounded ${parameters.edgeBevelType === 'chamfer' ? 'bg-sky-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}
+                           onClick={() => updateParam('edgeBevelType', 'chamfer')}
+                         >斜角</button>
+                      </div>
+                      <div className="space-y-1.5">
+                         <Label className="text-[10px] text-zinc-400">倒角大小</Label>
+                         <Slider value={parameters.edgeBevelSize} min={0.5} max={10} step={0.5}
+                           onChange={(val) => updateParam('edgeBevelSize', val)} compact />
+                      </div>
+                    </>
+                  )}
+               </div>
+             )}
              
              {parameters.plateShape === 'rectangle' ? (
                <div className="grid grid-cols-2 gap-3">
@@ -853,6 +978,24 @@ function PanelContent() {
                 <Label className="text-[10px] text-zinc-400">文字/图案颜色</Label>
                 <ColorInput value={parameters.textColor} onChange={(val) => updateParam('textColor', val)} />
              </div>
+
+             <div className="space-y-1.5 pt-2 border-t border-white/5">
+                <Label className="text-[10px] text-zinc-400 flex justify-between">
+                  <span>模型精度 (影响平滑度)</span>
+                  <span className="text-zinc-500">{parameters.modelResolution || 3}级</span>
+                </Label>
+                <Slider value={parameters.modelResolution || 3} min={1} max={5} step={1}
+                  onChange={(val) => updateParam('modelResolution', val)} compact />
+             </div>
+             <div className="col-span-2">
+               <HolesControl 
+                 holes={parameters.holes}
+                 addHole={addHole}
+                 removeHole={removeHole}
+                 updateHole={updateHole}
+               />
+             </div>
+
              </>
              )}
           </div>
@@ -864,7 +1007,6 @@ function PanelContent() {
   }
 
   if (currentMode === 'hollow') {
-    const { addTextItem, removeTextItem, updateTextItem } = useModelStore.getState()
     
     return (
       <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-100px)]">
@@ -902,7 +1044,9 @@ function PanelContent() {
                 { value: 'petBone', label: '宠物牌' },
                 { value: 'trophy', label: '奖杯' },
                 { value: 'frame', label: '相框' },
+                { value: 'tray', label: '托盘' },
               ].map(shape => (
+
                 <PlateShapeButton
                    key={shape.value}
                    shape={shape.value}
@@ -940,11 +1084,61 @@ function PanelContent() {
            )}
 
            {/* Corner radius for all non-circle shapes */}
-           {parameters.plateShape !== 'rectangle' && parameters.plateShape !== 'circle' && (
+           {parameters.plateShape !== 'rectangle' && parameters.plateShape !== 'circle' && parameters.plateShape !== 'tray' && (
              <div className="space-y-1.5">
                 <Label className="text-[10px] text-zinc-400">圆角半径</Label>
                 <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
                   onChange={(val) => updateParam('plateCornerRadius', val)} compact />
+             </div>
+           )}
+
+           {/* Tray-specific controls */}
+           {parameters.plateShape === 'tray' && (
+             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5 mt-2">
+                <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">边框宽度</Label>
+                   <Slider value={parameters.trayBorderWidth} min={2} max={30} step={1}
+                     onChange={(val) => updateParam('trayBorderWidth', val)} compact />
+                </div>
+                <div className="space-y-1.5">
+                   <Label className="text-[10px] text-zinc-400">边框高度</Label>
+                   <Slider value={parameters.trayBorderHeight} min={1} max={30} step={0.5}
+                     onChange={(val) => updateParam('trayBorderHeight', val)} compact />
+                </div>
+             </div>
+           )}
+
+           {/* Edge bevel controls - for square, rectangle, rounded */}
+           {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
+             <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
+                <div className="flex items-center justify-between">
+                   <Label className="text-[10px] text-zinc-400">边缘倒角</Label>
+                   <input
+                     type="checkbox"
+                     checked={parameters.edgeBevelEnabled}
+                     onChange={(e) => updateParam('edgeBevelEnabled', e.target.checked)}
+                     className="w-4 h-4 rounded border-zinc-600 bg-zinc-800"
+                   />
+                </div>
+                {parameters.edgeBevelEnabled && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                       <button
+                         className={`px-2 py-1 text-[10px] rounded ${parameters.edgeBevelType === 'round' ? 'bg-sky-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}
+                         onClick={() => updateParam('edgeBevelType', 'round')}
+                       >圆角</button>
+                       <button
+                         className={`px-2 py-1 text-[10px] rounded ${parameters.edgeBevelType === 'chamfer' ? 'bg-sky-600 text-white' : 'bg-zinc-700 text-zinc-300'}`}
+                         onClick={() => updateParam('edgeBevelType', 'chamfer')}
+                       >斜角</button>
+                    </div>
+                    <div className="space-y-1.5">
+                       <Label className="text-[10px] text-zinc-400">倒角大小</Label>
+                       <Slider value={parameters.edgeBevelSize} min={0.5} max={10} step={0.5}
+                         onChange={(val) => updateParam('edgeBevelSize', val)} compact />
+                    </div>
+                  </>
+                )}
              </div>
            )}
 
@@ -975,6 +1169,23 @@ function PanelContent() {
                            onChange={(val) => updateParam('platePosition', { ...parameters.platePosition, y: val })} compact />
                       </div>
                 </div>
+             </div>
+
+             <div className="col-span-2 space-y-1.5 pt-2 border-t border-white/5">
+                <Label className="text-[10px] text-zinc-400 flex justify-between">
+                  <span>模型精度 (影响平滑度)</span>
+                  <span className="text-zinc-500">{parameters.modelResolution || 3}级</span>
+                </Label>
+                <Slider value={parameters.modelResolution || 3} min={1} max={5} step={1}
+                  onChange={(val) => updateParam('modelResolution', val)} compact />
+             </div>
+             <div className="col-span-2">
+               <HolesControl 
+                 holes={parameters.holes}
+                 addHole={addHole}
+                 removeHole={removeHole}
+                 updateHole={updateHole}
+               />
              </div>
            </div>
         </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { Sparkles, Zap } from "lucide-react"
-import { useModelStore } from "@/lib/store"
+import { useModelStore, ExportFormat } from "@/lib/store"
 
 export function Header() {
   const { triggerExport, parameters, setParameters } = useModelStore()
@@ -104,6 +104,18 @@ export function Header() {
 
         <div className="h-8 w-px bg-white/5 mx-2" />
         
+        {/* Export Format Selector */}
+        <select
+          value={parameters.exportFormat}
+          onChange={(e) => setParameters({ exportFormat: e.target.value as ExportFormat })}
+          className="h-10 px-3 bg-zinc-800 text-zinc-200 rounded-lg border border-zinc-700 text-sm font-medium cursor-pointer hover:border-zinc-500 transition-colors"
+        >
+          <option value="stl">STL</option>
+          <option value="obj">OBJ</option>
+          <option value="gltf">GLTF</option>
+          <option value="glb">GLB</option>
+        </select>
+        
         {/* Export Button */}
         <button 
           onClick={triggerExport}
@@ -111,7 +123,7 @@ export function Header() {
         >
           <div className="absolute inset-0 bg-linear-to-r from-blue-100 to-white opacity-0 group-hover:opacity-100 transition-opacity" />
           <Sparkles className="h-4 w-4 relative z-10 transition-transform group-hover:rotate-12 group-hover:scale-110" />
-          <span className="relative z-10">导出 STL 模型</span>
+          <span className="relative z-10">导出 {parameters.exportFormat.toUpperCase()}</span>
           
           {/* Shine effect */}
           <div className="absolute -inset-full h-[300%] w-[300%] bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] -translate-x-full animate-[shimmer_3s_infinite] transition-transform group-hover:duration-1000" />

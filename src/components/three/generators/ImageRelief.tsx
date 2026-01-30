@@ -37,11 +37,19 @@ export function ImageReliefGenerator() {
     plateHeight,
     baseThickness,
     size, // Used for plate size if not rectangle
+    trayBorderWidth,
+    trayBorderHeight,
+    edgeBevelEnabled,
+    edgeBevelType,
+    edgeBevelSize,
+    modelResolution,
+    holes,
     plateColor,
     textColor,
     roughness,
     metalness
   } = parameters
+
 
   // Alias internally to avoid rewriting all logic below right now
   // Or actually, cleaner to just use new names?
@@ -56,9 +64,17 @@ export function ImageReliefGenerator() {
         plateWidth, 
         plateHeight, 
         baseThickness,
-        parameters.plateCornerRadius || 0
+        parameters.plateCornerRadius || 0,
+        trayBorderWidth,
+        trayBorderHeight,
+        edgeBevelEnabled,
+        edgeBevelType,
+        edgeBevelSize,
+        modelResolution,
+        holes
     )
-  }, [plateShape, size, plateWidth, plateHeight, baseThickness, parameters.plateCornerRadius])
+  }, [plateShape, size, plateWidth, plateHeight, baseThickness, parameters.plateCornerRadius, trayBorderWidth, trayBorderHeight, edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes])
+
 
   // 2. Process Image and Merge
   useEffect(() => {

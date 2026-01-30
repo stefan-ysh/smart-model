@@ -108,6 +108,14 @@ function StencilMesh() {
       const plateRotRad = (plateRotation * Math.PI) / 180
       const cosR = Math.cos(-plateRotRad)
       const sinR = Math.sin(-plateRotRad)
+      const toPlateLocal = (x: number, y: number) => {
+        const dx = x - platePosition.x
+        const dy = y - platePosition.y
+        return {
+          x: dx * cosR - dy * sinR,
+          y: dx * sinR + dy * cosR
+        }
+      }
       
       // (Dead code removed: textGeos prep loop was unused as we use polygonClipping below)
 
@@ -407,30 +415,25 @@ function StencilMesh() {
             const cos = Math.cos(rad)
             const sin = Math.sin(rad)
 
-            shapes.forEach(s => {
-              const pts = s.getPoints(curveSegments)
-              if (pts.length === 0) return
-              pts.forEach(p => {
+            const transformPoints = (pts: THREE.Vector2[]) => {
+              return pts.map(p => {
                 const lx = p.x - centerX
                 const ly = p.y - centerY
                 const rx = lx * cos - ly * sin + localItem.position.x
                 const ry = lx * sin + ly * cos + localItem.position.y
-                p.set(rx, ry)
+                return new THREE.Vector2(rx, ry)
               })
+            }
 
-              const holePaths = s.holes || []
-              holePaths.forEach(h => {
-                const hpts = h.getPoints(curveSegments)
-                hpts.forEach(p => {
-                  const lx = p.x - centerX
-                  const ly = p.y - centerY
-                  const rx = lx * cos - ly * sin + localItem.position.x
-                  const ry = lx * sin + ly * cos + localItem.position.y
-                  p.set(rx, ry)
-                })
-              })
+            const shapeToPolygonWithTransform = (shape: THREE.Shape): number[][][] => {
+              const outerPts = transformPoints(shape.getPoints(curveSegments))
+              const outer = pointsToRing(outerPts)
+              const holesRings = shape.holes.map(h => pointsToRing(transformPoints(h.getPoints(curveSegments))))
+              return [outer, ...holesRings]
+            }
 
-              const poly = shapeToPolygon(s)
+            shapes.forEach(s => {
+              const poly = shapeToPolygonWithTransform(s)
               clipPolys.push([poly])
             })
           }

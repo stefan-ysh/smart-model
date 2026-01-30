@@ -1478,6 +1478,14 @@ function PanelContent() {
                  </div>
                </div>
             </Section>
+            <div className="pt-2">
+              <HolesControl 
+                holes={parameters.holes}
+                addHole={addHole}
+                removeHole={removeHole}
+                updateHole={updateHole}
+              />
+            </div>
         <LayoutSection />
       </div>
     )

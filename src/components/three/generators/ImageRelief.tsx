@@ -3,7 +3,8 @@
 import * as THREE from "three"
 import { useEffect, useState, useMemo } from "react"
 import { useModelStore } from "@/lib/store"
-import { createPlateGeometry } from "./plateShapes"
+import { createPlateGeometry, createPlateShape2D } from "./plateShapes"
+import polygonClipping from "polygon-clipping"
 import { mergeBufferGeometries } from "three-stdlib"
 
 // Helper to load image
@@ -61,23 +62,174 @@ export function ImageReliefGenerator() {
 
   // 1. Generate Base Geometry
   const baseGeo = useMemo(() => {
-    // Base Geo is unrotated here. Rotation applied later.
+    const curveSegments = 32 * Math.max(1, Math.min(5, modelResolution))
+    const plateCornerRadius = parameters.plateCornerRadius || 0
+    const plateRotRad = (plateRotation * Math.PI) / 180
+    const cosR = Math.cos(-plateRotRad)
+    const sinR = Math.sin(-plateRotRad)
+
+    const closeRing = (ring: number[][]) => {
+      if (ring.length === 0) return ring
+      const [x0, y0] = ring[0]
+      const [xl, yl] = ring[ring.length - 1]
+      if (x0 !== xl || y0 !== yl) ring.push([x0, y0])
+      return ring
+    }
+
+    const pointsToRing = (pts: THREE.Vector2[]) =>
+      closeRing(pts.map(p => [p.x, p.y]))
+
+    const ringArea = (ring: number[][]) => {
+      let sum = 0
+      for (let i = 0; i < ring.length - 1; i++) {
+        const [x1, y1] = ring[i]
+        const [x2, y2] = ring[i + 1]
+        sum += (x1 * y2 - x2 * y1)
+      }
+      return sum / 2
+    }
+
+    const shapeToPolygon = (shape: THREE.Shape): number[][][] => {
+      const outer = pointsToRing(shape.getPoints(curveSegments))
+      const holesRings = shape.holes.map(h => pointsToRing(h.getPoints(curveSegments)))
+      return [outer, ...holesRings]
+    }
+
+    const buildShapeFromPolygon = (poly: number[][][]) => {
+      if (!poly || poly.length === 0) return null
+      const outer = poly[0].slice(0, -1)
+      if (outer.length < 3) return null
+      const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)))
+      if (ringArea(poly[0]) < 0) shape.reverse()
+      for (let i = 1; i < poly.length; i++) {
+        const hole = poly[i].slice(0, -1)
+        if (hole.length < 3) continue
+        const path = new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y)))
+        if (ringArea(poly[i]) > 0) path.reverse()
+        shape.holes.push(path)
+      }
+      return shape
+    }
+
+    const holePolys: number[][][][] = []
+    if (holes && holes.length > 0) {
+      holes.forEach(hole => {
+        const hShape = new THREE.Shape()
+        // Keep holes in world space by converting to plate-local (inverse plate rotation)
+        const hx = hole.x * cosR - hole.y * sinR
+        const hy = hole.x * sinR + hole.y * cosR
+        hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
+        holePolys.push([shapeToPolygon(hShape)])
+      })
+    }
+    const holesUnion = holePolys.length > 0 ? polygonClipping.union(...holePolys) : null
+
+    const buildExtrude = (polys: number[][][][], depth: number, zOffset: number) => {
+      const geos: THREE.BufferGeometry[] = []
+      for (const poly of polys) {
+        const shape = buildShapeFromPolygon(poly)
+        if (!shape) continue
+        const geo = new THREE.ExtrudeGeometry(shape, {
+          depth,
+          bevelEnabled: false,
+          curveSegments
+        }).translate(0, 0, zOffset)
+        geos.push(geo)
+      }
+      if (geos.length === 0) return null
+      return geos.length === 1 ? geos[0] : mergeBufferGeometries(geos)
+    }
+
+    const buildPlate2D = () => {
+      if (plateShape === "tray") {
+        const outer = createPlateShape2D(
+          "square",
+          size,
+          plateWidth,
+          plateHeight,
+          plateCornerRadius,
+          modelResolution
+        )
+        if (!outer) return null
+        const innerSize = Math.max(1, size - 2 * Math.min(trayBorderWidth, size / 4))
+        const inner = createPlateShape2D(
+          "square",
+          innerSize,
+          innerSize,
+          innerSize,
+          0,
+          modelResolution
+        )
+        if (!inner) return null
+
+        const outerPoly: number[][][][] = [shapeToPolygon(outer)]
+        const innerPoly: number[][][][] = [shapeToPolygon(inner)]
+
+        let basePoly = outerPoly
+        if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion)
+
+        let ringPoly = polygonClipping.difference(outerPoly, innerPoly)
+        if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion)
+
+        const baseGeo = buildExtrude(basePoly, baseThickness, -baseThickness / 2)
+        const ringGeo = buildExtrude(ringPoly, trayBorderHeight, baseThickness / 2)
+        if (baseGeo && ringGeo) {
+          return mergeBufferGeometries([baseGeo, ringGeo]) || baseGeo
+        }
+        return baseGeo || ringGeo
+      }
+
+      const shape2D = createPlateShape2D(
+        plateShape,
+        size,
+        plateWidth,
+        plateHeight,
+        plateCornerRadius,
+        modelResolution
+      )
+      if (!shape2D) return null
+      let platePoly: number[][][][] = [shapeToPolygon(shape2D)]
+      if (holesUnion) {
+        platePoly = polygonClipping.difference(platePoly, holesUnion)
+      }
+      return buildExtrude(platePoly, baseThickness, -baseThickness / 2)
+    }
+
+    const plate2D = buildPlate2D()
+    if (plate2D) return plate2D
+
+    // Fallback to CSG if 2D fails
     return createPlateGeometry(
-        plateShape, 
-        size, 
-        plateWidth, 
-        plateHeight, 
-        baseThickness,
-        parameters.plateCornerRadius || 0,
-        trayBorderWidth,
-        trayBorderHeight,
-        edgeBevelEnabled,
-        edgeBevelType,
-        edgeBevelSize,
-        modelResolution,
-        holes
+      plateShape,
+      size,
+      plateWidth,
+      plateHeight,
+      baseThickness,
+      plateCornerRadius,
+      trayBorderWidth,
+      trayBorderHeight,
+      edgeBevelEnabled,
+      edgeBevelType,
+      edgeBevelSize,
+      modelResolution,
+      holes
     )
-  }, [plateShape, size, plateWidth, plateHeight, baseThickness, parameters.plateCornerRadius, trayBorderWidth, trayBorderHeight, edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes])
+  }, [
+    plateShape,
+    size,
+    plateWidth,
+    plateHeight,
+    baseThickness,
+    parameters.plateCornerRadius,
+    trayBorderWidth,
+    trayBorderHeight,
+    edgeBevelEnabled,
+    edgeBevelType,
+    edgeBevelSize,
+    modelResolution,
+    holes,
+    plateRotation
+  ])
 
 
   // 2. Process Image and Merge

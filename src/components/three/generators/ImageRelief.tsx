@@ -47,7 +47,10 @@ export function ImageReliefGenerator() {
     plateColor,
     textColor,
     roughness,
-    metalness
+    metalness,
+    plateRotation,
+    textPosition,
+    imageRotation
   } = parameters
 
 
@@ -58,6 +61,7 @@ export function ImageReliefGenerator() {
 
   // 1. Generate Base Geometry
   const baseGeo = useMemo(() => {
+    // Base Geo is unrotated here. Rotation applied later.
     return createPlateGeometry(
         plateShape, 
         size, 
@@ -378,22 +382,45 @@ export function ImageReliefGenerator() {
             textGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
             textGeo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
             textGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+            textGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+        }
+
+        // --- TRANSFORMATIONS ---
+        
+        // 1. Text/Image Geometry: Apply standalone rotation and position
+        if (textGeo) {
+            // Rotate around Z (up axis in our logic before flipping X)
+            if (imageRotation) {
+                textGeo.rotateZ((imageRotation * Math.PI) / 180)
+            }
+            
+            // Translate offset
+            if (textPosition && (textPosition.x !== 0 || textPosition.y !== 0)) {
+                textGeo.translate(textPosition.x, textPosition.y, 0)
+            }
+        }
+
+        // 2. Base Geometry: Apply local rotation
+        let baseReady = parameters.hasBase ? baseGeo.clone() : null
+        
+        if (baseReady) {
+             // Apply plate rotation
+             if (plateRotation) {
+                 baseReady.rotateZ((plateRotation * Math.PI) / 180)
+             }
+             
+             baseReady.translate(0, 0, baseThickness/2)
+             
+             // Ensure base is non-indexed for compatibility
+             if (baseReady.index) {
+                 baseReady = baseReady.toNonIndexed()
+             }
         }
 
         // Merge!
-        const geometriesToMerge = [textGeo]
-        
-        // Prepare Base if enabled
-        if (parameters.hasBase) {
-            let baseReady = baseGeo.clone()
-            baseReady.translate(0, 0, baseThickness/2)
-            
-            // Ensure base is non-indexed for compatibility
-            if (baseReady.index) {
-                baseReady = baseReady.toNonIndexed()
-            }
-            geometriesToMerge.push(baseReady)
-        }
+        const geometriesToMerge: THREE.BufferGeometry[] = []
+        if (textGeo) geometriesToMerge.push(textGeo)
+        if (baseReady) geometriesToMerge.push(baseReady) // Base is already cloned and transformed
         
         // Merge
         const merged = mergeBufferGeometries(geometriesToMerge, true)
@@ -421,7 +448,11 @@ export function ImageReliefGenerator() {
       baseThickness,
       calligraphyStyle, // using destructured alias
       calligraphyResolution, // using destructured alias
-      parameters.hasBase
+      parameters.hasBase,
+      // New dependencies
+      imageRotation,
+      textPosition,
+      plateRotation
   ])
 
   if (!mergedGeometry) return null

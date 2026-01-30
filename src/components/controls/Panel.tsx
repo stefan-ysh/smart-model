@@ -848,6 +848,44 @@ function PanelContent() {
                />
             </div>
           </div>
+         
+         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5 mt-2">
+            <div className="col-span-2 space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">图案角度 (Image Rotation)</Label>
+               <SliderWithInput
+                 value={parameters.imageRotation}
+                 min={-180}
+                 max={180}
+                 step={1}
+                 onChange={(val) => updateParam('imageRotation', val)}
+                 compact
+               />
+            </div>
+            
+            <div className="space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">图案位置 X</Label>
+               <SliderWithInput
+                 value={parameters.textPosition.x}
+                 min={-300}
+                 max={300}
+                 step={1}
+                 onChange={(val) => updateParam('textPosition', { ...parameters.textPosition, x: val })}
+                 compact
+               />
+            </div>
+            
+            <div className="space-y-1.5">
+               <Label className="text-[10px] text-zinc-400">图案位置 Y</Label>
+               <SliderWithInput
+                 value={parameters.textPosition.y}
+                 min={-300}
+                 max={300}
+                 step={1}
+                 onChange={(val) => updateParam('textPosition', { ...parameters.textPosition, y: val })}
+                 compact
+               />
+            </div>
+         </div>
 
           <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
              <Switch

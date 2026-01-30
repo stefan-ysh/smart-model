@@ -122,6 +122,7 @@ export interface ModelParams {
   imageSmoothing: number; // 0-5 for smoothing steps
   imageStyle: "voxel" | "smooth";
   imageResolution: number; // 32-512
+  imageRotation: number; // Rotation in degrees for the image pattern
 
   // Generic
   roughness: number;
@@ -392,6 +393,7 @@ const defaultParams: ModelParams = {
   imageSmoothing: 1,
   imageStyle: "voxel",
   imageResolution: 150,
+  imageRotation: 0,
 
   baseThickness: 2,
   hasBase: false,

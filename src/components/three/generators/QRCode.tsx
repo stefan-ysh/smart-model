@@ -38,6 +38,7 @@ export function QRCodeGenerator() {
   const qrMargin = useModelStore(state => state.parameters.qrMargin)
   const qrIsThrough = useModelStore(state => state.parameters.qrIsThrough)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
+  const holes = useModelStore(state => state.parameters.holes)
   const plateColor = useModelStore(state => state.parameters.plateColor)
   const textColor = useModelStore(state => state.parameters.textColor)
   const roughness = useModelStore(state => state.parameters.roughness)
@@ -81,6 +82,15 @@ export function QRCodeGenerator() {
     const padding = Math.max(0, qrMargin)
     const plateSize = qrSize + padding * 2
     
+    const addHoles = (shape: THREE.Shape) => {
+      if (!holes || holes.length === 0) return
+      holes.forEach(hole => {
+        const h = new THREE.Path()
+        h.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false)
+        shape.holes.push(h)
+      })
+    }
+
     // 1. Create Base Geometry
     // Needs base if (Relief) OR (Hollow AND NOT Through)
     const needsBase = !qrInvert || !qrIsThrough
@@ -89,6 +99,7 @@ export function QRCodeGenerator() {
     
     if (needsBase) {
         const shape = createRoundedRectShape(plateSize, plateSize, plateCornerRadius)
+        addHoles(shape)
         const extrudeSettings = {
             depth: baseThickness,
             bevelEnabled: false
@@ -96,6 +107,16 @@ export function QRCodeGenerator() {
         baseGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
     }
     
+    const isInHole = (x: number, y: number) => {
+      if (!holes || holes.length === 0) return false
+      for (const hole of holes) {
+        const dx = x - hole.x
+        const dy = y - hole.y
+        if (dx * dx + dy * dy <= hole.radius * hole.radius) return true
+      }
+      return false
+    }
+
     // 2. Create QR Layer (Blocks)
     const blocks: THREE.BufferGeometry[] = []
     
@@ -128,9 +149,11 @@ export function QRCodeGenerator() {
              const xPos = x * blockSize - halfSize + blockSize/2
              // QR scan Y is down, 3D Y is up. Flip Y.
              const yPos = (moduleCount - 1 - y) * blockSize - halfSize + blockSize/2
-             
-             instance.translate(xPos, yPos, zStart + layerThickness/2)
-             blocks.push(instance)
+            
+             if (!isInHole(xPos, yPos)) {
+               instance.translate(xPos, yPos, zStart + layerThickness/2)
+               blocks.push(instance)
+             }
          }
       }
     }
@@ -154,6 +177,7 @@ export function QRCodeGenerator() {
        innerHole.closePath()
        
        outerShape.holes.push(innerHole)
+       addHoles(outerShape)
        
        borderGeometry = new THREE.ExtrudeGeometry(outerShape, {
            depth: layerThickness,
@@ -172,7 +196,7 @@ export function QRCodeGenerator() {
     
     return { baseGeometry, qrGeometry, borderGeometry }
 
-  }, [qrMatrix, qrSize, qrDepth, qrInvert, qrIsThrough, baseThickness, qrMargin, plateCornerRadius])
+  }, [qrMatrix, qrSize, qrDepth, qrInvert, qrIsThrough, baseThickness, qrMargin, plateCornerRadius, holes])
 
   if (!geometry) return null
 

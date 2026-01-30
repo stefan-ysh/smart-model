@@ -109,34 +109,7 @@ function StencilMesh() {
       const cosR = Math.cos(-plateRotRad)
       const sinR = Math.sin(-plateRotRad)
       
-      const textGeos: THREE.BufferGeometry[] = []
-
-      // Prepare all text geometries
-      for (const item of textItems) {
-        const font = fontMap[item.fontUrl]
-        if (!font) continue
-        
-        // Transform text world position to plate-local position
-        const localX = item.position.x - platePosition.x
-        const localY = item.position.y - platePosition.y
-        
-        // Then rotate by inverse plate rotation
-        const rotatedX = localX * cosR - localY * sinR
-        const rotatedY = localX * sinR + localY * cosR
-        
-        const localItem = {
-          ...item,
-          position: { ...item.position, x: rotatedX, y: rotatedY },
-          rotation: item.rotation - plateRotation
-        }
-        
-        // Pass tray border height for proper cut depth calculation
-        const effectiveTrayHeight = plateShape === 'tray' ? trayBorderHeight : 0
-        const textGeo = createTextGeometry(font, localItem, baseThickness, effectiveTrayHeight)
-        if (textGeo) {
-           textGeos.push(textGeo)
-        }
-      }
+      // (Dead code removed: textGeos prep loop was unused as we use polygonClipping below)
 
       let result: THREE.BufferGeometry | null = null
 
@@ -215,7 +188,12 @@ function StencilMesh() {
           if (holes && holes.length > 0) {
             holes.forEach(hole => {
               const hShape = new THREE.Shape()
-              hShape.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false)
+              // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
+              const dx = hole.x - platePosition.x
+              const dy = hole.y - platePosition.y
+              const hx = dx * cosR - dy * sinR
+              const hy = dx * sinR + dy * cosR
+              hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
               clipPolys.push([shapeToPolygon(hShape)])
             })
           }
@@ -224,7 +202,18 @@ function StencilMesh() {
             const font = fontMap[item.fontUrl]
             if (!font) continue
 
-            const shapes = font.generateShapes(item.content || ' ', item.fontSize)
+            // Keep text in world space; convert to plate-local so plate rotation doesn't affect it
+            const localX = item.position.x - platePosition.x
+            const localY = item.position.y - platePosition.y
+            const rotatedX = localX * cosR - localY * sinR
+            const rotatedY = localX * sinR + localY * cosR
+            const localItem = {
+              ...item,
+              position: { ...item.position, x: rotatedX, y: rotatedY },
+              rotation: item.rotation - plateRotation
+            }
+
+            const shapes = font.generateShapes(localItem.content || ' ', localItem.fontSize)
             if (!shapes || shapes.length === 0) continue
 
             const textGeo = new THREE.ShapeGeometry(shapes)
@@ -238,34 +227,29 @@ function StencilMesh() {
             }
             textGeo.dispose()
 
-            const rad = (item.rotation * Math.PI) / 180
+            const rad = (localItem.rotation * Math.PI) / 180
             const cos = Math.cos(rad)
             const sin = Math.sin(rad)
 
-            shapes.forEach(s => {
-              const pts = s.getPoints(curveSegments)
-              if (pts.length === 0) return
-              pts.forEach(p => {
+            const transformPoints = (pts: THREE.Vector2[]) => {
+              return pts.map(p => {
                 const lx = p.x - centerX
                 const ly = p.y - centerY
-                const rx = lx * cos - ly * sin + item.position.x
-                const ry = lx * sin + ly * cos + item.position.y
-                p.set(rx, ry)
+                const rx = lx * cos - ly * sin + localItem.position.x
+                const ry = lx * sin + ly * cos + localItem.position.y
+                return new THREE.Vector2(rx, ry)
               })
+            }
 
-              const holePaths = s.holes || []
-              holePaths.forEach(h => {
-                const hpts = h.getPoints(curveSegments)
-                hpts.forEach(p => {
-                  const lx = p.x - centerX
-                  const ly = p.y - centerY
-                  const rx = lx * cos - ly * sin + item.position.x
-                  const ry = lx * sin + ly * cos + item.position.y
-                  p.set(rx, ry)
-                })
-              })
+            const shapeToPolygonWithTransform = (shape: THREE.Shape): number[][][] => {
+              const outerPts = transformPoints(shape.getPoints(curveSegments))
+              const outer = pointsToRing(outerPts)
+              const holesRings = shape.holes.map(h => pointsToRing(transformPoints(h.getPoints(curveSegments))))
+              return [outer, ...holesRings]
+            }
 
-              const poly = shapeToPolygon(s)
+            shapes.forEach(s => {
+              const poly = shapeToPolygonWithTransform(s)
               clipPolys.push([poly])
             })
           }
@@ -288,7 +272,10 @@ function StencilMesh() {
             if (!shape) continue
             const geo = new THREE.ExtrudeGeometry(shape, {
               depth: baseThickness,
-              bevelEnabled: false,
+              bevelEnabled: edgeBevelEnabled,
+              bevelThickness: edgeBevelSize,
+              bevelSize: edgeBevelSize,
+              bevelSegments: edgeBevelType === 'round' ? 4 : 1,
               curveSegments
             }).translate(0, 0, -baseThickness / 2)
             baseGeos.push(geo)
@@ -300,7 +287,10 @@ function StencilMesh() {
             if (!shape) continue
             const geo = new THREE.ExtrudeGeometry(shape, {
               depth: trayBorderHeight,
-              bevelEnabled: false,
+              bevelEnabled: edgeBevelEnabled,
+              bevelThickness: edgeBevelSize,
+              bevelSize: edgeBevelSize,
+              bevelSegments: edgeBevelType === 'round' ? 4 : 1,
               curveSegments
             }).translate(0, 0, baseThickness / 2)
             ringGeos.push(geo)
@@ -375,7 +365,12 @@ function StencilMesh() {
           if (holes && holes.length > 0) {
             holes.forEach(hole => {
               const hShape = new THREE.Shape()
-              hShape.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false)
+              // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
+              const dx = hole.x - platePosition.x
+              const dy = hole.y - platePosition.y
+              const hx = dx * cosR - dy * sinR
+              const hy = dx * sinR + dy * cosR
+              hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
               clipPolys.push([shapeToPolygon(hShape)])
             })
           }
@@ -384,7 +379,17 @@ function StencilMesh() {
             const font = fontMap[item.fontUrl]
             if (!font) continue
 
-            const shapes = font.generateShapes(item.content || ' ', item.fontSize)
+            const localX = item.position.x - platePosition.x
+            const localY = item.position.y - platePosition.y
+            const rotatedX = localX * cosR - localY * sinR
+            const rotatedY = localX * sinR + localY * cosR
+            const localItem = {
+              ...item,
+              position: { ...item.position, x: rotatedX, y: rotatedY },
+              rotation: item.rotation - plateRotation
+            }
+
+            const shapes = font.generateShapes(localItem.content || ' ', localItem.fontSize)
             if (!shapes || shapes.length === 0) continue
 
             const textGeo = new THREE.ShapeGeometry(shapes)
@@ -398,7 +403,7 @@ function StencilMesh() {
             }
             textGeo.dispose()
 
-            const rad = (item.rotation * Math.PI) / 180
+            const rad = (localItem.rotation * Math.PI) / 180
             const cos = Math.cos(rad)
             const sin = Math.sin(rad)
 
@@ -408,8 +413,8 @@ function StencilMesh() {
               pts.forEach(p => {
                 const lx = p.x - centerX
                 const ly = p.y - centerY
-                const rx = lx * cos - ly * sin + item.position.x
-                const ry = lx * sin + ly * cos + item.position.y
+                const rx = lx * cos - ly * sin + localItem.position.x
+                const ry = lx * sin + ly * cos + localItem.position.y
                 p.set(rx, ry)
               })
 
@@ -419,8 +424,8 @@ function StencilMesh() {
                 hpts.forEach(p => {
                   const lx = p.x - centerX
                   const ly = p.y - centerY
-                  const rx = lx * cos - ly * sin + item.position.x
-                  const ry = lx * sin + ly * cos + item.position.y
+                  const rx = lx * cos - ly * sin + localItem.position.x
+                  const ry = lx * sin + ly * cos + localItem.position.y
                   p.set(rx, ry)
                 })
               })
@@ -441,7 +446,10 @@ function StencilMesh() {
             if (!shape) continue
             const geo = new THREE.ExtrudeGeometry(shape, {
               depth: baseThickness,
-              bevelEnabled: false,
+              bevelEnabled: edgeBevelEnabled,
+              bevelThickness: edgeBevelSize,
+              bevelSize: edgeBevelSize,
+              bevelSegments: edgeBevelType === 'round' ? 4 : 1,
               curveSegments
             }).translate(0, 0, -baseThickness / 2)
             extruded.push(geo)
@@ -452,7 +460,8 @@ function StencilMesh() {
       }
 
       // Cleanup
-      textGeos.forEach(g => g.dispose())
+      // Cleanup
+      // textGeos was removed
       
       const finalGeo = result || new THREE.BufferGeometry()
       

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Smart Model",
-  description: "Smart Model, 一款智能模型生成工具",
+  description: "Smart Model, 一款基础模型生成工具",
 };
 
 export default function RootLayout({

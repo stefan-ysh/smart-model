@@ -69,8 +69,6 @@ export function Header() {
             <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500">
               Intelligent 3D Engine
             </span>
-            <div className="h-1 w-1 rounded-full bg-blue-500/50" />
-            <span className="text-[9px] font-medium text-zinc-600">智能模型生成</span>
           </div>
         </div>
       </div>

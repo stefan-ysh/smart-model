@@ -68,7 +68,10 @@ export function ImageReliefGenerator() {
     const cosR = Math.cos(-plateRotRad)
     const sinR = Math.sin(-plateRotRad)
 
-    const closeRing = (ring: number[][]) => {
+    type Pair = [number, number]
+    
+    // Close the ring if not closed
+    const closeRing = (ring: Pair[]): Pair[] => {
       if (ring.length === 0) return ring
       const [x0, y0] = ring[0]
       const [xl, yl] = ring[ring.length - 1]
@@ -76,10 +79,10 @@ export function ImageReliefGenerator() {
       return ring
     }
 
-    const pointsToRing = (pts: THREE.Vector2[]) =>
-      closeRing(pts.map(p => [p.x, p.y]))
+    const pointsToRing = (pts: THREE.Vector2[]): Pair[] =>
+      closeRing(pts.map(p => [p.x, p.y] as Pair))
 
-    const ringArea = (ring: number[][]) => {
+    const ringArea = (ring: Pair[]) => {
       let sum = 0
       for (let i = 0; i < ring.length - 1; i++) {
         const [x1, y1] = ring[i]
@@ -89,29 +92,31 @@ export function ImageReliefGenerator() {
       return sum / 2
     }
 
-    const shapeToPolygon = (shape: THREE.Shape): number[][][] => {
+    const shapeToPolygon = (shape: THREE.Shape): Pair[][] => {
       const outer = pointsToRing(shape.getPoints(curveSegments))
       const holesRings = shape.holes.map(h => pointsToRing(h.getPoints(curveSegments)))
       return [outer, ...holesRings]
     }
 
-    const buildShapeFromPolygon = (poly: number[][][]) => {
+    const buildShapeFromPolygon = (poly: Pair[][]) => {
       if (!poly || poly.length === 0) return null
       const outer = poly[0].slice(0, -1)
       if (outer.length < 3) return null
-      const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)))
-      if (ringArea(poly[0]) < 0) shape.reverse()
+      const outerPts = outer.map(([x, y]) => new THREE.Vector2(x, y))
+      if (ringArea(poly[0]) < 0) outerPts.reverse()
+      const shape = new THREE.Shape(outerPts)
       for (let i = 1; i < poly.length; i++) {
         const hole = poly[i].slice(0, -1)
         if (hole.length < 3) continue
-        const path = new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y)))
-        if (ringArea(poly[i]) > 0) path.reverse()
+        const holePts = hole.map(([x, y]) => new THREE.Vector2(x, y))
+        if (ringArea(poly[i]) > 0) holePts.reverse()
+        const path = new THREE.Path(holePts)
         shape.holes.push(path)
       }
       return shape
     }
 
-    const holePolys: number[][][][] = []
+    const holePolys: Pair[][][] = []
     if (holes && holes.length > 0) {
       holes.forEach(hole => {
         const hShape = new THREE.Shape()
@@ -119,12 +124,13 @@ export function ImageReliefGenerator() {
         const hx = hole.x * cosR - hole.y * sinR
         const hy = hole.x * sinR + hole.y * cosR
         hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
-        holePolys.push([shapeToPolygon(hShape)])
+        holePolys.push(shapeToPolygon(hShape))
       })
     }
-    const holesUnion = holePolys.length > 0 ? polygonClipping.union(...holePolys) : null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const holesUnion = holePolys.length > 0 ? (holePolys as any).reduce((acc: any, val: any) => polygonClipping.union(acc, val)) : null
 
-    const buildExtrude = (polys: number[][][][], depth: number, zOffset: number) => {
+    const buildExtrude = (polys: Pair[][][], depth: number, zOffset: number) => {
       const geos: THREE.BufferGeometry[] = []
       for (const poly of polys) {
         const shape = buildShapeFromPolygon(poly)
@@ -162,14 +168,17 @@ export function ImageReliefGenerator() {
         )
         if (!inner) return null
 
-        const outerPoly: number[][][][] = [shapeToPolygon(outer)]
-        const innerPoly: number[][][][] = [shapeToPolygon(inner)]
+        const outerPoly: Pair[][][] = [shapeToPolygon(outer)]
+        const innerPoly: Pair[][][] = [shapeToPolygon(inner)]
 
         let basePoly = outerPoly
-        if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (holesUnion) basePoly = polygonClipping.difference(basePoly as any, holesUnion as any)
 
-        let ringPoly = polygonClipping.difference(outerPoly, innerPoly)
-        if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let ringPoly = polygonClipping.difference(outerPoly as any, innerPoly as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (holesUnion) ringPoly = polygonClipping.difference(ringPoly as any, holesUnion as any)
 
         const baseGeo = buildExtrude(basePoly, baseThickness, -baseThickness / 2)
         const ringGeo = buildExtrude(ringPoly, trayBorderHeight, baseThickness / 2)
@@ -188,9 +197,10 @@ export function ImageReliefGenerator() {
         modelResolution
       )
       if (!shape2D) return null
-      let platePoly: number[][][][] = [shapeToPolygon(shape2D)]
+      let platePoly: Pair[][][] = [shapeToPolygon(shape2D)]
       if (holesUnion) {
-        platePoly = polygonClipping.difference(platePoly, holesUnion)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        platePoly = polygonClipping.difference(platePoly as any, holesUnion as any)
       }
       return buildExtrude(platePoly, baseThickness, -baseThickness / 2)
     }

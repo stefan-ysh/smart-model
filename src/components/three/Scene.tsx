@@ -230,11 +230,9 @@ function HoleMarkers() {
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
   const groupRotation = useModelStore(state => state.parameters.groupRotation)
   const updateHole = useModelStore(state => state.updateHole)
-  const isTransformEnabled = useModelStore(state => state.isTransformEnabled)
   
-  // Only show markers in relevant modes and when transform is enabled
-  if (!isTransformEnabled) return null
-  if (!['stencil', 'relief', 'image', 'qr'].includes(currentMode)) return null
+  // Only show markers in relevant modes
+  if (!['hollow', 'relief', 'image', 'qr'].includes(currentMode)) return null
   if (!holes || holes.length === 0) return null
   
   return (

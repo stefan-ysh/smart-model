@@ -108,14 +108,6 @@ function StencilMesh() {
       const plateRotRad = (plateRotation * Math.PI) / 180
       const cosR = Math.cos(-plateRotRad)
       const sinR = Math.sin(-plateRotRad)
-      const toPlateLocal = (x: number, y: number) => {
-        const dx = x - platePosition.x
-        const dy = y - platePosition.y
-        return {
-          x: dx * cosR - dy * sinR,
-          y: dx * sinR + dy * cosR
-        }
-      }
       
       // (Dead code removed: textGeos prep loop was unused as we use polygonClipping below)
 
@@ -155,14 +147,16 @@ function StencilMesh() {
           if (!poly || poly.length === 0) return null
           const outer = poly[0].slice(0, -1)
           if (outer.length < 3) return null
-          const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)))
-          if (ringArea(poly[0]) < 0) shape.reverse()
+          const outerPts = outer.map(([x, y]) => new THREE.Vector2(x, y))
+          if (ringArea(poly[0]) < 0) outerPts.reverse()
+          const shape = new THREE.Shape(outerPts)
 
           for (let i = 1; i < poly.length; i++) {
             const hole = poly[i].slice(0, -1)
             if (hole.length < 3) continue
-            const path = new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y)))
-            if (ringArea(poly[i]) > 0) path.reverse()
+            const holePts = hole.map(([x, y]) => new THREE.Vector2(x, y))
+            if (ringArea(poly[i]) > 0) holePts.reverse()
+            const path = new THREE.Path(holePts)
             shape.holes.push(path)
           }
           return shape
@@ -202,12 +196,13 @@ function StencilMesh() {
               const hx = dx * cosR - dy * sinR
               const hy = dx * sinR + dy * cosR
               hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
-              clipPolys.push([shapeToPolygon(hShape)])
+              clipPolys.push(shapeToPolygon(hShape))
             })
           }
 
           for (const item of textItems) {
-            const font = fontMap[item.fontUrl]
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const font = fontMap[item.fontUrl] as any
             if (!font) continue
 
             // Keep text in world space; convert to plate-local so plate rotation doesn't affect it
@@ -256,22 +251,27 @@ function StencilMesh() {
               return [outer, ...holesRings]
             }
 
-            shapes.forEach(s => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            shapes.forEach((s: any) => {
               const poly = shapeToPolygonWithTransform(s)
-              clipPolys.push([poly])
+              clipPolys.push(poly)
             })
           }
 
-          const holesUnion = clipPolys.length > 0 ? polygonClipping.union(...clipPolys) : null
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const holesUnion = clipPolys.length > 0 ? (clipPolys as any).reduce((acc: any, val: any) => polygonClipping.union(acc, val)) : null
 
           let basePoly = outerPoly
           if (holesUnion) {
-            basePoly = polygonClipping.difference(basePoly, holesUnion)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            basePoly = polygonClipping.difference(basePoly as any, holesUnion as any)
           }
 
-          let ringPoly = polygonClipping.difference(outerPoly, innerPoly)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let ringPoly = polygonClipping.difference(outerPoly as any, innerPoly as any)
           if (holesUnion) {
-            ringPoly = polygonClipping.difference(ringPoly, holesUnion)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ringPoly = polygonClipping.difference(ringPoly as any, holesUnion as any)
           }
 
           const baseGeos: THREE.BufferGeometry[] = []
@@ -344,14 +344,16 @@ function StencilMesh() {
           if (!poly || poly.length === 0) return null
           const outer = poly[0].slice(0, -1)
           if (outer.length < 3) return null
-          const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)))
-          if (ringArea(poly[0]) < 0) shape.reverse()
+          const outerPts = outer.map(([x, y]) => new THREE.Vector2(x, y))
+          if (ringArea(poly[0]) < 0) outerPts.reverse()
+          const shape = new THREE.Shape(outerPts)
 
           for (let i = 1; i < poly.length; i++) {
             const hole = poly[i].slice(0, -1)
             if (hole.length < 3) continue
+            const holePts = hole.map(([x, y]) => new THREE.Vector2(x, y))
+            if (ringArea(poly[i]) > 0) holePts.reverse()
             const path = new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y)))
-            if (ringArea(poly[i]) > 0) path.reverse()
             shape.holes.push(path)
           }
           return shape
@@ -379,12 +381,13 @@ function StencilMesh() {
               const hx = dx * cosR - dy * sinR
               const hy = dx * sinR + dy * cosR
               hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
-              clipPolys.push([shapeToPolygon(hShape)])
+              clipPolys.push(shapeToPolygon(hShape))
             })
           }
 
           for (const item of textItems) {
-            const font = fontMap[item.fontUrl]
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const font = fontMap[item.fontUrl] as any
             if (!font) continue
 
             const localX = item.position.x - platePosition.x
@@ -432,15 +435,18 @@ function StencilMesh() {
               return [outer, ...holesRings]
             }
 
-            shapes.forEach(s => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            shapes.forEach((s: any) => {
               const poly = shapeToPolygonWithTransform(s)
-              clipPolys.push([poly])
+              clipPolys.push(poly)
             })
           }
 
           if (clipPolys.length > 0) {
-            const clipUnion = polygonClipping.union(...clipPolys)
-            platePoly = polygonClipping.difference(platePoly, clipUnion)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const clipUnion = (clipPolys as any).reduce((acc: any, val: any) => polygonClipping.union(acc, val))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            platePoly = polygonClipping.difference(platePoly as any, clipUnion as any)
           }
 
           const extruded: THREE.BufferGeometry[] = []

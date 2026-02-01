@@ -58,31 +58,34 @@ function createReliefPlateGeometry2D(
     return [outer, ...holesRings]
   }
 
-  const buildShapeFromPolygon = (poly: number[][][]) => {
-    if (!poly || poly.length === 0) return null
-    const outer = poly[0].slice(0, -1)
-    if (outer.length < 3) return null
-    const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)))
-    if (ringArea(poly[0]) < 0) shape.reverse()
-    for (let i = 1; i < poly.length; i++) {
-      const hole = poly[i].slice(0, -1)
-      if (hole.length < 3) continue
-      const path = new THREE.Path(hole.map(([x, y]) => new THREE.Vector2(x, y)))
-      if (ringArea(poly[i]) > 0) path.reverse()
-      shape.holes.push(path)
+    const buildShapeFromPolygon = (poly: number[][][]) => {
+      if (!poly || poly.length === 0) return null
+      const outer = poly[0].slice(0, -1)
+      if (outer.length < 3) return null
+      const outerPts = outer.map(([x, y]) => new THREE.Vector2(x, y))
+      if (ringArea(poly[0]) < 0) outerPts.reverse()
+      const shape = new THREE.Shape(outerPts)
+      for (let i = 1; i < poly.length; i++) {
+        const hole = poly[i].slice(0, -1)
+        if (hole.length < 3) continue
+        const holePts = hole.map(([x, y]) => new THREE.Vector2(x, y))
+        if (ringArea(poly[i]) > 0) holePts.reverse()
+        const path = new THREE.Path(holePts)
+        shape.holes.push(path)
+      }
+      return shape
     }
-    return shape
-  }
 
   const holePolys: number[][][][] = []
   if (holes && holes.length > 0) {
     holes.forEach(hole => {
       const hShape = new THREE.Shape()
       hShape.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false)
-      holePolys.push([shapeToPolygon(hShape)])
+      holePolys.push(shapeToPolygon(hShape))
     })
   }
-  const holesUnion = holePolys.length > 0 ? polygonClipping.union(...holePolys) : null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const holesUnion = holePolys.length > 0 ? (holePolys as any).reduce((acc: any, val: any) => polygonClipping.union(acc, val)) : null
 
   if (plateShape === "tray") {
     const outer = createPlateShape2D(
@@ -109,10 +112,13 @@ function createReliefPlateGeometry2D(
     const innerPoly: number[][][][] = [shapeToPolygon(inner)]
 
     let basePoly = outerPoly
-    if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (holesUnion) basePoly = polygonClipping.difference(basePoly as any, holesUnion as any)
 
-    let ringPoly = polygonClipping.difference(outerPoly, innerPoly)
-    if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let ringPoly = polygonClipping.difference(outerPoly as any, innerPoly as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (holesUnion) ringPoly = polygonClipping.difference(ringPoly as any, holesUnion as any)
 
     const baseGeos: THREE.BufferGeometry[] = []
     for (const poly of basePoly) {
@@ -156,7 +162,8 @@ function createReliefPlateGeometry2D(
 
   let platePoly: number[][][][] = [shapeToPolygon(shape2D)]
   if (holesUnion) {
-    platePoly = polygonClipping.difference(platePoly, holesUnion)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    platePoly = polygonClipping.difference(platePoly as any, holesUnion as any)
   }
 
   const geos: THREE.BufferGeometry[] = []
@@ -322,7 +329,9 @@ function ReliefMesh() {
     );
 
 
-    plateCache.set(cacheKey, geo)
+    if (geo) {
+      plateCache.set(cacheKey, geo)
+    }
     
     // Limit cache size
     if (plateCache.size > 20) {
@@ -344,13 +353,15 @@ function ReliefMesh() {
         rotation={[-Math.PI / 2, 0, (plateRotation * Math.PI) / 180]}
         position={[platePosition.x, baseThickness / 2, platePosition.y]}
       >
-        <mesh geometry={plateGeo}>
-          <meshStandardMaterial
-            color={plateColor}
-            roughness={roughness}
-            metalness={metalness}
-          />
-        </mesh>
+        {plateGeo && (
+          <mesh geometry={plateGeo}>
+            <meshStandardMaterial
+              color={plateColor}
+              roughness={roughness}
+              metalness={metalness}
+            />
+          </mesh>
+        )}
       </group>
 
       {/* Text Items - independent transforms */}

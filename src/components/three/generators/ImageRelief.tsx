@@ -7,6 +7,7 @@ import { createPlateGeometry, createPlateShape2D } from "./plateShapes"
 import polygonClipping from "polygon-clipping"
 import { mergeBufferGeometries } from "three-stdlib"
 import { rotate2D, toShapeXY } from "@/components/three/utils/coords"
+import { useDebounce } from "@/components/hooks/useDebounce"
 
 // Helper to load image
 function loadImage(url: string): Promise<HTMLImageElement> {
@@ -56,6 +57,9 @@ export function ImageReliefGenerator() {
     platePosition,
     groupRotation
   } = parameters
+
+  const debouncedTextPosition = useDebounce(textPosition, 150)
+  const debouncedImageRotation = useDebounce(imageRotation, 150)
 
 
   // Alias internally to avoid rewriting all logic below right now
@@ -556,13 +560,13 @@ export function ImageReliefGenerator() {
         // 1. Text/Image Geometry: Apply standalone rotation and position
         if (textGeo) {
             // Rotate around Z (up axis in our logic before flipping X)
-            if (imageRotation) {
-                textGeo.rotateZ((imageRotation * Math.PI) / 180)
+            if (debouncedImageRotation) {
+                textGeo.rotateZ((debouncedImageRotation * Math.PI) / 180)
             }
             
             // Translate offset
-            if (textPosition && (textPosition.x !== 0 || textPosition.y !== 0)) {
-                const shapeXY = toShapeXY({ x: textPosition.x, y: textPosition.y })
+            if (debouncedTextPosition && (debouncedTextPosition.x !== 0 || debouncedTextPosition.y !== 0)) {
+                const shapeXY = toShapeXY({ x: debouncedTextPosition.x, y: debouncedTextPosition.y })
                 textGeo.translate(shapeXY.x, shapeXY.y, 0)
             }
         }
@@ -617,8 +621,8 @@ export function ImageReliefGenerator() {
       calligraphyResolution, // using destructured alias
       parameters.hasBase,
       // New dependencies
-      imageRotation,
-      textPosition,
+      debouncedImageRotation,
+      debouncedTextPosition,
       plateRotation,
       platePosition,
       groupRotation

@@ -86,6 +86,37 @@ function collectMeshes(target: THREE.Object3D): {
   // We explicitly use scale=[1,1,1] at every step to bypass animation scales.
   
   target.traverse((child) => {
+    if (child instanceof THREE.InstancedMesh && child.geometry) {
+      if (child.userData.noExport || child.parent?.userData.noExport) return
+      if (hasTransformControlsAncestor(child)) return
+
+      const baseGeo = child.geometry
+      const combinedMatrix = new THREE.Matrix4()
+      const tempMatrix = new THREE.Matrix4()
+      const one = new THREE.Vector3(1, 1, 1)
+
+      let current: THREE.Object3D | null = child
+      while (current && current !== target) {
+        current.updateMatrix()
+        tempMatrix.compose(current.position, current.quaternion, one)
+        combinedMatrix.premultiply(tempMatrix)
+        current = current.parent
+      }
+
+      const instanceMatrix = new THREE.Matrix4()
+      for (let i = 0; i < child.count; i++) {
+        child.getMatrixAt(i, instanceMatrix)
+        const geo = baseGeo.clone()
+        const finalMatrix = combinedMatrix.clone().multiply(instanceMatrix)
+        geo.applyMatrix4(finalMatrix)
+        const sanitized = sanitizeForExport(geo)
+        sanitized.computeVertexNormals()
+        geometries.push(sanitized)
+        geo.dispose()
+      }
+      return
+    }
+
     if (child instanceof THREE.Mesh && child.geometry) {
       // Check for noExport flag on mesh or parent
       if (child.userData.noExport || child.parent?.userData.noExport) return

@@ -3,7 +3,7 @@
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
 import { OrbitControls, Grid, Html, useProgress, Environment, ContactShadows } from "@react-three/drei"
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing"
-import { Suspense, useRef, useEffect, useState } from "react"
+import { Suspense, useRef, useEffect, useState, useMemo } from "react"
 import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
 
@@ -206,45 +206,20 @@ function AnimatedModelWrapper({ children }: { children: React.ReactNode }) {
 // Current model renderer
 function CurrentModel() {
   const currentMode = useModelStore(state => state.currentMode)
-  const [key, setKey] = useState(0)
-  
-  // Reset animation when mode changes
-  useEffect(() => {
-    setKey(prev => prev + 1)
+  const model = useMemo(() => {
+    if (currentMode === 'basic') return <BasicShape />
+    if (currentMode === 'text') return <Text3DGenerator />
+    if (currentMode === 'relief') return <ReliefGenerator />
+    if (currentMode === 'hollow') return <StencilGenerator />
+    if (currentMode === 'qr') return <QRCodeGenerator />
+    if (currentMode === 'image') return <ImageReliefGenerator />
+    return null
   }, [currentMode])
 
-  const renderModel = () => {
-    if (currentMode === 'basic') {
-      return <BasicShape />
-    }
-    
-    if (currentMode === 'text') {
-      return <Text3DGenerator />
-    }
-
-    if (currentMode === 'relief') {
-      return <ReliefGenerator />
-    }
-
-    if (currentMode === 'hollow') {
-       return <StencilGenerator />
-    }
-
-    if (currentMode === 'qr') {
-       return <QRCodeGenerator />
-    }
-
-    if (currentMode === 'image') {
-       return <ImageReliefGenerator />
-    }
-
-    return null
-  }
-
   return (
-    <AnimatedModelWrapper key={key}>
+    <AnimatedModelWrapper key={currentMode}>
       <ArrayLayout>
-        {renderModel()}
+        {model}
       </ArrayLayout>
     </AnimatedModelWrapper>
   )

@@ -1,9 +1,10 @@
-import { useMemo } from "react"
+import { useMemo, useEffect, useRef } from "react"
 import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
 import QRCode from "qrcode"
-import { mergeBufferGeometries } from "three-stdlib"
 import { toShapeXY } from "@/components/three/utils/coords"
+import { useDebounce } from "@/components/hooks/useDebounce"
+// (mergeBufferGeometries removed; instanced preview handles blocks)
 
 // Helper to create a rounded rectangle shape
 function createRoundedRectShape(width: number, height: number, radius: number) {
@@ -32,11 +33,11 @@ function createRoundedRectShape(width: number, height: number, radius: number) {
 
 export function QRCodeGenerator() {
   // Optimized: Subscribe only to QR-related parameters
-  const qrText = useModelStore(state => state.parameters.qrText)
-  const qrSize = useModelStore(state => state.parameters.qrSize)
-  const qrDepth = useModelStore(state => state.parameters.qrDepth)
+  const qrTextRaw = useModelStore(state => state.parameters.qrText)
+  const qrSizeRaw = useModelStore(state => state.parameters.qrSize)
+  const qrDepthRaw = useModelStore(state => state.parameters.qrDepth)
   const qrInvert = useModelStore(state => state.parameters.qrInvert)
-  const qrMargin = useModelStore(state => state.parameters.qrMargin)
+  const qrMarginRaw = useModelStore(state => state.parameters.qrMargin)
   const qrIsThrough = useModelStore(state => state.parameters.qrIsThrough)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
   const holes = useModelStore(state => state.parameters.holes)
@@ -47,6 +48,11 @@ export function QRCodeGenerator() {
   const roughness = useModelStore(state => state.parameters.roughness)
   const metalness = useModelStore(state => state.parameters.metalness)
   const plateCornerRadius = useModelStore(state => state.parameters.plateCornerRadius)
+
+  const qrText = useDebounce(qrTextRaw, 200)
+  const qrSize = useDebounce(qrSizeRaw, 200)
+  const qrDepth = useDebounce(qrDepthRaw, 200)
+  const qrMargin = useDebounce(qrMarginRaw, 200)
 
   // Generate QR Matrix
   const qrMatrix = useMemo(() => {
@@ -123,7 +129,7 @@ export function QRCodeGenerator() {
     }
 
     // 2. Create QR Layer (Blocks)
-    const blocks: THREE.BufferGeometry[] = []
+    const instanceMatrices: THREE.Matrix4[] = []
     
     // Layer Z pos and Thickness
     // If Hollow+Through: Starts at 0, thickness=baseThickness (to fill the void)
@@ -150,14 +156,14 @@ export function QRCodeGenerator() {
          const shouldRender = qrInvert ? !isBlack : isBlack
          
          if (shouldRender) {
-             const instance = blockGeo.clone()
              const xPos = x * blockSize - halfSize + blockSize/2
              // QR scan Y is down, 3D Y is up. Flip Y.
              const yPos = (moduleCount - 1 - y) * blockSize - halfSize + blockSize/2
             
              if (!isInHole(xPos, yPos)) {
-               instance.translate(xPos, yPos, zStart + layerThickness/2)
-               blocks.push(instance)
+               const m = new THREE.Matrix4()
+               m.setPosition(xPos, yPos, zStart + layerThickness/2)
+               instanceMatrices.push(m)
              }
          }
       }
@@ -191,19 +197,23 @@ export function QRCodeGenerator() {
        borderGeometry.translate(0, 0, zStart)
     }
 
-    // Merge QR blocks
-    let qrGeometry: THREE.BufferGeometry | null = null
-    if (blocks.length > 0) {
-        // Ensure all geometries have consistent attributes
-        const compatibleBlocks = blocks.map(b => b.index ? b.toNonIndexed() : b)
-        qrGeometry = mergeBufferGeometries(compatibleBlocks)
-    }
-    
-    return { baseGeometry, qrGeometry, borderGeometry }
+    return { baseGeometry, borderGeometry, blockGeo, instanceMatrices }
 
   }, [qrMatrix, qrSize, qrDepth, qrInvert, qrIsThrough, baseThickness, qrMargin, plateCornerRadius, holes])
 
   if (!geometry) return null
+  const instancedRef = useRef<THREE.InstancedMesh>(null)
+
+  useEffect(() => {
+    if (!instancedRef.current) return
+    const mesh = instancedRef.current
+    const count = geometry.instanceMatrices.length
+    mesh.count = count
+    for (let i = 0; i < count; i++) {
+      mesh.setMatrixAt(i, geometry.instanceMatrices[i])
+    }
+    mesh.instanceMatrix.needsUpdate = true
+  }, [geometry])
 
   return (
     <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
@@ -219,15 +229,18 @@ export function QRCodeGenerator() {
           </mesh>
         )}
         
-        {/* QR Mesh */}
-        {geometry.qrGeometry && (
-          <mesh geometry={geometry.qrGeometry}>
+        {/* QR Mesh (Instanced) */}
+        {geometry.instanceMatrices.length > 0 && (
+          <instancedMesh
+            ref={instancedRef}
+            args={[geometry.blockGeo, null as unknown as THREE.Material, geometry.instanceMatrices.length]}
+          >
             <meshStandardMaterial 
               color={textColor} 
               roughness={roughness} 
               metalness={metalness}
             />
-          </mesh>
+          </instancedMesh>
         )}
         
         {/* Border Mesh - Keep consistent with QR Mesh */}

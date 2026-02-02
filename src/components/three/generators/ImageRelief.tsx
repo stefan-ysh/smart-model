@@ -6,6 +6,7 @@ import { useModelStore } from "@/lib/store"
 import { createPlateGeometry, createPlateShape2D } from "./plateShapes"
 import polygonClipping from "polygon-clipping"
 import { mergeBufferGeometries } from "three-stdlib"
+import { rotate2D, toShapeXY } from "@/components/three/utils/coords"
 
 // Helper to load image
 function loadImage(url: string): Promise<HTMLImageElement> {
@@ -123,10 +124,10 @@ export function ImageReliefGenerator() {
       holes.forEach(hole => {
         const hShape = new THREE.Shape()
         // Convert world-space hole to plate-local space
-        const dx = hole.x
-        const dy = -hole.y // Invert Y (World Z) due to -90deg rotation
-        const hx = dx * cosR - dy * sinR
-        const hy = dx * sinR + dy * cosR
+        const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
+        const rotated = rotate2D(shapeXY, -plateRotation)
+        const hx = rotated.x
+        const hy = rotated.y
         hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
         holePolys.push(shapeToPolygon(hShape))
       })
@@ -561,7 +562,8 @@ export function ImageReliefGenerator() {
             
             // Translate offset
             if (textPosition && (textPosition.x !== 0 || textPosition.y !== 0)) {
-                textGeo.translate(textPosition.x, -textPosition.y, 0)
+                const shapeXY = toShapeXY({ x: textPosition.x, y: textPosition.y })
+                textGeo.translate(shapeXY.x, shapeXY.y, 0)
             }
         }
 

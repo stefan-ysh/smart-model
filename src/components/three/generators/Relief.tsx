@@ -9,6 +9,7 @@ import { createPlateGeometry, createPlateShape2D } from "./plateShapes";
 import { mergeBufferGeometries } from "three-stdlib";
 import polygonClipping from "polygon-clipping";
 import { UniversalFontLoader } from "@/utils/fontLoaderUtils";
+import { toShapeXY } from "@/components/three/utils/coords";
 
 // Create plate geometry based on shape type (same as Stencil)
 // Now imported from ./plateShapes
@@ -80,7 +81,8 @@ function createReliefPlateGeometry2D(
   if (holes && holes.length > 0) {
     holes.forEach(hole => {
       const hShape = new THREE.Shape()
-      hShape.absarc(hole.x, -hole.y, hole.radius, 0, Math.PI * 2, false)
+      const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
+      hShape.absarc(shapeXY.x, shapeXY.y, hole.radius, 0, Math.PI * 2, false)
       holePolys.push(shapeToPolygon(hShape))
     })
   }

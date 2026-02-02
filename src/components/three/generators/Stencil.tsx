@@ -7,6 +7,7 @@ import { mergeBufferGeometries } from "three-stdlib"
 import polygonClipping from "polygon-clipping"
 import { useModelStore, TextItem } from "@/lib/store"
 import { createPlateGeometry, createPlateShape2D } from "./plateShapes"
+import { rotate2D, toPlateLocal, toShapeXY } from "@/components/three/utils/coords"
 
 // Create text geometry with proper attributes
 function createTextGeometry(
@@ -191,10 +192,10 @@ function StencilMesh() {
             holes.forEach(hole => {
               const hShape = new THREE.Shape()
               // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
-              const dx = hole.x
-              const dy = -hole.y
-              const hx = dx * cosR - dy * sinR
-              const hy = dx * sinR + dy * cosR
+              const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
+              const rotated = rotate2D(shapeXY, -plateRotation)
+              const hx = rotated.x
+              const hy = rotated.y
               hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
               clipPolys.push(shapeToPolygon(hShape))
             })
@@ -206,13 +207,12 @@ function StencilMesh() {
             if (!font) continue
 
             // Keep text in world space; convert to plate-local so plate rotation doesn't affect it
-            const localX = item.position.x - platePosition.x
-            const localY = -(item.position.y - platePosition.y)
-            const rotatedX = localX * cosR - localY * sinR
-            const rotatedY = localX * sinR + localY * cosR
+            const local = toPlateLocal({ x: item.position.x, y: item.position.y }, platePosition)
+            const shapeXY = toShapeXY(local)
+            const rotated = rotate2D(shapeXY, -plateRotation)
             const localItem = {
               ...item,
-              position: { ...item.position, x: rotatedX, y: rotatedY },
+              position: { ...item.position, x: rotated.x, y: rotated.y },
               rotation: item.rotation - plateRotation
             }
 
@@ -376,10 +376,10 @@ function StencilMesh() {
             holes.forEach(hole => {
               const hShape = new THREE.Shape()
               // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
-              const dx = hole.x
-              const dy = -hole.y
-              const hx = dx * cosR - dy * sinR
-              const hy = dx * sinR + dy * cosR
+              const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
+              const rotated = rotate2D(shapeXY, -plateRotation)
+              const hx = rotated.x
+              const hy = rotated.y
               hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
               clipPolys.push(shapeToPolygon(hShape))
             })
@@ -390,13 +390,12 @@ function StencilMesh() {
             const font = fontMap[item.fontUrl] as any
             if (!font) continue
 
-            const localX = item.position.x - platePosition.x
-            const localY = -(item.position.y - platePosition.y)
-            const rotatedX = localX * cosR - localY * sinR
-            const rotatedY = localX * sinR + localY * cosR
+            const local = toPlateLocal({ x: item.position.x, y: item.position.y }, platePosition)
+            const shapeXY = toShapeXY(local)
+            const rotated = rotate2D(shapeXY, -plateRotation)
             const localItem = {
               ...item,
-              position: { ...item.position, x: rotatedX, y: rotatedY },
+              position: { ...item.position, x: rotated.x, y: rotated.y },
               rotation: item.rotation - plateRotation
             }
 

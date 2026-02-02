@@ -3,6 +3,7 @@ import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
 import QRCode from "qrcode"
 import { mergeBufferGeometries } from "three-stdlib"
+import { toShapeXY } from "@/components/three/utils/coords"
 
 // Helper to create a rounded rectangle shape
 function createRoundedRectShape(width: number, height: number, radius: number) {
@@ -88,7 +89,8 @@ export function QRCodeGenerator() {
       if (!holes || holes.length === 0) return
       holes.forEach(hole => {
         const h = new THREE.Path()
-        h.absarc(hole.x, -hole.y, hole.radius, 0, Math.PI * 2, false)
+        const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
+        h.absarc(shapeXY.x, shapeXY.y, hole.radius, 0, Math.PI * 2, false)
         shape.holes.push(h)
       })
     }
@@ -112,8 +114,9 @@ export function QRCodeGenerator() {
     const isInHole = (x: number, y: number) => {
       if (!holes || holes.length === 0) return false
       for (const hole of holes) {
-        const dx = x - hole.x
-        const dy = y + hole.y
+        const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
+        const dx = x - shapeXY.x
+        const dy = y - shapeXY.y
         if (dx * dx + dy * dy <= hole.radius * hole.radius) return true
       }
       return false

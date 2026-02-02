@@ -10,13 +10,14 @@ import { mergeBufferGeometries } from "three-stdlib";
 import polygonClipping from "polygon-clipping";
 import { UniversalFontLoader } from "@/utils/fontLoaderUtils";
 import { toShapeXY } from "@/components/three/utils/coords";
+import { LRUCache } from "@/components/three/utils/lru";
 
 // Create plate geometry based on shape type (same as Stencil)
 // Now imported from ./plateShapes
 
 // Global caches for expensive geometries
-const plateCache = new Map<string, THREE.BufferGeometry>()
-const textGeoCache = new Map<string, THREE.BufferGeometry>()
+const plateCache = new LRUCache<string, THREE.BufferGeometry>(20)
+const textGeoCache = new LRUCache<string, THREE.BufferGeometry>(100)
 
 function createReliefPlateGeometry2D(
   plateShape: any,
@@ -243,8 +244,9 @@ function ReliefMesh() {
         })
 
         let textGeo: THREE.BufferGeometry
-        if (textGeoCache.has(cacheKey)) {
-          textGeo = textGeoCache.get(cacheKey)!
+        const cached = textGeoCache.get(cacheKey)
+        if (cached) {
+          textGeo = cached
         } else {
           try {
             textGeo = new TextGeometry(item.content || " ", {
@@ -266,16 +268,6 @@ function ReliefMesh() {
             }
 
             textGeoCache.set(cacheKey, textGeo)
-            
-            // Limit cache size
-            if (textGeoCache.size > 100) {
-              const firstKey = textGeoCache.keys().next().value
-              if (firstKey) {
-                const oldGeo = textGeoCache.get(firstKey)
-                if (oldGeo) oldGeo.dispose()
-                textGeoCache.delete(firstKey)
-              }
-            }
           } catch (e) {
             console.error("Error creating text geometry:", e);
             return null;
@@ -299,9 +291,8 @@ function ReliefMesh() {
       plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius, trayBorderWidth, trayBorderHeight, edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes
     })
 
-    if (plateCache.has(cacheKey)) {
-      return plateCache.get(cacheKey)!
-    }
+    const cached = plateCache.get(cacheKey)
+    if (cached) return cached
 
     const geo = createReliefPlateGeometry2D(
       plateShape,
@@ -333,16 +324,6 @@ function ReliefMesh() {
 
     if (geo) {
       plateCache.set(cacheKey, geo)
-    }
-    
-    // Limit cache size
-    if (plateCache.size > 20) {
-      const firstKey = plateCache.keys().next().value
-      if (firstKey) {
-        const oldGeo = plateCache.get(firstKey)
-        if (oldGeo) oldGeo.dispose()
-        plateCache.delete(firstKey)
-      }
     }
 
     return geo

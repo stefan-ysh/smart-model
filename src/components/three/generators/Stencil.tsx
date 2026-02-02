@@ -8,6 +8,7 @@ import polygonClipping from "polygon-clipping"
 import { useModelStore, TextItem } from "@/lib/store"
 import { createPlateGeometry, createPlateShape2D } from "./plateShapes"
 import { rotate2D, toPlateLocal, toShapeXY } from "@/components/three/utils/coords"
+import { LRUCache } from "@/components/three/utils/lru"
 
 // Create text geometry with proper attributes
 function createTextGeometry(
@@ -58,7 +59,7 @@ function createTextGeometry(
 }
 
 // Global cache for expensive CSG geometries
-const geometryCache = new Map<string, THREE.BufferGeometry>()
+const geometryCache = new LRUCache<string, THREE.BufferGeometry>(20)
 
 // Replace standard FontLoader with our UniversalFontLoader
 import { UniversalFontLoader } from "@/utils/fontLoaderUtils"
@@ -100,9 +101,8 @@ function StencilMesh() {
       holes
     })
 
-    if (geometryCache.has(cacheKey)) {
-      return geometryCache.get(cacheKey)!
-    }
+    const cached = geometryCache.get(cacheKey)
+    if (cached) return cached
 
     try {
       // Calculate inverse plate transform
@@ -474,12 +474,6 @@ function StencilMesh() {
       const finalGeo = result || new THREE.BufferGeometry()
       
       geometryCache.set(cacheKey, finalGeo)
-      
-      // Limit cache size
-      if (geometryCache.size > 20) {
-         const firstKey = geometryCache.keys().next().value
-         if (firstKey) geometryCache.delete(firstKey)
-      }
       
       return finalGeo
 

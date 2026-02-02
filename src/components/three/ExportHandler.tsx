@@ -49,6 +49,31 @@ function sanitizeForExport(geometry: THREE.BufferGeometry): THREE.BufferGeometry
 /**
  * Collect all meshes from target and prepare for export
  */
+function isTransformControlsObject(obj: THREE.Object3D): boolean {
+  const name = obj.name || ""
+  const type = (obj as any).type || ""
+  if (
+    type === "TransformControls" ||
+    name.includes("TransformControls") ||
+    name.includes("TransformControlsGizmo") ||
+    name.includes("TransformControlsPlane") ||
+    name.includes("Gizmo")
+  ) {
+    return true
+  }
+  const userData = (obj as any).userData || {}
+  return !!userData.isTransformControls
+}
+
+function hasTransformControlsAncestor(obj: THREE.Object3D): boolean {
+  let current: THREE.Object3D | null = obj
+  while (current) {
+    if (isTransformControlsObject(current)) return true
+    current = current.parent
+  }
+  return false
+}
+
 function collectMeshes(target: THREE.Object3D): {
   geometries: THREE.BufferGeometry[];
   mesh: THREE.Mesh | null;
@@ -64,6 +89,8 @@ function collectMeshes(target: THREE.Object3D): {
     if (child instanceof THREE.Mesh && child.geometry) {
       // Check for noExport flag on mesh or parent
       if (child.userData.noExport || child.parent?.userData.noExport) return
+      // Guard against TransformControls gizmo/planes getting exported
+      if (hasTransformControlsAncestor(child)) return
 
       const geo = child.geometry.clone()
       

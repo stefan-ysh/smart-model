@@ -236,7 +236,10 @@ function HoleMarkers() {
   if (!holes || holes.length === 0) return null
   
   return (
-    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
+    <group
+      rotation={[0, (groupRotation * Math.PI) / 180, 0]}
+      userData={{ noExport: true }}
+    >
       {holes.map(hole => (
         <DraggableHole
           key={hole.id}
@@ -343,8 +346,8 @@ export function Scene() {
             }}
           >
             <CurrentModel />
-            <HoleMarkers />
           </group>
+          <HoleMarkers />
           
           {/* Grid - infinite and filling the view */}
           {showGrid && (

@@ -186,6 +186,8 @@ function createReliefPlateGeometry2D(
 
 function ReliefMesh() {
   const { parameters } = useModelStore();
+  const setSelectedLayer = useModelStore(state => state.setSelectedLayer)
+  const isTransformEnabled = useModelStore(state => state.isTransformEnabled)
   const {
     size,
     baseThickness,
@@ -338,7 +340,14 @@ function ReliefMesh() {
         position={[platePosition.x, baseThickness / 2, platePosition.y]}
       >
         {plateGeo && (
-          <mesh geometry={plateGeo}>
+          <mesh
+            geometry={plateGeo}
+            onPointerDown={(e) => {
+              if (!isTransformEnabled) return
+              e.stopPropagation()
+              setSelectedLayer("base")
+            }}
+          >
             <meshStandardMaterial
               color={plateColor}
               roughness={roughness}

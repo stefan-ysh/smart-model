@@ -22,6 +22,8 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 
 export function ImageReliefGenerator() {
   const { parameters } = useModelStore()
+  const setSelectedLayer = useModelStore(state => state.setSelectedLayer)
+  const isTransformEnabled = useModelStore(state => state.isTransformEnabled)
   const [mergedGeometry, setMergedGeometry] = useState<THREE.BufferGeometry | null>(null)
   
   const { 
@@ -52,11 +54,10 @@ export function ImageReliefGenerator() {
     roughness,
     metalness,
     plateRotation,
+    platePosition,
     textPosition,
     imageRotation,
-    groupRotation
   } = parameters
-  const platePosition = parameters.platePosition
 
   const debouncedTextPosition = useDebounce(textPosition, 150)
   const debouncedImageRotation = useDebounce(imageRotation, 150)
@@ -622,7 +623,6 @@ export function ImageReliefGenerator() {
       debouncedImageRotation,
       debouncedTextPosition,
       plateRotation,
-      groupRotation
   ])
 
   if (!mergedGeometry) return null
@@ -658,16 +658,19 @@ export function ImageReliefGenerator() {
     : [textMaterial]
     
   return (
-    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
-      <group 
-        rotation={[-Math.PI/2, 0, 0]}
-        position={[platePosition.x, baseThickness/2, platePosition.y]}
-      >
-          <mesh 
-              geometry={mergedGeometry}
-              material={materials}
-          />
-      </group>
+    <group 
+      rotation={[-Math.PI/2, 0, 0]}
+      position={[platePosition.x, baseThickness/2, platePosition.y]}
+    >
+        <mesh 
+            geometry={mergedGeometry}
+            material={materials}
+            onPointerDown={(e) => {
+              if (!isTransformEnabled) return
+              e.stopPropagation()
+              setSelectedLayer("base")
+            }}
+        />
     </group>
   )
 }

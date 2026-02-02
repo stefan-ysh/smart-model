@@ -159,6 +159,7 @@ export interface ModelParams {
   // System
   exportTrigger: number;
   exportFormat: ExportFormat;
+  layerCoordsVersion: number;
 }
 
 export type TransformMode = "translate" | "rotate" | "scale";
@@ -177,6 +178,7 @@ interface ModelStore {
   parameters: ModelParams;
   updateParam: (key: keyof ModelParams, value: unknown) => void;
   setParameters: (params: Partial<ModelParams>) => void;
+  normalizeLayerPositions: () => void;
   triggerExport: () => void;
 
   // Text items management
@@ -435,6 +437,7 @@ const defaultParams: ModelParams = {
 
   exportTrigger: 0,
   exportFormat: "stl",
+  layerCoordsVersion: 1,
 };
 
 export const useModelStore = create<ModelStore>((set) => ({
@@ -449,8 +452,38 @@ export const useModelStore = create<ModelStore>((set) => ({
     set((state) => {
       const nextValue =
         key === "plateShape" && value === "square" ? "rectangle" : value
+      const params = { ...state.parameters, [key]: nextValue }
+
+      if (key === "textContent" && typeof value === "string") {
+        const nextItems = [...params.textItems]
+        if (nextItems.length > 0) {
+          nextItems[0] = { ...nextItems[0], content: value }
+          params.textItems = nextItems
+        }
+      }
+      if (key === "fontSize" && typeof value === "number") {
+        const nextItems = [...params.textItems]
+        if (nextItems.length > 0) {
+          nextItems[0] = { ...nextItems[0], fontSize: value }
+          params.textItems = nextItems
+        }
+      }
+      if (key === "fontUrl" && typeof value === "string") {
+        const nextItems = [...params.textItems]
+        if (nextItems.length > 0) {
+          nextItems[0] = { ...nextItems[0], fontUrl: value }
+          params.textItems = nextItems
+        }
+      }
+      if (key === "thickness" && typeof value === "number") {
+        const nextItems = [...params.textItems]
+        if (nextItems.length > 0) {
+          nextItems[0] = { ...nextItems[0], reliefHeight: value }
+          params.textItems = nextItems
+        }
+      }
       return {
-        parameters: { ...state.parameters, [key]: nextValue },
+        parameters: params,
       }
     }),
   setParameters: (params) =>
@@ -461,6 +494,35 @@ export const useModelStore = create<ModelStore>((set) => ({
           : params
       return {
         parameters: { ...state.parameters, ...nextParams },
+      }
+    }),
+  normalizeLayerPositions: () =>
+    set((state) => {
+      const { layerCoordsVersion, platePosition, textItems, textPosition } =
+        state.parameters
+      if ((layerCoordsVersion ?? 1) !== 2) return state
+
+      const nextTextItems = textItems.map((item) => ({
+        ...item,
+        position: {
+          ...item.position,
+          x: item.position.x + platePosition.x,
+          y: item.position.y + platePosition.y,
+        },
+      }))
+
+      const nextTextPosition = {
+        x: textPosition.x + platePosition.x,
+        y: textPosition.y + platePosition.y,
+      }
+
+      return {
+        parameters: {
+          ...state.parameters,
+          textItems: nextTextItems,
+          textPosition: nextTextPosition,
+          layerCoordsVersion: 1,
+        },
       }
     }),
   triggerExport: () =>
@@ -505,12 +567,28 @@ export const useModelStore = create<ModelStore>((set) => ({
 
   updateTextItem: (id, updates) =>
     set((state) => ({
-      parameters: {
-        ...state.parameters,
-        textItems: state.parameters.textItems.map((item) =>
+      parameters: (() => {
+        const nextItems = state.parameters.textItems.map((item) =>
           item.id === id ? { ...item, ...updates } : item,
-        ),
-      },
+        )
+        const params = { ...state.parameters, textItems: nextItems }
+        const firstId = state.parameters.textItems[0]?.id
+        if (firstId && firstId === id) {
+          if (typeof updates.content === "string") {
+            params.textContent = updates.content
+          }
+          if (typeof updates.fontSize === "number") {
+            params.fontSize = updates.fontSize
+          }
+          if (typeof updates.fontUrl === "string") {
+            params.fontUrl = updates.fontUrl
+          }
+          if (typeof updates.reliefHeight === "number") {
+            params.thickness = updates.reliefHeight
+          }
+        }
+        return params
+      })(),
     })),
 
   // Hole management

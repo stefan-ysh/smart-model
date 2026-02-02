@@ -33,6 +33,8 @@ function createRoundedRectShape(width: number, height: number, radius: number) {
 
 export function QRCodeGenerator() {
   // Optimized: Subscribe only to QR-related parameters
+  const setSelectedLayer = useModelStore(state => state.setSelectedLayer)
+  const isTransformEnabled = useModelStore(state => state.isTransformEnabled)
   const qrTextRaw = useModelStore(state => state.parameters.qrText)
   const qrSizeRaw = useModelStore(state => state.parameters.qrSize)
   const qrDepthRaw = useModelStore(state => state.parameters.qrDepth)
@@ -42,7 +44,7 @@ export function QRCodeGenerator() {
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
   const holes = useModelStore(state => state.parameters.holes)
   const platePosition = useModelStore(state => state.parameters.platePosition)
-  const groupRotation = useModelStore(state => state.parameters.groupRotation)
+  
   const plateColor = useModelStore(state => state.parameters.plateColor)
   const textColor = useModelStore(state => state.parameters.textColor)
   const roughness = useModelStore(state => state.parameters.roughness)
@@ -219,11 +221,17 @@ export function QRCodeGenerator() {
   if (!geometry) return null
 
   return (
-    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
       <group rotation={[-Math.PI / 2, 0, 0]} position={[platePosition.x, baseThickness / 2, platePosition.y]}>
         {/* Base Mesh */}
         {geometry.baseGeometry && (
-          <mesh geometry={geometry.baseGeometry}>
+          <mesh
+            geometry={geometry.baseGeometry}
+            onPointerDown={(e) => {
+              if (!isTransformEnabled) return
+              e.stopPropagation()
+              setSelectedLayer("base")
+            }}
+          >
             <meshStandardMaterial 
               color={plateColor}
               roughness={roughness} 
@@ -257,6 +265,5 @@ export function QRCodeGenerator() {
           </mesh>
         )}
       </group>
-    </group>
   )
 }

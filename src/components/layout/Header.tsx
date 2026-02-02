@@ -29,6 +29,9 @@ export function Header() {
         try {
             const result = event.target?.result as string
             const importedParams = JSON.parse(result)
+            if (!("layerCoordsVersion" in importedParams)) {
+              importedParams.layerCoordsVersion = 1
+            }
             
             // Exclude triggers from import to avoid side effects
             if ('exportTrigger' in importedParams) delete importedParams.exportTrigger

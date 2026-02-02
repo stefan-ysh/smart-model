@@ -19,10 +19,12 @@ import { UniversalFontLoader } from "@/utils/fontLoaderUtils"
 
 function StencilMesh() {
   const { parameters } = useModelStore()
+  const setSelectedLayer = useModelStore(state => state.setSelectedLayer)
+  const isTransformEnabled = useModelStore(state => state.isTransformEnabled)
   const { 
     size, baseThickness, textItems, 
     plateShape, plateWidth, plateHeight,
-    platePosition, plateRotation, groupRotation, plateCornerRadius,
+    platePosition, plateRotation, plateCornerRadius,
     trayBorderWidth, trayBorderHeight,
     edgeBevelEnabled, edgeBevelType, edgeBevelSize,
     modelResolution,
@@ -46,7 +48,7 @@ function StencilMesh() {
     const cacheKey = JSON.stringify({
       size, baseThickness, textItems, 
       plateShape, plateWidth, plateHeight,
-      platePosition, plateRotation, plateCornerRadius,
+      plateRotation, plateCornerRadius,
       trayBorderWidth, trayBorderHeight,
       edgeBevelEnabled, edgeBevelType, edgeBevelSize,
       modelResolution,
@@ -438,20 +440,25 @@ function StencilMesh() {
   if (!resultGeometry) return null
   
   return (
-    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
-      <group 
-        rotation={[-Math.PI / 2, 0, (plateRotation * Math.PI) / 180]} 
-        position={[platePosition.x, baseThickness / 2, platePosition.y]}
+    <group 
+      rotation={[-Math.PI / 2, 0, (plateRotation * Math.PI) / 180]} 
+      position={[platePosition.x, baseThickness / 2, platePosition.y]}
+    >
+      <mesh
+        geometry={resultGeometry}
+        onPointerDown={(e) => {
+          if (!isTransformEnabled) return
+          e.stopPropagation()
+          setSelectedLayer("base")
+        }}
       >
-        <mesh geometry={resultGeometry}>
-          <meshStandardMaterial 
-            color={plateColor} 
-            roughness={roughness}
-            metalness={metalness}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      </group>
+        <meshStandardMaterial 
+          color={plateColor} 
+          roughness={roughness}
+          metalness={metalness}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
     </group>
   )
 }

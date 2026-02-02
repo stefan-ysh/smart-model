@@ -207,6 +207,22 @@ function AnimatedModelWrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
+function ModelTransformGroup({ children }: { children: React.ReactNode }) {
+  const currentMode = useModelStore(state => state.currentMode)
+  const groupRotation = useModelStore(state => state.parameters.groupRotation)
+
+  const isGrouped = ["relief", "hollow", "image", "qr"].includes(currentMode)
+  if (!isGrouped) return <>{children}</>
+
+  return (
+    <group
+      rotation={[0, (groupRotation * Math.PI) / 180, 0]}
+    >
+      {children}
+    </group>
+  )
+}
+
 // Current model renderer
 function CurrentModel() {
   const currentMode = useModelStore(state => state.currentMode)
@@ -223,7 +239,9 @@ function CurrentModel() {
   return (
     <AnimatedModelWrapper key={currentMode}>
       <ArrayLayout>
-        {model}
+        <ModelTransformGroup>
+          {model}
+        </ModelTransformGroup>
       </ArrayLayout>
     </AnimatedModelWrapper>
   )
@@ -252,7 +270,6 @@ function HoleMarkers() {
   const holes = useModelStore(state => state.parameters.holes)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
   const platePosition = useModelStore(state => state.parameters.platePosition)
-  const groupRotation = useModelStore(state => state.parameters.groupRotation)
   const updateHole = useModelStore(state => state.updateHole)
   
   // Only show markers in relevant modes
@@ -260,10 +277,7 @@ function HoleMarkers() {
   if (!holes || holes.length === 0) return null
   
   return (
-    <group
-      rotation={[0, (groupRotation * Math.PI) / 180, 0]}
-      userData={{ noExport: true }}
-    >
+    <group userData={{ noExport: true }}>
       {holes.map(hole => (
         <DraggableHole
           key={hole.id}
@@ -287,14 +301,13 @@ function TextMarkers() {
   const textItems = useModelStore(state => state.parameters.textItems)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
   const plateRotation = useModelStore(state => state.parameters.plateRotation)
-  const groupRotation = useModelStore(state => state.parameters.groupRotation)
   const updateTextItem = useModelStore(state => state.updateTextItem)
 
   if (!["relief", "hollow"].includes(currentMode)) return null
   if (!textItems || textItems.length === 0) return null
 
   return (
-    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]} userData={{ noExport: true }}>
+    <group userData={{ noExport: true }}>
       {textItems.map(item => (
         <DraggableText
           key={item.id}
@@ -314,13 +327,12 @@ function PlateMarker() {
   const currentMode = useModelStore(state => state.currentMode)
   const platePosition = useModelStore(state => state.parameters.platePosition)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
-  const groupRotation = useModelStore(state => state.parameters.groupRotation)
   const updateParam = useModelStore(state => state.updateParam)
 
   if (!["relief", "hollow", "image"].includes(currentMode)) return null
 
   return (
-    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]} userData={{ noExport: true }}>
+    <group userData={{ noExport: true }}>
       <DraggableAnchor
         id="base"
         position={platePosition}
@@ -336,13 +348,12 @@ function TextPositionMarker() {
   const currentMode = useModelStore(state => state.currentMode)
   const textPosition = useModelStore(state => state.parameters.textPosition)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
-  const groupRotation = useModelStore(state => state.parameters.groupRotation)
   const updateParam = useModelStore(state => state.updateParam)
 
   if (!["image", "text"].includes(currentMode)) return null
 
   return (
-    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]} userData={{ noExport: true }}>
+    <group userData={{ noExport: true }}>
       <DraggableAnchor
         id="text-position"
         position={textPosition}
@@ -375,9 +386,18 @@ function GroundEffects() {
 export function Scene() {
   const controlsRef = useRef<OrbitControlsLike | null>(null)
   const showShadows = useModelStore(state => state.parameters.showShadows)
+  const currentMode = useModelStore(state => state.currentMode)
+  const layerCoordsVersion = useModelStore(state => state.parameters.layerCoordsVersion)
+  const normalizeLayerPositions = useModelStore(state => state.normalizeLayerPositions)
   const isLoadingFont = useModelStore(state => state.isLoadingFont)
   const autoRotate = useModelStore(state => state.autoRotate)
   const showGrid = useModelStore(state => state.showGrid)
+
+  useEffect(() => {
+    if (["relief", "hollow", "image", "qr"].includes(currentMode) && layerCoordsVersion === 2) {
+      normalizeLayerPositions()
+    }
+  }, [currentMode, layerCoordsVersion, normalizeLayerPositions])
   
   return (
     <div className="relative w-full h-full">
@@ -450,10 +470,12 @@ export function Scene() {
           >
             <CurrentModel />
           </group>
-          <HoleMarkers />
-          <TextMarkers />
+          <ModelTransformGroup>
+            <HoleMarkers />
+            <TextMarkers />
+            <TextPositionMarker />
+          </ModelTransformGroup>
           <PlateMarker />
-          <TextPositionMarker />
           
           {/* Grid - infinite and filling the view */}
           {showGrid && (
@@ -536,6 +558,7 @@ function LayerOverlay() {
   const selectedLayerId = useModelStore(state => state.selectedLayerId)
   const setSelectedLayer = useModelStore(state => state.setSelectedLayer)
   const setFocusTarget = useModelStore(state => state.setFocusTarget)
+  const normalizeLayerPositions = useModelStore(state => state.normalizeLayerPositions)
   const [collapsed, setCollapsed] = useState(true)
   const [query, setQuery] = useState("")
 
@@ -553,7 +576,20 @@ function LayerOverlay() {
         }))
       ]
     }
-    if (currentMode === "relief" || currentMode === "hollow" || currentMode === "qr") {
+    if (currentMode === "relief" || currentMode === "hollow") {
+      return [
+        { id: "base", label: "底板" },
+        ...parameters.textItems.map((item, index) => ({
+          id: `text-${item.id}`,
+          label: `文字 ${index + 1}`
+        })),
+        ...parameters.holes.map((hole, index) => ({
+          id: `hole-${hole.id}`,
+          label: `孔位 ${index + 1}`
+        }))
+      ]
+    }
+    if (currentMode === "qr") {
       return [
         { id: "base", label: "底板" },
         ...parameters.holes.map((hole, index) => ({
@@ -563,7 +599,7 @@ function LayerOverlay() {
       ]
     }
     return []
-  }, [currentMode, parameters.holes])
+  }, [currentMode, parameters.holes, parameters.textItems])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -578,13 +614,21 @@ function LayerOverlay() {
       return
     }
     if (id === "text-position") {
-      setFocusTarget({ x: parameters.textPosition.x, y: 0, z: parameters.textPosition.y })
+      setFocusTarget({
+        x: parameters.textPosition.x,
+        y: 0,
+        z: parameters.textPosition.y
+      })
       return
     }
     if (id.startsWith("text-")) {
       const match = parameters.textItems.find((item) => `text-${item.id}` === id)
       if (match) {
-        setFocusTarget({ x: match.position.x, y: 0, z: match.position.y })
+        setFocusTarget({
+          x: match.position.x,
+          y: 0,
+          z: match.position.y
+        })
       }
       return
     }
@@ -606,12 +650,21 @@ function LayerOverlay() {
     <div className="absolute top-4 right-24 z-10 w-56 bg-background/80 backdrop-blur-xl rounded-xl p-2 border border-white/10 shadow-xl">
       <div className="flex items-center justify-between px-1">
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">图层</span>
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="text-[10px] text-zinc-400 hover:text-zinc-200"
-        >
-          {collapsed ? "展开" : "收起"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => normalizeLayerPositions()}
+            className="text-[10px] text-zinc-400 hover:text-zinc-200"
+            title="修正旧坐标导致的错位"
+          >
+            修正
+          </button>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="text-[10px] text-zinc-400 hover:text-zinc-200"
+          >
+            {collapsed ? "展开" : "收起"}
+          </button>
+        </div>
       </div>
       {!collapsed && (
         <>

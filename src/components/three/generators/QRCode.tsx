@@ -86,7 +86,7 @@ export function QRCodeGenerator() {
       if (!holes || holes.length === 0) return
       holes.forEach(hole => {
         const h = new THREE.Path()
-        h.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false)
+        h.absarc(hole.x, -hole.y, hole.radius, 0, Math.PI * 2, false)
         shape.holes.push(h)
       })
     }
@@ -111,7 +111,7 @@ export function QRCodeGenerator() {
       if (!holes || holes.length === 0) return false
       for (const hole of holes) {
         const dx = x - hole.x
-        const dy = y - hole.y
+        const dy = y + hole.y
         if (dx * dx + dy * dy <= hole.radius * hole.radius) return true
       }
       return false

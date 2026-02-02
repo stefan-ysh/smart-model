@@ -54,25 +54,47 @@ function collectMeshes(target: THREE.Object3D): {
   mesh: THREE.Mesh | null;
 } {
   const geometries: THREE.BufferGeometry[] = []
-  const worldMatrix = new THREE.Matrix4()
+  
+  // MANUAL MATRIX STRATEGY:
+  // Instead of cloning (which can be flaky or undefined), we manually calculate
+  // the cumulative transformation matrix for each mesh relative to the target.
+  // We explicitly use scale=[1,1,1] at every step to bypass animation scales.
   
   target.traverse((child) => {
     if (child instanceof THREE.Mesh && child.geometry) {
-      // Clone geometry and apply world transform
+      // Check for noExport flag on mesh or parent
+      if (child.userData.noExport || child.parent?.userData.noExport) return
+
       const geo = child.geometry.clone()
-      child.updateWorldMatrix(true, false)
-      worldMatrix.copy(child.matrixWorld)
-      geo.applyMatrix4(worldMatrix)
+      
+      // Calculate matrix relative to export target, forcing scale to 1
+      const combinedMatrix = new THREE.Matrix4()
+      const tempMatrix = new THREE.Matrix4()
+      const one = new THREE.Vector3(1, 1, 1)
+      
+      let current: THREE.Object3D | null = child
+      
+      // Walk up the hierarchy until we hit the export target
+      while (current && current !== target) {
+        // Ensure local transform properties (especially quaternion from R3F props) are up to date
+        current.updateMatrix()
+        
+        // Compose local matrix with Scale=1
+        tempMatrix.compose(current.position, current.quaternion, one)
+        
+        // Multiply: Parent * Child
+        combinedMatrix.premultiply(tempMatrix)
+        
+        current = current.parent
+      }
+      
+      geo.applyMatrix4(combinedMatrix)
       
       // Convert to non-indexed geometry and sanitize for export
       const sanitized = sanitizeForExport(geo)
-      
-      // Ensure normals are computed
       sanitized.computeVertexNormals()
-      
       geometries.push(sanitized)
       
-      // Cleanup if we cloned and converted
       geo.dispose()
     }
   })

@@ -51,7 +51,9 @@ export function ImageReliefGenerator() {
     metalness,
     plateRotation,
     textPosition,
-    imageRotation
+    imageRotation,
+    platePosition,
+    groupRotation
   } = parameters
 
 
@@ -120,9 +122,11 @@ export function ImageReliefGenerator() {
     if (holes && holes.length > 0) {
       holes.forEach(hole => {
         const hShape = new THREE.Shape()
-        // Keep holes in world space by converting to plate-local (inverse plate rotation)
-        const hx = hole.x * cosR - hole.y * sinR
-        const hy = hole.x * sinR + hole.y * cosR
+        // Convert world-space hole to plate-local space
+        const dx = hole.x - platePosition.x
+        const dy = -(hole.y - platePosition.y) // Invert Y (World Z) due to -90deg rotation
+        const hx = dx * cosR - dy * sinR
+        const hy = dx * sinR + dy * cosR
         hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
         holePolys.push(shapeToPolygon(hShape))
       })
@@ -151,8 +155,6 @@ export function ImageReliefGenerator() {
         const outer = createPlateShape2D(
           "square",
           size,
-          plateWidth,
-          plateHeight,
           plateCornerRadius,
           modelResolution
         )
@@ -238,7 +240,8 @@ export function ImageReliefGenerator() {
     edgeBevelSize,
     modelResolution,
     holes,
-    plateRotation
+    plateRotation,
+    platePosition
   ])
 
 
@@ -614,7 +617,9 @@ export function ImageReliefGenerator() {
       // New dependencies
       imageRotation,
       textPosition,
-      plateRotation
+      plateRotation,
+      platePosition,
+      groupRotation
   ])
 
   if (!mergedGeometry) return null
@@ -650,11 +655,16 @@ export function ImageReliefGenerator() {
     : [textMaterial]
     
   return (
-    <group rotation={[-Math.PI/2, 0, 0]}>
-        <mesh 
-            geometry={mergedGeometry}
-            material={materials}
-        />
+    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
+      <group 
+        rotation={[-Math.PI/2, 0, 0]}
+        position={[platePosition.x, baseThickness/2, platePosition.y]}
+      >
+          <mesh 
+              geometry={mergedGeometry}
+              material={materials}
+          />
+      </group>
     </group>
   )
 }

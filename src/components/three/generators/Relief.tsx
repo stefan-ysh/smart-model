@@ -80,7 +80,7 @@ function createReliefPlateGeometry2D(
   if (holes && holes.length > 0) {
     holes.forEach(hole => {
       const hShape = new THREE.Shape()
-      hShape.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false)
+      hShape.absarc(hole.x, -hole.y, hole.radius, 0, Math.PI * 2, false)
       holePolys.push(shapeToPolygon(hShape))
     })
   }

@@ -192,7 +192,7 @@ function StencilMesh() {
               const hShape = new THREE.Shape()
               // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
               const dx = hole.x - platePosition.x
-              const dy = hole.y - platePosition.y
+              const dy = -(hole.y - platePosition.y)
               const hx = dx * cosR - dy * sinR
               const hy = dx * sinR + dy * cosR
               hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
@@ -377,7 +377,7 @@ function StencilMesh() {
               const hShape = new THREE.Shape()
               // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
               const dx = hole.x - platePosition.x
-              const dy = hole.y - platePosition.y
+              const dy = -(hole.y - platePosition.y)
               const hx = dx * cosR - dy * sinR
               const hy = dx * sinR + dy * cosR
               hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)

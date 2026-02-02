@@ -77,7 +77,7 @@ function getSubtractionGeometries(
     holes.forEach(hole => {
       const cyl = new THREE.CylinderGeometry(hole.radius, hole.radius, holeDepth, 32);
       cyl.rotateX(Math.PI / 2);
-      cyl.translate(hole.x + xOffset, hole.y + yOffset, 0); 
+      cyl.translate(hole.x + xOffset, -hole.y + yOffset, 0); 
       const prepared = prepareCSGGeometry(cyl);
       geometries.push(prepared);
       cyl.dispose();

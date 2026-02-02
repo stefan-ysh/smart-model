@@ -191,8 +191,8 @@ function StencilMesh() {
             holes.forEach(hole => {
               const hShape = new THREE.Shape()
               // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
-              const dx = hole.x - platePosition.x
-              const dy = -(hole.y - platePosition.y)
+              const dx = hole.x
+              const dy = -hole.y
               const hx = dx * cosR - dy * sinR
               const hy = dx * sinR + dy * cosR
               hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
@@ -207,7 +207,7 @@ function StencilMesh() {
 
             // Keep text in world space; convert to plate-local so plate rotation doesn't affect it
             const localX = item.position.x - platePosition.x
-            const localY = item.position.y - platePosition.y
+            const localY = -(item.position.y - platePosition.y)
             const rotatedX = localX * cosR - localY * sinR
             const rotatedY = localX * sinR + localY * cosR
             const localItem = {
@@ -376,8 +376,8 @@ function StencilMesh() {
             holes.forEach(hole => {
               const hShape = new THREE.Shape()
               // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
-              const dx = hole.x - platePosition.x
-              const dy = -(hole.y - platePosition.y)
+              const dx = hole.x
+              const dy = -hole.y
               const hx = dx * cosR - dy * sinR
               const hy = dx * sinR + dy * cosR
               hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
@@ -391,7 +391,7 @@ function StencilMesh() {
             if (!font) continue
 
             const localX = item.position.x - platePosition.x
-            const localY = item.position.y - platePosition.y
+            const localY = -(item.position.y - platePosition.y)
             const rotatedX = localX * cosR - localY * sinR
             const rotatedY = localX * sinR + localY * cosR
             const localItem = {

@@ -23,7 +23,7 @@ function filterSupportedChars(text: string, font: Font): string {
 
 export function Text3DGenerator() {
   const { parameters } = useModelStore()
-  const { textContent, fontSize, thickness, fontUrl } = parameters
+  const { textContent, fontSize, thickness, fontUrl, textPosition } = parameters
   
   // Load font using UniversalFontLoader - this is the ONLY load
   const font = useLoader(UniversalFontLoader, fontUrl) as Font
@@ -34,7 +34,10 @@ export function Text3DGenerator() {
   }, [textContent, font])
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, thickness / 2, 0]}>
+    <group
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[textPosition.x, thickness / 2, textPosition.y]}
+    >
       <Center>
         <DreiText3D
           font={font.data as unknown as string}

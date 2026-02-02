@@ -2,7 +2,7 @@
 
 import * as THREE from "three"
 import { useThree } from "@react-three/fiber"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { STLExporter, OBJExporter, GLTFExporter, mergeBufferGeometries } from "three-stdlib"
 import { useModelStore } from "@/lib/store"
 
@@ -241,9 +241,12 @@ export function ExportHandler() {
   const { scene } = useThree()
   const { parameters } = useModelStore()
   const { exportTrigger, exportFormat } = parameters
+  const lastExportTriggerRef = useRef(exportTrigger)
 
   useEffect(() => {
     if (exportTrigger === 0) return
+    if (exportTrigger === lastExportTriggerRef.current) return
+    lastExportTriggerRef.current = exportTrigger
 
     // Find the export target group
     const target = scene.getObjectByName('export-target')

@@ -202,6 +202,8 @@ interface ModelStore {
   // Layer selection (for Relief/Hollow modes)
   selectedLayerId: string | null; // 'base' for base plate, or textItem.id
   setSelectedLayer: (id: string | null) => void;
+  focusTarget: { x: number; y: number; z: number } | null;
+  setFocusTarget: (target: { x: number; y: number; z: number } | null) => void;
 
   // Font loading state
   isLoadingFont: boolean;
@@ -545,6 +547,8 @@ export const useModelStore = create<ModelStore>((set) => ({
   // Layer selection
   selectedLayerId: null,
   setSelectedLayer: (id) => set({ selectedLayerId: id }),
+  focusTarget: null,
+  setFocusTarget: (target) => set({ focusTarget: target }),
 
   // Font loading
   isLoadingFont: false,

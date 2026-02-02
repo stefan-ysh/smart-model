@@ -123,8 +123,8 @@ export function ImageReliefGenerator() {
       holes.forEach(hole => {
         const hShape = new THREE.Shape()
         // Convert world-space hole to plate-local space
-        const dx = hole.x - platePosition.x
-        const dy = -(hole.y - platePosition.y) // Invert Y (World Z) due to -90deg rotation
+        const dx = hole.x
+        const dy = -hole.y // Invert Y (World Z) due to -90deg rotation
         const hx = dx * cosR - dy * sinR
         const hy = dx * sinR + dy * cosR
         hShape.absarc(hx, hy, hole.radius, 0, Math.PI * 2, false)
@@ -561,7 +561,7 @@ export function ImageReliefGenerator() {
             
             // Translate offset
             if (textPosition && (textPosition.x !== 0 || textPosition.y !== 0)) {
-                textGeo.translate(textPosition.x, textPosition.y, 0)
+                textGeo.translate(textPosition.x, -textPosition.y, 0)
             }
         }
 

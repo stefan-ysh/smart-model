@@ -1,5 +1,6 @@
 "use client"
 
+import type * as React from "react"
 import { AlertTriangle } from "lucide-react"
 
 import { useModelStore, ShapeType } from "@/lib/store"
@@ -45,6 +46,7 @@ const Slider = ({
     compact={compact}
   />
 )
+
 
 // Simple Select wrapper for compatibility
 const SimpleSelect = ({ value, options, onChange }: { 
@@ -610,7 +612,7 @@ function PanelContent() {
              </div>
            </div>
         </div>
-        
+
         {/* Text Items Section */}
         <div className="space-y-4">
            <div className="flex items-center justify-between">
@@ -1044,7 +1046,7 @@ function PanelContent() {
              )}
           </div>
         </Section>
-        
+
         <LayoutSection />
       </div>
     )
@@ -1233,7 +1235,7 @@ function PanelContent() {
              </div>
            </div>
         </div>
-        
+
         {/* Text Items Section */}
         <div className="space-y-4">
            <div className="flex items-center justify-between">

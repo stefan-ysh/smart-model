@@ -39,6 +39,8 @@ export function QRCodeGenerator() {
   const qrIsThrough = useModelStore(state => state.parameters.qrIsThrough)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
   const holes = useModelStore(state => state.parameters.holes)
+  const platePosition = useModelStore(state => state.parameters.platePosition)
+  const groupRotation = useModelStore(state => state.parameters.groupRotation)
   const plateColor = useModelStore(state => state.parameters.plateColor)
   const textColor = useModelStore(state => state.parameters.textColor)
   const roughness = useModelStore(state => state.parameters.roughness)
@@ -201,39 +203,41 @@ export function QRCodeGenerator() {
   if (!geometry) return null
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]}>
-       {/* Base Mesh */}
-       {geometry.baseGeometry && (
-         <mesh geometry={geometry.baseGeometry}>
+    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>
+      <group rotation={[-Math.PI / 2, 0, 0]} position={[platePosition.x, baseThickness / 2, platePosition.y]}>
+        {/* Base Mesh */}
+        {geometry.baseGeometry && (
+          <mesh geometry={geometry.baseGeometry}>
             <meshStandardMaterial 
               color={plateColor}
               roughness={roughness} 
               metalness={metalness}
             />
-         </mesh>
-       )}
-       
-       {/* QR Mesh */}
-       {geometry.qrGeometry && (
-         <mesh geometry={geometry.qrGeometry}>
+          </mesh>
+        )}
+        
+        {/* QR Mesh */}
+        {geometry.qrGeometry && (
+          <mesh geometry={geometry.qrGeometry}>
             <meshStandardMaterial 
               color={textColor} 
               roughness={roughness} 
               metalness={metalness}
             />
-         </mesh>
-       )}
-       
-       {/* Border Mesh - Keep consistent with QR Mesh */}
-       {geometry.borderGeometry && (
-         <mesh geometry={geometry.borderGeometry}>
+          </mesh>
+        )}
+        
+        {/* Border Mesh - Keep consistent with QR Mesh */}
+        {geometry.borderGeometry && (
+          <mesh geometry={geometry.borderGeometry}>
             <meshStandardMaterial 
               color={textColor} 
               roughness={roughness} 
               metalness={metalness}
             />
-         </mesh>
-       )}
+          </mesh>
+        )}
+      </group>
     </group>
   )
 }

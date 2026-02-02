@@ -19,6 +19,9 @@ import { ScreenshotHandler } from "@/components/hooks/useScreenshot"
 import { ArrayLayout } from "@/components/three/ArrayLayout"
 import { ImageReliefGenerator } from "@/components/three/generators/ImageRelief"
 import { DraggableHole } from "@/components/three/DraggableHole"
+import { DraggableText } from "@/components/three/DraggableText"
+import { DraggableAnchor } from "@/components/three/DraggableAnchor"
+import { useMemo } from "react"
 
 // Loading indicator component
 function Loader() {
@@ -93,6 +96,16 @@ function CameraController({
   const viewPreset = useModelStore(state => state.viewPreset)
   const setViewPreset = useModelStore(state => state.setViewPreset)
   const resetViewTrigger = useModelStore(state => state.resetViewTrigger)
+  const focusTarget = useModelStore(state => state.focusTarget)
+  const setFocusTarget = useModelStore(state => state.setFocusTarget)
+  const focusAnimRef = useRef<{
+    start: number
+    duration: number
+    fromTarget: THREE.Vector3
+    toTarget: THREE.Vector3
+    fromPos: THREE.Vector3
+    toPos: THREE.Vector3
+  } | null>(null)
   
   useEffect(() => {
     if (!viewPreset || !controlsRef.current) return
@@ -127,6 +140,37 @@ function CameraController({
       controlsRef.current.update()
     }
   }, [resetViewTrigger, camera, controlsRef])
+
+  useEffect(() => {
+    if (!focusTarget || !controlsRef.current) return
+    const target = controlsRef.current.target.clone()
+    const offset = camera.position.clone().sub(target)
+    const toTarget = new THREE.Vector3(focusTarget.x, focusTarget.y, focusTarget.z)
+    const toPos = toTarget.clone().add(offset)
+    focusAnimRef.current = {
+      start: performance.now(),
+      duration: 420,
+      fromTarget: target,
+      toTarget,
+      fromPos: camera.position.clone(),
+      toPos
+    }
+    setFocusTarget(null)
+  }, [focusTarget, camera, controlsRef, setFocusTarget])
+
+  useFrame(() => {
+    const anim = focusAnimRef.current
+    if (!anim || !controlsRef.current) return
+    const now = performance.now()
+    const t = Math.min(1, (now - anim.start) / anim.duration)
+    const ease = 1 - Math.pow(1 - t, 3)
+    const nextTarget = anim.fromTarget.clone().lerp(anim.toTarget, ease)
+    const nextPos = anim.fromPos.clone().lerp(anim.toPos, ease)
+    controlsRef.current.target.copy(nextTarget)
+    camera.position.copy(nextPos)
+    controlsRef.current.update()
+    if (t >= 1) focusAnimRef.current = null
+  })
   
   return null
 }
@@ -228,6 +272,7 @@ function HoleMarkers() {
   const currentMode = useModelStore(state => state.currentMode)
   const holes = useModelStore(state => state.parameters.holes)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
+  const platePosition = useModelStore(state => state.parameters.platePosition)
   const groupRotation = useModelStore(state => state.parameters.groupRotation)
   const updateHole = useModelStore(state => state.updateHole)
   
@@ -243,11 +288,89 @@ function HoleMarkers() {
       {holes.map(hole => (
         <DraggableHole
           key={hole.id}
-          hole={hole}
+          hole={{
+            ...hole,
+            x: hole.x + platePosition.x,
+            y: hole.y + platePosition.y
+          }}
           baseThickness={baseThickness}
-          onPositionChange={(x, y) => updateHole(hole.id, { x, y })}
+          onPositionChange={(x, y) =>
+            updateHole(hole.id, { x: x - platePosition.x, y: y - platePosition.y })
+          }
         />
       ))}
+    </group>
+  )
+}
+
+function TextMarkers() {
+  const currentMode = useModelStore(state => state.currentMode)
+  const textItems = useModelStore(state => state.parameters.textItems)
+  const baseThickness = useModelStore(state => state.parameters.baseThickness)
+  const plateRotation = useModelStore(state => state.parameters.plateRotation)
+  const groupRotation = useModelStore(state => state.parameters.groupRotation)
+  const updateTextItem = useModelStore(state => state.updateTextItem)
+
+  if (!["relief", "hollow"].includes(currentMode)) return null
+  if (!textItems || textItems.length === 0) return null
+
+  return (
+    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]} userData={{ noExport: true }}>
+      {textItems.map(item => (
+        <DraggableText
+          key={item.id}
+          item={item}
+          baseThickness={baseThickness}
+          plateRotation={plateRotation}
+          onPositionChange={(x, y) =>
+            updateTextItem(item.id, { position: { x, y, z: item.position.z } })
+          }
+        />
+      ))}
+    </group>
+  )
+}
+
+function PlateMarker() {
+  const currentMode = useModelStore(state => state.currentMode)
+  const platePosition = useModelStore(state => state.parameters.platePosition)
+  const baseThickness = useModelStore(state => state.parameters.baseThickness)
+  const groupRotation = useModelStore(state => state.parameters.groupRotation)
+  const updateParam = useModelStore(state => state.updateParam)
+
+  if (!["relief", "hollow", "image"].includes(currentMode)) return null
+
+  return (
+    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]} userData={{ noExport: true }}>
+      <DraggableAnchor
+        id="base"
+        position={platePosition}
+        baseThickness={baseThickness}
+        size={10}
+        onPositionChange={(x, y) => updateParam("platePosition", { x, y })}
+      />
+    </group>
+  )
+}
+
+function TextPositionMarker() {
+  const currentMode = useModelStore(state => state.currentMode)
+  const textPosition = useModelStore(state => state.parameters.textPosition)
+  const baseThickness = useModelStore(state => state.parameters.baseThickness)
+  const groupRotation = useModelStore(state => state.parameters.groupRotation)
+  const updateParam = useModelStore(state => state.updateParam)
+
+  if (!["image", "text"].includes(currentMode)) return null
+
+  return (
+    <group rotation={[0, (groupRotation * Math.PI) / 180, 0]} userData={{ noExport: true }}>
+      <DraggableAnchor
+        id="text-position"
+        position={textPosition}
+        baseThickness={baseThickness}
+        size={8}
+        onPositionChange={(x, y) => updateParam("textPosition", { x, y })}
+      />
     </group>
   )
 }
@@ -305,6 +428,7 @@ export function Scene() {
       
       {/* View preset buttons */}
       <ViewControls />
+      <LayerOverlay />
       
       {/* Model Toolbar */}
       <ModelToolbar />
@@ -348,6 +472,9 @@ export function Scene() {
             <CurrentModel />
           </group>
           <HoleMarkers />
+          <TextMarkers />
+          <PlateMarker />
+          <TextPositionMarker />
           
           {/* Grid - infinite and filling the view */}
           {showGrid && (
@@ -420,6 +547,127 @@ function ViewControls() {
           <span>{v.label}</span>
         </button>
       ))}
+    </div>
+  )
+}
+
+function LayerOverlay() {
+  const currentMode = useModelStore(state => state.currentMode)
+  const parameters = useModelStore(state => state.parameters)
+  const selectedLayerId = useModelStore(state => state.selectedLayerId)
+  const setSelectedLayer = useModelStore(state => state.setSelectedLayer)
+  const setFocusTarget = useModelStore(state => state.setFocusTarget)
+  const [collapsed, setCollapsed] = useState(true)
+  const [query, setQuery] = useState("")
+
+  const layers = useMemo(() => {
+    if (currentMode === "text") {
+      return [{ id: "text-position", label: "文字位置" }]
+    }
+    if (currentMode === "image") {
+      return [
+        { id: "base", label: "底板" },
+        { id: "text-position", label: "图案位置" },
+        ...parameters.holes.map((hole, index) => ({
+          id: `hole-${hole.id}`,
+          label: `孔位 ${index + 1}`
+        }))
+      ]
+    }
+    if (currentMode === "relief" || currentMode === "hollow" || currentMode === "qr") {
+      return [
+        { id: "base", label: "底板" },
+        ...parameters.holes.map((hole, index) => ({
+          id: `hole-${hole.id}`,
+          label: `孔位 ${index + 1}`
+        }))
+      ]
+    }
+    return []
+  }, [currentMode, parameters.holes, parameters.textItems])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return layers
+    return layers.filter(l => l.label.toLowerCase().includes(q))
+  }, [layers, query])
+
+  const focusLayer = (id: string | null) => {
+    if (!id) return
+    if (id === "base") {
+      setFocusTarget({ x: parameters.platePosition.x, y: 0, z: parameters.platePosition.y })
+      return
+    }
+    if (id === "text-position") {
+      setFocusTarget({ x: parameters.textPosition.x, y: 0, z: parameters.textPosition.y })
+      return
+    }
+    if (id.startsWith("text-")) {
+      const match = parameters.textItems.find((item) => `text-${item.id}` === id)
+      if (match) {
+        setFocusTarget({ x: match.position.x, y: 0, z: match.position.y })
+      }
+      return
+    }
+    if (id.startsWith("hole-")) {
+      const match = parameters.holes.find((hole) => `hole-${hole.id}` === id)
+      if (match) {
+        setFocusTarget({
+          x: match.x + parameters.platePosition.x,
+          y: 0,
+          z: match.y + parameters.platePosition.y
+        })
+      }
+    }
+  }
+
+  if (layers.length === 0) return null
+
+  return (
+    <div className="absolute top-4 right-24 z-10 w-56 bg-background/80 backdrop-blur-xl rounded-xl p-2 border border-white/10 shadow-xl">
+      <div className="flex items-center justify-between px-1">
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">图层</span>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="text-[10px] text-zinc-400 hover:text-zinc-200"
+        >
+          {collapsed ? "展开" : "收起"}
+        </button>
+      </div>
+      {!collapsed && (
+        <>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="搜索图层..."
+            className="mt-2 w-full h-7 px-2 text-xs rounded-md bg-white/5 border border-white/10 text-zinc-200 placeholder:text-zinc-500 focus:outline-none"
+          />
+          <div className="mt-2 grid grid-cols-1 gap-2 max-h-56 overflow-auto pr-1">
+            {filtered.map((layer) => (
+              <button
+                key={layer.id}
+                onClick={() => {
+                  setSelectedLayer(layer.id)
+                  focusLayer(layer.id)
+                }}
+                className={`px-2 py-1.5 text-xs rounded-md border transition-colors ${
+                  selectedLayerId === layer.id
+                    ? "border-blue-500 bg-blue-500/10 text-blue-200"
+                    : "border-white/5 bg-white/5 text-zinc-400 hover:text-zinc-200 hover:border-white/15"
+                }`}
+                title={layer.label}
+              >
+                {layer.label}
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <div className="col-span-2 text-[10px] text-zinc-500 py-2 text-center border border-dashed border-white/10 rounded">
+                无匹配图层
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

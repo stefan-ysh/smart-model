@@ -175,7 +175,7 @@ interface ModelStore {
   setMode: (mode: GeneratorMode) => void;
 
   parameters: ModelParams;
-  updateParam: (key: keyof ModelParams, value: any) => void;
+  updateParam: (key: keyof ModelParams, value: unknown) => void;
   setParameters: (params: Partial<ModelParams>) => void;
   triggerExport: () => void;
 
@@ -569,7 +569,7 @@ export const useModelStore = create<ModelStore>((set) => ({
     set((state) => ({ resetViewTrigger: state.resetViewTrigger + 1 })),
 
   // Effects
-  bloomEnabled: true,
+  bloomEnabled: false,
   setBloomEnabled: (enabled: boolean) => set({ bloomEnabled: enabled }),
   contactShadowsEnabled: true,
   setContactShadowsEnabled: (enabled: boolean) =>

@@ -3,61 +3,14 @@
 import * as THREE from 'three'
 import { useMemo, Suspense } from "react"
 import { useLoader } from "@react-three/fiber"
-import { mergeBufferGeometries } from "three-stdlib"
+import { mergeBufferGeometries, Font } from "three-stdlib"
 import polygonClipping from "polygon-clipping"
-import { useModelStore, TextItem } from "@/lib/store"
+import { useModelStore } from "@/lib/store"
 import { createPlateGeometry, createPlateShape2D } from "./plateShapes"
 import { rotate2D, toPlateLocal, toShapeXY } from "@/components/three/utils/coords"
 import { LRUCache } from "@/components/three/utils/lru"
 
 // Create text geometry with proper attributes
-function createTextGeometry(
-  font: any, 
-  item: TextItem, 
-  thickness: number,
-  trayBorderHeight: number = 0
-): THREE.BufferGeometry | null {
-  try {
-    // Calculate the total height needed to cut through everything
-    // For tray shapes, we need to cut through base + frame
-    const cutHeight = thickness + trayBorderHeight + 10 // Extra margin for safety
-    const shapes = font.generateShapes(item.content || ' ', item.fontSize)
-    if (!shapes || shapes.length === 0) return null
-    
-    const textGeo = new THREE.ExtrudeGeometry(shapes, {
-      depth: cutHeight,
-      bevelEnabled: false,
-      curveSegments: 12,
-    })
-    
-    // Center the text first
-    textGeo.computeBoundingBox()
-    if (textGeo.boundingBox) {
-      const centerX = (textGeo.boundingBox.max.x + textGeo.boundingBox.min.x) / 2
-      const centerY = (textGeo.boundingBox.max.y + textGeo.boundingBox.min.y) / 2
-      // Position Z so the cutter starts below the plate and extends above
-      // Plate is centered at Z=0, so cutter should go from -thickness to +trayBorderHeight+margin
-      textGeo.translate(-centerX, -centerY, -thickness - 2)
-    }
-    
-    // Apply rotation around Z axis
-    if (item.rotation !== 0) {
-      const rotationMatrix = new THREE.Matrix4().makeRotationZ((item.rotation * Math.PI) / 180)
-      textGeo.applyMatrix4(rotationMatrix)
-    }
-    
-    // Then apply position offset
-    textGeo.translate(item.position.x, item.position.y, 0)
-    
-    textGeo.computeVertexNormals()
-    
-    return textGeo
-  } catch (e) {
-    console.error('Error creating text geometry:', e)
-    return null
-  }
-}
-
 // Global cache for expensive CSG geometries
 const geometryCache = new LRUCache<string, THREE.BufferGeometry>(20)
 
@@ -78,14 +31,13 @@ function StencilMesh() {
   } = parameters
 
   // Load all unique fonts needed
-  const fontUrlsHash = JSON.stringify(textItems.map(item => item.fontUrl))
   const fontUrls = useMemo(() => {
     return [...new Set(textItems.map(item => item.fontUrl))].sort()
-  }, [fontUrlsHash])
+  }, [textItems])
 
   // Use UniversalFontLoader to support both JSON and TTF
   const fonts = useLoader(UniversalFontLoader, fontUrls)
-  const fontMap = Object.fromEntries(fontUrls.map((url, i) => [url, fonts[i]]))
+  const fontMap = Object.fromEntries(fontUrls.map((url, i) => [url, fonts[i] as Font])) as Record<string, Font>
 
   const resultGeometry = useMemo(() => {
     if (Object.keys(fontMap).length === 0) return null
@@ -106,9 +58,8 @@ function StencilMesh() {
 
     try {
       // Calculate inverse plate transform
-      const plateRotRad = (plateRotation * Math.PI) / 180
-      const cosR = Math.cos(-plateRotRad)
-      const sinR = Math.sin(-plateRotRad)
+      type Poly = number[][][]
+      type MultiPoly = Poly[]
       
       // (Dead code removed: textGeos prep loop was unused as we use polygonClipping below)
 
@@ -183,10 +134,10 @@ function StencilMesh() {
         )
 
         if (outerShape && innerShape) {
-          const outerPoly: number[][][][] = [shapeToPolygon(outerShape)]
-          const innerPoly: number[][][][] = [shapeToPolygon(innerShape)]
+          const outerPoly: MultiPoly[] = [shapeToPolygon(outerShape)]
+          const innerPoly: MultiPoly[] = [shapeToPolygon(innerShape)]
 
-          const clipPolys: number[][][][] = []
+          const clipPolys: MultiPoly[] = []
 
           if (holes && holes.length > 0) {
             holes.forEach(hole => {
@@ -202,8 +153,7 @@ function StencilMesh() {
           }
 
           for (const item of textItems) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const font = fontMap[item.fontUrl] as any
+            const font = fontMap[item.fontUrl]
             if (!font) continue
 
             // Keep text in world space; convert to plate-local so plate rotation doesn't affect it
@@ -251,27 +201,24 @@ function StencilMesh() {
               return [outer, ...holesRings]
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            shapes.forEach((s: any) => {
+            shapes.forEach((s) => {
               const poly = shapeToPolygonWithTransform(s)
               clipPolys.push(poly)
             })
           }
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const holesUnion = clipPolys.length > 0 ? (clipPolys as any).reduce((acc: any, val: any) => polygonClipping.union(acc, val)) : null
+          const holesUnion = clipPolys.length > 0
+            ? clipPolys.reduce((acc, val) => polygonClipping.union(acc, val) as MultiPoly, [] as MultiPoly)
+            : null
 
           let basePoly = outerPoly
           if (holesUnion) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            basePoly = polygonClipping.difference(basePoly as any, holesUnion as any)
+            basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly[]
           }
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          let ringPoly = polygonClipping.difference(outerPoly as any, innerPoly as any)
+          let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly[]
           if (holesUnion) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ringPoly = polygonClipping.difference(ringPoly as any, holesUnion as any)
+            ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly[]
           }
 
           const baseGeos: THREE.BufferGeometry[] = []
@@ -369,8 +316,8 @@ function StencilMesh() {
         )
 
         if (plateShape2D) {
-          let platePoly: number[][][][] = [shapeToPolygon(plateShape2D)]
-          const clipPolys: number[][][][] = []
+          let platePoly: MultiPoly[] = [shapeToPolygon(plateShape2D)]
+          const clipPolys: MultiPoly[] = []
 
           if (holes && holes.length > 0) {
             holes.forEach(hole => {
@@ -386,8 +333,7 @@ function StencilMesh() {
           }
 
           for (const item of textItems) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const font = fontMap[item.fontUrl] as any
+            const font = fontMap[item.fontUrl]
             if (!font) continue
 
             const local = toPlateLocal({ x: item.position.x, y: item.position.y }, platePosition)
@@ -434,18 +380,15 @@ function StencilMesh() {
               return [outer, ...holesRings]
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            shapes.forEach((s: any) => {
+            shapes.forEach((s) => {
               const poly = shapeToPolygonWithTransform(s)
               clipPolys.push(poly)
             })
           }
 
           if (clipPolys.length > 0) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const clipUnion = (clipPolys as any).reduce((acc: any, val: any) => polygonClipping.union(acc, val))
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            platePoly = polygonClipping.difference(platePoly as any, clipUnion as any)
+            const clipUnion = clipPolys.reduce((acc, val) => polygonClipping.union(acc, val) as MultiPoly, [] as MultiPoly)
+            platePoly = polygonClipping.difference(platePoly, clipUnion) as MultiPoly[]
           }
 
           const extruded: THREE.BufferGeometry[] = []

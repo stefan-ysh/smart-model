@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback } from "react"
 import { useThree, ThreeEvent } from "@react-three/fiber"
-import { useModelStore, TransformMode } from "@/lib/store"
+import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
 
 interface DraggableLayerProps {
@@ -68,7 +68,7 @@ export function DraggableLayer({
     e.stopPropagation()
     
     setIsDragging(true)
-    gl.domElement.style.cursor = 'grabbing'
+    document.body.style.cursor = 'grabbing'
     
     // Capture the event
     ;(e.target as HTMLElement)?.setPointerCapture?.(e.nativeEvent.pointerId)
@@ -119,10 +119,10 @@ export function DraggableLayer({
   }
   
   // Handle pointer up to end drag
-  const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
+  const handlePointerUp = () => {
     if (!isDragging) return
     setIsDragging(false)
-    gl.domElement.style.cursor = 'auto'
+    document.body.style.cursor = 'auto'
     dragStartRef.current = null
     rotationStartRef.current = null
   }

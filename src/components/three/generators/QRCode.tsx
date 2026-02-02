@@ -55,13 +55,15 @@ export function QRCodeGenerator() {
   const qrMargin = useDebounce(qrMarginRaw, 200)
 
   // Generate QR Matrix
+  type QRCodeCreateOptions = { errorCorrectionLevel: "L" | "M" | "Q" | "H"; margin?: number }
+
   const qrMatrix = useMemo(() => {
     if (!qrText) return []
 
     const qr = QRCode.create(qrText, { 
       errorCorrectionLevel: 'M', 
       margin: 0 
-    } as any)
+    } as QRCodeCreateOptions)
     
     const modules = qr.modules.data
     const size = qr.modules.size
@@ -201,11 +203,10 @@ export function QRCodeGenerator() {
 
   }, [qrMatrix, qrSize, qrDepth, qrInvert, qrIsThrough, baseThickness, qrMargin, plateCornerRadius, holes])
 
-  if (!geometry) return null
   const instancedRef = useRef<THREE.InstancedMesh>(null)
 
   useEffect(() => {
-    if (!instancedRef.current) return
+    if (!geometry || !instancedRef.current) return
     const mesh = instancedRef.current
     const count = geometry.instanceMatrices.length
     mesh.count = count
@@ -214,6 +215,8 @@ export function QRCodeGenerator() {
     }
     mesh.instanceMatrix.needsUpdate = true
   }, [geometry])
+
+  if (!geometry) return null
 
   return (
     <group rotation={[0, (groupRotation * Math.PI) / 180, 0]}>

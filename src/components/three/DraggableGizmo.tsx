@@ -28,7 +28,12 @@ export function DraggableGizmo({
   children
 }: DraggableGizmoProps) {
   const groupRef = useRef<THREE.Group>(null!)
-  const transformRef = useRef<any>(null)
+  type DraggingChangedEvent = { value: boolean }
+  type TransformControlsLike = {
+    addEventListener: (type: string, listener: (event: DraggingChangedEvent) => void) => void
+    removeEventListener: (type: string, listener: (event: DraggingChangedEvent) => void) => void
+  }
+  const transformRef = useRef<TransformControlsLike | null>(null)
   const { selectedLayerId, setSelectedLayer } = useModelStore()
   const isSelected = selectedLayerId === id
   const defaultControls = useThree((state) => state.controls) as unknown as { enabled: boolean } | null
@@ -41,9 +46,8 @@ export function DraggableGizmo({
   useEffect(() => {
     const controls = transformRef.current
     if (controls && defaultControls) {
-      const callback = (event: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(defaultControls as any).enabled = !event.value
+      const callback = (event: DraggingChangedEvent) => {
+        ;(defaultControls as { enabled: boolean }).enabled = !event.value
       }
       controls.addEventListener("dragging-changed", callback)
       return () => controls.removeEventListener("dragging-changed", callback)

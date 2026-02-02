@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { useLoader } from '@react-three/fiber'
-import { FontLoader, TextGeometry, mergeVertices } from 'three-stdlib'
+import { FontLoader, TextGeometry } from 'three-stdlib'
 import { useModelStore } from '@/lib/store'
 import { useMemo } from 'react'
 import { useDebounce } from '@/components/hooks/useDebounce'

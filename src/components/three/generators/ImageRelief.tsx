@@ -54,9 +54,9 @@ export function ImageReliefGenerator() {
     plateRotation,
     textPosition,
     imageRotation,
-    platePosition,
     groupRotation
   } = parameters
+  const platePosition = parameters.platePosition
 
   const debouncedTextPosition = useDebounce(textPosition, 150)
   const debouncedImageRotation = useDebounce(imageRotation, 150)
@@ -71,10 +71,6 @@ export function ImageReliefGenerator() {
   const baseGeo = useMemo(() => {
     const curveSegments = 32 * Math.max(1, Math.min(5, modelResolution))
     const plateCornerRadius = parameters.plateCornerRadius || 0
-    const plateRotRad = (plateRotation * Math.PI) / 180
-    const cosR = Math.cos(-plateRotRad)
-    const sinR = Math.sin(-plateRotRad)
-
     type Pair = [number, number]
     
     // Close the ring if not closed
@@ -123,7 +119,9 @@ export function ImageReliefGenerator() {
       return shape
     }
 
-    const holePolys: Pair[][][] = []
+    type Poly = Pair[][]
+    type MultiPoly = Poly[]
+    const holePolys: MultiPoly[] = []
     if (holes && holes.length > 0) {
       holes.forEach(hole => {
         const hShape = new THREE.Shape()
@@ -136,8 +134,9 @@ export function ImageReliefGenerator() {
         holePolys.push(shapeToPolygon(hShape))
       })
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const holesUnion = holePolys.length > 0 ? (holePolys as any).reduce((acc: any, val: any) => polygonClipping.union(acc, val)) : null
+    const holesUnion = holePolys.length > 0
+      ? holePolys.reduce((acc, val) => polygonClipping.union(acc, val) as MultiPoly, [] as MultiPoly)
+      : null
 
     const buildExtrude = (polys: Pair[][][], depth: number, zOffset: number) => {
       const geos: THREE.BufferGeometry[] = []
@@ -179,13 +178,10 @@ export function ImageReliefGenerator() {
         const innerPoly: Pair[][][] = [shapeToPolygon(inner)]
 
         let basePoly = outerPoly
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (holesUnion) basePoly = polygonClipping.difference(basePoly as any, holesUnion as any)
+        if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly[]
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let ringPoly = polygonClipping.difference(outerPoly as any, innerPoly as any)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (holesUnion) ringPoly = polygonClipping.difference(ringPoly as any, holesUnion as any)
+        let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly[]
+        if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly[]
 
         const baseGeo = buildExtrude(basePoly, baseThickness, -baseThickness / 2)
         const ringGeo = buildExtrude(ringPoly, trayBorderHeight, baseThickness / 2)
@@ -206,8 +202,7 @@ export function ImageReliefGenerator() {
       if (!shape2D) return null
       let platePoly: Pair[][][] = [shapeToPolygon(shape2D)]
       if (holesUnion) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        platePoly = polygonClipping.difference(platePoly as any, holesUnion as any)
+    platePoly = polygonClipping.difference(platePoly, holesUnion) as MultiPoly[]
       }
       return buildExtrude(platePoly, baseThickness, -baseThickness / 2)
     }
@@ -245,8 +240,7 @@ export function ImageReliefGenerator() {
     edgeBevelSize,
     modelResolution,
     holes,
-    plateRotation,
-    platePosition
+    plateRotation
   ])
 
 
@@ -624,7 +618,6 @@ export function ImageReliefGenerator() {
       debouncedImageRotation,
       debouncedTextPosition,
       plateRotation,
-      platePosition,
       groupRotation
   ])
 

@@ -21,7 +21,6 @@ import { ImageReliefGenerator } from "@/components/three/generators/ImageRelief"
 import { DraggableHole } from "@/components/three/DraggableHole"
 import { DraggableText } from "@/components/three/DraggableText"
 import { DraggableAnchor } from "@/components/three/DraggableAnchor"
-import { useMemo } from "react"
 
 // Loading indicator component
 function Loader() {
@@ -87,10 +86,15 @@ function Loader() {
 }
 
 // Camera controller for view presets and reset
+type OrbitControlsLike = {
+  target: THREE.Vector3
+  update: () => void
+}
+
 function CameraController({ 
   controlsRef 
 }: { 
-  controlsRef: React.RefObject<any> 
+  controlsRef: React.RefObject<OrbitControlsLike | null> 
 }) {
   const { camera } = useThree()
   const viewPreset = useModelStore(state => state.viewPreset)
@@ -369,7 +373,7 @@ function GroundEffects() {
 }
 
 export function Scene() {
-  const controlsRef = useRef<any>(null)
+  const controlsRef = useRef<OrbitControlsLike | null>(null)
   const showShadows = useModelStore(state => state.parameters.showShadows)
   const isLoadingFont = useModelStore(state => state.isLoadingFont)
   const autoRotate = useModelStore(state => state.autoRotate)
@@ -559,7 +563,7 @@ function LayerOverlay() {
       ]
     }
     return []
-  }, [currentMode, parameters.holes, parameters.textItems])
+  }, [currentMode, parameters.holes])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

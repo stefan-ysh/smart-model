@@ -34,14 +34,14 @@ function prepareCSGGeometry(geometry: THREE.BufferGeometry): THREE.BufferGeometr
     prepared.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   }
 
-  const positions = prepared.attributes.position.array as ArrayLike<number>;
+  const positions = prepared.attributes.position.array as Float32Array;
   for (let i = 0; i < positions.length; i++) {
-    if (Number.isNaN(positions[i])) (prepared.attributes.position.array as any)[i] = 0;
+    if (Number.isNaN(positions[i])) positions[i] = 0;
   }
 
-  const normals = prepared.attributes.normal.array as ArrayLike<number>;
+  const normals = prepared.attributes.normal.array as Float32Array;
   for (let i = 0; i < normals.length; i++) {
-    if (Number.isNaN(normals[i])) (prepared.attributes.normal.array as any)[i] = 0;
+    if (Number.isNaN(normals[i])) normals[i] = 0;
   }
 
   return prepared;
@@ -54,7 +54,7 @@ function hasValidPosition(geometry: THREE.BufferGeometry): boolean {
 
 function hasValidIndex(geometry: THREE.BufferGeometry): boolean {
   const idx = geometry.index as THREE.BufferAttribute | null;
-  return !!(idx && (idx as any).array && idx.count >= 3);
+  return !!(idx && idx.array && idx.count >= 3);
 }
 
 function hasValidCSGData(geometry: THREE.BufferGeometry): boolean {
@@ -199,6 +199,7 @@ export function createPlateShape2D(
   modelResolution: number = 3
 ): THREE.Shape | null {
   const baseSegments = 32 * Math.max(1, Math.min(5, modelResolution));
+  void baseSegments;
 
   switch (shape) {
     case "rectangle": {
@@ -593,12 +594,6 @@ function createPlateGeometryInternal(
     bevelSegments: cornerBevelSegs,
     curveSegments: baseSegments,
   });
-
-  // Helper to apply holes to a shape - DISABLED for CSG approach
-  const applyHoles = (shape: THREE.Shape) => {
-    // CSG will handle holes in 3D
-    return;
-  };
 
   switch (shape) {
     case "rectangle": {

@@ -96,11 +96,9 @@ export function useMaterialPreset() {
 // Simple component wrapper for applying material presets
 export function PresetMaterial({ 
   isPlate = true,
-  children,
   ...props 
 }: { 
   isPlate?: boolean
-  children?: React.ReactNode
 } & Partial<THREE.MeshStandardMaterialParameters>) {
   const { getMaterialProps } = useMaterialPreset()
   const materialProps = getMaterialProps(isPlate)

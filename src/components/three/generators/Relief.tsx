@@ -3,8 +3,8 @@
 import * as THREE from "three";
 import { useMemo, Suspense } from "react";
 import { useLoader } from "@react-three/fiber";
-import { TextGeometry } from "three-stdlib";
-import { useModelStore, TextItem } from "@/lib/store";
+import { TextGeometry, Font } from "three-stdlib";
+import { useModelStore, PlateShape, HoleItem } from "@/lib/store";
 import { createPlateGeometry, createPlateShape2D } from "./plateShapes";
 import { mergeBufferGeometries } from "three-stdlib";
 import polygonClipping from "polygon-clipping";
@@ -20,7 +20,7 @@ const plateCache = new LRUCache<string, THREE.BufferGeometry>(20)
 const textGeoCache = new LRUCache<string, THREE.BufferGeometry>(100)
 
 function createReliefPlateGeometry2D(
-  plateShape: any,
+  plateShape: PlateShape,
   size: number,
   plateWidth: number,
   plateHeight: number,
@@ -29,7 +29,7 @@ function createReliefPlateGeometry2D(
   trayBorderWidth: number,
   trayBorderHeight: number,
   modelResolution: number,
-  holes: any[] | undefined
+  holes: HoleItem[] | undefined
 ): THREE.BufferGeometry | null {
   const curveSegments = 32 * Math.max(1, Math.min(5, modelResolution))
 
@@ -78,7 +78,9 @@ function createReliefPlateGeometry2D(
       return shape
     }
 
-  const holePolys: number[][][][] = []
+  type Poly = number[][][]
+  type MultiPoly = Poly[]
+  const holePolys: MultiPoly[] = []
   if (holes && holes.length > 0) {
     holes.forEach(hole => {
       const hShape = new THREE.Shape()
@@ -87,8 +89,9 @@ function createReliefPlateGeometry2D(
       holePolys.push(shapeToPolygon(hShape))
     })
   }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const holesUnion = holePolys.length > 0 ? (holePolys as any).reduce((acc: any, val: any) => polygonClipping.union(acc, val)) : null
+  const holesUnion = holePolys.length > 0
+    ? holePolys.reduce((acc, val) => polygonClipping.union(acc, val) as MultiPoly, [] as MultiPoly)
+    : null
 
   if (plateShape === "tray") {
     const outer = createPlateShape2D(
@@ -111,17 +114,14 @@ function createReliefPlateGeometry2D(
     )
     if (!inner) return null
 
-    const outerPoly: number[][][][] = [shapeToPolygon(outer)]
-    const innerPoly: number[][][][] = [shapeToPolygon(inner)]
+    const outerPoly: MultiPoly[] = [shapeToPolygon(outer)]
+    const innerPoly: MultiPoly[] = [shapeToPolygon(inner)]
 
     let basePoly = outerPoly
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (holesUnion) basePoly = polygonClipping.difference(basePoly as any, holesUnion as any)
+    if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly[]
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let ringPoly = polygonClipping.difference(outerPoly as any, innerPoly as any)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (holesUnion) ringPoly = polygonClipping.difference(ringPoly as any, holesUnion as any)
+    let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly[]
+    if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly[]
 
     const baseGeos: THREE.BufferGeometry[] = []
     for (const poly of basePoly) {
@@ -163,10 +163,9 @@ function createReliefPlateGeometry2D(
   )
   if (!shape2D) return null
 
-  let platePoly: number[][][][] = [shapeToPolygon(shape2D)]
+  let platePoly: MultiPoly[] = [shapeToPolygon(shape2D)]
   if (holesUnion) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    platePoly = polygonClipping.difference(platePoly as any, holesUnion as any)
+    platePoly = polygonClipping.difference(platePoly, holesUnion) as MultiPoly[]
   }
 
   const geos: THREE.BufferGeometry[] = []
@@ -220,9 +219,9 @@ function ReliefMesh() {
 
   // Create font map
   const fontMap = useMemo(() => {
-    const map: Record<string, any> = {};
+    const map: Record<string, Font> = {};
     fontUrls.forEach((url, i) => {
-      map[url] = fonts[i];
+      map[url] = fonts[i] as Font;
     });
     return map;
   }, [fonts, fontUrls]);
@@ -348,7 +347,7 @@ function ReliefMesh() {
       </group>
 
       {/* Text Items - independent transforms */}
-      {textMeshes.map((item: any) => (
+      {textMeshes.map((item: { id: string; rotation: number; position: { x: number; y: number }; geometry: THREE.BufferGeometry }) => (
         <group
           key={item.id}
           rotation={[-Math.PI / 2, 0, (item.rotation * Math.PI) / 180]}

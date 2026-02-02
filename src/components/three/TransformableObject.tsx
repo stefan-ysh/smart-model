@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react"
 import { TransformControls } from "@react-three/drei"
-import { useThree } from "@react-three/fiber"
+import { useThree, ThreeEvent } from "@react-three/fiber"
 import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
 
@@ -16,8 +16,12 @@ export function TransformableObject({
   onTransformChange 
 }: TransformableObjectProps) {
   const [group, setGroup] = useState<THREE.Group | null>(null)
-  const controlsRef = useRef<any>(null)
-  const { gl, camera } = useThree()
+  type TransformControlsLike = {
+    addEventListener: (type: string, listener: (event?: { value?: boolean }) => void) => void
+    removeEventListener: (type: string, listener: (event?: { value?: boolean }) => void) => void
+  }
+  const controlsRef = useRef<TransformControlsLike | null>(null)
+  const { gl } = useThree()
   
   const { 
     transformMode, 
@@ -26,7 +30,7 @@ export function TransformableObject({
   } = useModelStore()
   
   // Handle click to select
-  const handleClick = (e: any) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
     setTransformEnabled(true)
   }
@@ -54,11 +58,11 @@ export function TransformableObject({
     const controls = controlsRef.current
     if (!controls) return
     
-    const handleDraggingChanged = (event: any) => {
+    const handleDraggingChanged = (event?: { value?: boolean }) => {
       // Find orbit controls and disable during drag
-      const orbitControls = (gl.domElement.parentElement as any)?.__r3f?.orbitControls
+      const orbitControls = (gl.domElement.parentElement as { __r3f?: { orbitControls?: { enabled: boolean } } })?.__r3f?.orbitControls
       if (orbitControls) {
-        orbitControls.enabled = !event.value
+        orbitControls.enabled = !(event?.value ?? false)
       }
     }
     

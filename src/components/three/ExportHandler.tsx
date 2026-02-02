@@ -51,7 +51,8 @@ function sanitizeForExport(geometry: THREE.BufferGeometry): THREE.BufferGeometry
  */
 function isTransformControlsObject(obj: THREE.Object3D): boolean {
   const name = obj.name || ""
-  const type = (obj as any).type || ""
+  const typed = obj as THREE.Object3D & { type?: string; userData?: Record<string, unknown> }
+  const type = typed.type || ""
   if (
     type === "TransformControls" ||
     name.includes("TransformControls") ||
@@ -61,8 +62,8 @@ function isTransformControlsObject(obj: THREE.Object3D): boolean {
   ) {
     return true
   }
-  const userData = (obj as any).userData || {}
-  return !!userData.isTransformControls
+  const userData = typed.userData || {}
+  return userData.isTransformControls === true
 }
 
 function hasTransformControlsAncestor(obj: THREE.Object3D): boolean {

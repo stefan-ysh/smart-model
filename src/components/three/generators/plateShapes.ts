@@ -230,19 +230,20 @@ export function createPlateShape2D(
     }
 
     case "rounded": {
-      const r = Math.min(size / 5, 15);
+      const r = Math.min(Math.min(width, height) / 5, 15);
       const rectShape = new THREE.Shape();
-      const half = size / 2;
+      const halfW = width / 2;
+      const halfH = height / 2;
 
-      rectShape.moveTo(-half + r, -half);
-      rectShape.lineTo(half - r, -half);
-      rectShape.quadraticCurveTo(half, -half, half, -half + r);
-      rectShape.lineTo(half, half - r);
-      rectShape.quadraticCurveTo(half, half, half - r, half);
-      rectShape.lineTo(-half + r, half);
-      rectShape.quadraticCurveTo(-half, half, -half, half - r);
-      rectShape.lineTo(-half, -half + r);
-      rectShape.quadraticCurveTo(-half, -half, -half + r, -half);
+      rectShape.moveTo(-halfW + r, -halfH);
+      rectShape.lineTo(halfW - r, -halfH);
+      rectShape.quadraticCurveTo(halfW, -halfH, halfW, -halfH + r);
+      rectShape.lineTo(halfW, halfH - r);
+      rectShape.quadraticCurveTo(halfW, halfH, halfW - r, halfH);
+      rectShape.lineTo(-halfW + r, halfH);
+      rectShape.quadraticCurveTo(-halfW, halfH, -halfW, halfH - r);
+      rectShape.lineTo(-halfW, -halfH + r);
+      rectShape.quadraticCurveTo(-halfW, -halfH, -halfW + r, -halfH);
       return rectShape;
     }
 
@@ -512,27 +513,28 @@ export function createPlateShape2D(
     case "tray":
     case "square":
     default: {
-      const maxRadius = cornerRadius > 0 ? size / 2 - 1 : 0;
+      const maxRadius = cornerRadius > 0 ? Math.min(width, height) / 2 - 1 : 0;
       const r = Math.min(cornerRadius, maxRadius);
       const rectShape = new THREE.Shape();
-      const half = size / 2;
+      const halfW = width / 2;
+      const halfH = height / 2;
 
       if (r > 0) {
-        rectShape.moveTo(-half + r, -half);
-        rectShape.lineTo(half - r, -half);
-        rectShape.quadraticCurveTo(half, -half, half, -half + r);
-        rectShape.lineTo(half, half - r);
-        rectShape.quadraticCurveTo(half, half, half - r, half);
-        rectShape.lineTo(-half + r, half);
-        rectShape.quadraticCurveTo(-half, half, -half, half - r);
-        rectShape.lineTo(-half, -half + r);
-        rectShape.quadraticCurveTo(-half, -half, -half + r, -half);
+        rectShape.moveTo(-halfW + r, -halfH);
+        rectShape.lineTo(halfW - r, -halfH);
+        rectShape.quadraticCurveTo(halfW, -halfH, halfW, -halfH + r);
+        rectShape.lineTo(halfW, halfH - r);
+        rectShape.quadraticCurveTo(halfW, halfH, halfW - r, halfH);
+        rectShape.lineTo(-halfW + r, halfH);
+        rectShape.quadraticCurveTo(-halfW, halfH, -halfW, halfH - r);
+        rectShape.lineTo(-halfW, -halfH + r);
+        rectShape.quadraticCurveTo(-halfW, -halfH, -halfW + r, -halfH);
       } else {
-        rectShape.moveTo(-half, -half);
-        rectShape.lineTo(half, -half);
-        rectShape.lineTo(half, half);
-        rectShape.lineTo(-half, half);
-        rectShape.lineTo(-half, -half);
+        rectShape.moveTo(-halfW, -halfH);
+        rectShape.lineTo(halfW, -halfH);
+        rectShape.lineTo(halfW, halfH);
+        rectShape.lineTo(-halfW, halfH);
+        rectShape.lineTo(-halfW, -halfH);
       }
       return rectShape;
     }
@@ -1095,17 +1097,17 @@ function createPlateGeometryInternal(
       // 3. Merge internal cavity + Holes + Text
       // 4. Subtract everything at once
       
-      const borderW = Math.min(trayBorderWidth, size / 4);
+      const borderW = Math.min(trayBorderWidth, Math.min(width, height) / 4);
       const borderH = Math.max(trayBorderHeight, 0.5);
       const totalHeight = thickness + borderH;
       
       // 1. Outer Solid
-      const outerGeo = new THREE.BoxGeometry(size, size, totalHeight);
+      const outerGeo = new THREE.BoxGeometry(width, height, totalHeight);
       outerGeo.translate(0, 0, (totalHeight - thickness) / 2);
       
       // 2. Inner Cavity
-      const innerWidth = size - 2 * borderW;
-      const innerDepth = size - 2 * borderW;
+      const innerWidth = Math.max(1, width - 2 * borderW);
+      const innerDepth = Math.max(1, height - 2 * borderW);
       const cavityHeight = borderH + 2;
       const innerGeo = new THREE.BoxGeometry(innerWidth, innerDepth, cavityHeight);
       innerGeo.translate(0, 0, thickness / 2 + cavityHeight / 2 - 0.1); 
@@ -1127,27 +1129,28 @@ function createPlateGeometryInternal(
     case "square":
     default: {
       const bevelSettings = getBevelSettings();
-      const maxRadius = cornerRadius > 0 ? size / 2 - 1 : 0;
+      const maxRadius = cornerRadius > 0 ? Math.min(width, height) / 2 - 1 : 0;
       const r = Math.min(cornerRadius, maxRadius);
       const rectShape = new THREE.Shape();
-      const half = size / 2;
+      const halfW = width / 2;
+      const halfH = height / 2;
 
       if (r > 0) {
-        rectShape.moveTo(-half + r, -half);
-        rectShape.lineTo(half - r, -half);
-        rectShape.quadraticCurveTo(half, -half, half, -half + r);
-        rectShape.lineTo(half, half - r);
-        rectShape.quadraticCurveTo(half, half, half - r, half);
-        rectShape.lineTo(-half + r, half);
-        rectShape.quadraticCurveTo(-half, half, -half, half - r);
-        rectShape.lineTo(-half, -half + r);
-        rectShape.quadraticCurveTo(-half, -half, -half + r, -half);
+        rectShape.moveTo(-halfW + r, -halfH);
+        rectShape.lineTo(halfW - r, -halfH);
+        rectShape.quadraticCurveTo(halfW, -halfH, halfW, -halfH + r);
+        rectShape.lineTo(halfW, halfH - r);
+        rectShape.quadraticCurveTo(halfW, halfH, halfW - r, halfH);
+        rectShape.lineTo(-halfW + r, halfH);
+        rectShape.quadraticCurveTo(-halfW, halfH, -halfW, halfH - r);
+        rectShape.lineTo(-halfW, -halfH + r);
+        rectShape.quadraticCurveTo(-halfW, -halfH, -halfW + r, -halfH);
       } else {
-        rectShape.moveTo(-half, -half);
-        rectShape.lineTo(half, -half);
-        rectShape.lineTo(half, half);
-        rectShape.lineTo(-half, half);
-        rectShape.lineTo(-half, -half);
+        rectShape.moveTo(-halfW, -halfH);
+        rectShape.lineTo(halfW, -halfH);
+        rectShape.lineTo(halfW, halfH);
+        rectShape.lineTo(-halfW, halfH);
+        rectShape.lineTo(-halfW, -halfH);
       }
       applyHoles(rectShape);
 

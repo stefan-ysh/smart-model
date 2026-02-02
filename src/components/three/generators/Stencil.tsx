@@ -123,12 +123,14 @@ function StencilMesh() {
           modelResolution
         )
 
-        const innerSize = Math.max(1, size - 2 * Math.min(trayBorderWidth, size / 4))
+        const borderW = Math.min(trayBorderWidth, Math.min(plateWidth, plateHeight) / 4)
+        const innerWidth = Math.max(1, plateWidth - 2 * borderW)
+        const innerHeight = Math.max(1, plateHeight - 2 * borderW)
         const innerShape = createPlateShape2D(
           "square",
-          innerSize,
-          innerSize,
-          innerSize,
+          size,
+          innerWidth,
+          innerHeight,
           0,
           modelResolution
         )

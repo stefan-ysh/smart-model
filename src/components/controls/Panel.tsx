@@ -438,8 +438,7 @@ function PanelContent() {
            
            <div className="grid grid-cols-4 gap-2">
               {[
-                { value: 'square', label: '正方' },
-                { value: 'rectangle', label: '长方' },
+                { value: 'rectangle', label: '矩形' },
                 { value: 'rounded', label: '圆角' },
                 { value: 'circle', label: '圆形' },
                 { value: 'oval', label: '椭圆' },
@@ -482,7 +481,7 @@ function PanelContent() {
                     onChange={(val) => updateParam('plateWidth', val)} compact />
                </div>
                <div className="space-y-1.5">
-                  <Label className="text-[10px] text-zinc-400">高度</Label>
+                      <Label className="text-[10px] text-zinc-400">高度</Label>
                   <Slider value={parameters.plateHeight} min={20} max={300} step={1}
                     onChange={(val) => updateParam('plateHeight', val)} compact />
                </div>
@@ -490,6 +489,19 @@ function PanelContent() {
                   <Label className="text-[10px] text-zinc-400">圆角半径</Label>
                   <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
                     onChange={(val) => updateParam('plateCornerRadius', val)} compact />
+               </div>
+             </div>
+           ) : ['rounded', 'tray'].includes(parameters.plateShape) ? (
+             <div className="grid grid-cols-2 gap-3">
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">宽度</Label>
+                  <Slider value={parameters.plateWidth} min={20} max={300} step={1}
+                    onChange={(val) => updateParam('plateWidth', val)} compact />
+               </div>
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">长度</Label>
+                  <Slider value={parameters.plateHeight} min={20} max={300} step={1}
+                    onChange={(val) => updateParam('plateHeight', val)} compact />
                </div>
              </div>
            ) : (
@@ -525,8 +537,8 @@ function PanelContent() {
              </div>
            )}
 
-           {/* Edge bevel controls - for square, rectangle, rounded */}
-           {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
+           {/* Edge bevel controls - for rectangle, rounded, tray */}
+           {['rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
              <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
                 <div className="flex items-center justify-between">
                    <Label className="text-[10px] text-zinc-400">底板边缘倒角</Label>
@@ -662,7 +674,7 @@ function PanelContent() {
                    </div>
                    
                    <div className="space-y-1.5">
-                      <Label className="text-[10px] text-zinc-400">高度</Label>
+                  <Label className="text-[10px] text-zinc-400">长度</Label>
                       <Slider value={item.reliefHeight} min={1} max={20} step={0.5}
                         onChange={(val) => updateTextItem(item.id, { reliefHeight: val })} compact />
                    </div>
@@ -922,8 +934,7 @@ function PanelContent() {
              <>
              <div className="grid grid-cols-4 gap-2">
                 {[
-                  { value: 'square', label: '正方' },
-                  { value: 'rectangle', label: '长方' },
+                  { value: 'rectangle', label: '矩形' },
                   { value: 'circle', label: '圆形' },
                   { value: 'rounded', label: '圆角' },
                   { value: 'tray', label: '托盘' },
@@ -954,8 +965,8 @@ function PanelContent() {
                </div>
              )}
 
-             {/* Edge bevel controls - for square, rectangle, rounded */}
-             {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
+             {/* Edge bevel controls - for rectangle, rounded, tray */}
+             {['rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
                <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
                   <div className="flex items-center justify-between">
                      <Label className="text-[10px] text-zinc-400">底板边缘倒角</Label>
@@ -989,6 +1000,19 @@ function PanelContent() {
              )}
              
              {parameters.plateShape === 'rectangle' ? (
+               <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] text-zinc-400">宽度</Label>
+                    <Slider value={parameters.plateWidth} min={20} max={300} step={1}
+                      onChange={(val) => updateParam('plateWidth', val)} compact />
+                 </div>
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] text-zinc-400">高度</Label>
+                    <Slider value={parameters.plateHeight} min={20} max={300} step={1}
+                      onChange={(val) => updateParam('plateHeight', val)} compact />
+                 </div>
+               </div>
+             ) : ['rounded', 'tray'].includes(parameters.plateShape) ? (
                <div className="grid grid-cols-2 gap-3">
                  <div className="space-y-1.5">
                     <Label className="text-[10px] text-zinc-400">宽度</Label>
@@ -1067,8 +1091,7 @@ function PanelContent() {
            
            <div className="grid grid-cols-4 gap-2">
               {[
-                { value: 'square', label: '正方' },
-                { value: 'rectangle', label: '长方' },
+                { value: 'rectangle', label: '矩形' },
                 { value: 'rounded', label: '圆角' },
                 { value: 'circle', label: '圆形' },
                 { value: 'oval', label: '椭圆' },
@@ -1111,7 +1134,7 @@ function PanelContent() {
                     onChange={(val) => updateParam('plateWidth', val)} compact />
                </div>
                <div className="space-y-1.5">
-                  <Label className="text-[10px] text-zinc-400">高度</Label>
+                  <Label className="text-[10px] text-zinc-400">长度</Label>
                   <Slider value={parameters.plateHeight} min={20} max={300} step={1}
                     onChange={(val) => updateParam('plateHeight', val)} compact />
                </div>
@@ -1119,6 +1142,19 @@ function PanelContent() {
                   <Label className="text-[10px] text-zinc-400">圆角半径</Label>
                   <Slider value={parameters.plateCornerRadius} min={0} max={30} step={1}
                     onChange={(val) => updateParam('plateCornerRadius', val)} compact />
+               </div>
+             </div>
+           ) : ['rounded', 'tray'].includes(parameters.plateShape) ? (
+             <div className="grid grid-cols-2 gap-3">
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">宽度</Label>
+                  <Slider value={parameters.plateWidth} min={20} max={300} step={1}
+                    onChange={(val) => updateParam('plateWidth', val)} compact />
+               </div>
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] text-zinc-400">长度</Label>
+                  <Slider value={parameters.plateHeight} min={20} max={300} step={1}
+                    onChange={(val) => updateParam('plateHeight', val)} compact />
                </div>
              </div>
            ) : (
@@ -1154,8 +1190,8 @@ function PanelContent() {
              </div>
            )}
 
-           {/* Edge bevel controls - for square, rectangle, rounded */}
-           {['square', 'rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
+           {/* Edge bevel controls - for rectangle, rounded, tray */}
+           {['rectangle', 'rounded', 'tray'].includes(parameters.plateShape) && (
              <div className="space-y-2 pt-2 border-t border-white/5 mt-2">
                 <div className="flex items-center justify-between">
                    <Label className="text-[10px] text-zinc-400">底板边缘倒角</Label>
@@ -1524,7 +1560,7 @@ function PanelContent() {
         icon: '✨',
         description: '品牌标识展示',
         mode: 'relief' as const,
-        params: { plateShape: 'square', size: 100, baseThickness: 5 }
+        params: { plateShape: 'rectangle', plateWidth: 100, plateHeight: 100, baseThickness: 5 }
       },
       { 
         id: 'qr-badge', 

@@ -22,7 +22,6 @@ export type ShapeType =
   | "capsule"
   | "ring";
 export type PlateShape =
-  | "square"
   | "rectangle"
   | "circle"
   | "diamond"
@@ -45,7 +44,8 @@ export type PlateShape =
   | "petBone"
   | "trophy"
   | "frame"
-  | "tray";
+  | "tray"
+  | "square";
 export type ArrayType = "none" | "rectangular" | "circular";
 export type ExportFormat = "stl" | "obj" | "gltf" | "glb";
 
@@ -361,7 +361,7 @@ const defaultParams: ModelParams = {
   reliefHeight: 2,
 
   // Hollow plate defaults
-  plateShape: "square",
+  plateShape: "rectangle",
   plateWidth: 80,
   plateHeight: 50,
   platePosition: { x: 0, y: 0 },
@@ -446,13 +446,23 @@ export const useModelStore = create<ModelStore>((set) => ({
 
   parameters: defaultParams,
   updateParam: (key, value) =>
-    set((state) => ({
-      parameters: { ...state.parameters, [key]: value },
-    })),
+    set((state) => {
+      const nextValue =
+        key === "plateShape" && value === "square" ? "rectangle" : value
+      return {
+        parameters: { ...state.parameters, [key]: nextValue },
+      }
+    }),
   setParameters: (params) =>
-    set((state) => ({
-      parameters: { ...state.parameters, ...params },
-    })),
+    set((state) => {
+      const nextParams =
+        params.plateShape === "square"
+          ? { ...params, plateShape: "rectangle" }
+          : params
+      return {
+        parameters: { ...state.parameters, ...nextParams },
+      }
+    }),
   triggerExport: () =>
     set((state) => ({
       parameters: {

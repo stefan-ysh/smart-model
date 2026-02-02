@@ -505,7 +505,8 @@ export function Scene() {
         
         {/* Controls with zoom limits and auto-rotate */}
         <OrbitControls 
-          ref={controlsRef}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ref={controlsRef as any}
           makeDefault 
           minDistance={20}
           maxDistance={500}

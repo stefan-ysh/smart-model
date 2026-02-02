@@ -122,7 +122,7 @@ export function ImageReliefGenerator() {
 
     type Poly = Pair[][]
     type MultiPoly = Poly[]
-    const holePolys: MultiPoly[] = []
+    const holePolys: Poly[] = []
     if (holes && holes.length > 0) {
       holes.forEach(hole => {
         const hShape = new THREE.Shape()
@@ -183,10 +183,10 @@ export function ImageReliefGenerator() {
         const innerPoly: Pair[][][] = [shapeToPolygon(inner)]
 
         let basePoly = outerPoly
-        if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly[]
+        if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly
 
-        let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly[]
-        if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly[]
+        let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly
+        if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly
 
         const baseGeo = buildExtrude(basePoly, baseThickness, -baseThickness / 2)
         const ringGeo = buildExtrude(ringPoly, trayBorderHeight, baseThickness / 2)
@@ -207,7 +207,7 @@ export function ImageReliefGenerator() {
       if (!shape2D) return null
       let platePoly: Pair[][][] = [shapeToPolygon(shape2D)]
       if (holesUnion) {
-    platePoly = polygonClipping.difference(platePoly, holesUnion) as MultiPoly[]
+        platePoly = polygonClipping.difference(platePoly, holesUnion) as MultiPoly
       }
       return buildExtrude(platePoly, baseThickness, -baseThickness / 2)
     }

@@ -67,7 +67,8 @@ export function DraggableGizmo({
 
       {isSelected && (
         <TransformControls
-          ref={transformRef}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ref={transformRef as any}
           object={groupRef}
           mode="translate"
           showY={false}

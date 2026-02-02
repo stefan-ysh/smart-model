@@ -60,7 +60,8 @@ function StencilMesh() {
 
     try {
       // Calculate inverse plate transform
-      type Poly = number[][][]
+      type Pair = [number, number]
+      type Poly = Pair[][]
       type MultiPoly = Poly[]
       
       // (Dead code removed: textGeos prep loop was unused as we use polygonClipping below)
@@ -70,7 +71,7 @@ function StencilMesh() {
       if (plateShape === "tray") {
         const curveSegments = 32 * Math.max(1, Math.min(5, modelResolution))
 
-        const ringArea = (ring: number[][]) => {
+        const ringArea = (ring: Pair[]) => {
           let sum = 0
           for (let i = 0; i < ring.length - 1; i++) {
             const [x1, y1] = ring[i]
@@ -80,7 +81,9 @@ function StencilMesh() {
           return sum / 2
         }
 
-        const closeRing = (ring: number[][]) => {
+
+
+        const closeRing = (ring: Pair[]): Pair[] => {
           if (ring.length === 0) return ring
           const [x0, y0] = ring[0]
           const [xl, yl] = ring[ring.length - 1]
@@ -88,16 +91,16 @@ function StencilMesh() {
           return ring
         }
 
-        const pointsToRing = (pts: THREE.Vector2[]) =>
-          closeRing(pts.map(p => [p.x, p.y]))
+        const pointsToRing = (pts: THREE.Vector2[]): Pair[] =>
+          closeRing(pts.map(p => [p.x, p.y] as Pair))
 
-        const shapeToPolygon = (shape: THREE.Shape): number[][][] => {
+        const shapeToPolygon = (shape: THREE.Shape): Pair[][] => {
           const outer = pointsToRing(shape.getPoints(curveSegments))
           const holesRings = shape.holes.map(h => pointsToRing(h.getPoints(curveSegments)))
           return [outer, ...holesRings]
         }
 
-        const buildShapeFromPolygon = (poly: number[][][]) => {
+        const buildShapeFromPolygon = (poly: Pair[][]) => {
           if (!poly || poly.length === 0) return null
           const outer = poly[0].slice(0, -1)
           if (outer.length < 3) return null
@@ -138,10 +141,10 @@ function StencilMesh() {
         )
 
         if (outerShape && innerShape) {
-          const outerPoly: MultiPoly[] = [shapeToPolygon(outerShape)]
-          const innerPoly: MultiPoly[] = [shapeToPolygon(innerShape)]
+          const outerPoly: MultiPoly = [shapeToPolygon(outerShape)]
+          const innerPoly: MultiPoly = [shapeToPolygon(innerShape)]
 
-          const clipPolys: MultiPoly[] = []
+          const clipPolys: Poly[] = []
 
           if (holes && holes.length > 0) {
             holes.forEach(hole => {
@@ -198,7 +201,7 @@ function StencilMesh() {
               })
             }
 
-            const shapeToPolygonWithTransform = (shape: THREE.Shape): number[][][] => {
+            const shapeToPolygonWithTransform = (shape: THREE.Shape): Pair[][] => {
               const outerPts = transformPoints(shape.getPoints(curveSegments))
               const outer = pointsToRing(outerPts)
               const holesRings = shape.holes.map(h => pointsToRing(transformPoints(h.getPoints(curveSegments))))
@@ -217,12 +220,12 @@ function StencilMesh() {
 
           let basePoly = outerPoly
           if (holesUnion) {
-            basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly[]
+            basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly
           }
 
-          let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly[]
+          let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly
           if (holesUnion) {
-            ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly[]
+            ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly
           }
 
           const baseGeos: THREE.BufferGeometry[] = []
@@ -264,7 +267,7 @@ function StencilMesh() {
       } else {
         const curveSegments = 32 * Math.max(1, Math.min(5, modelResolution))
 
-        const ringArea = (ring: number[][]) => {
+        const ringArea = (ring: Pair[]) => {
           let sum = 0
           for (let i = 0; i < ring.length - 1; i++) {
             const [x1, y1] = ring[i]
@@ -274,7 +277,7 @@ function StencilMesh() {
           return sum / 2
         }
 
-        const closeRing = (ring: number[][]) => {
+        const closeRing = (ring: Pair[]): Pair[] => {
           if (ring.length === 0) return ring
           const [x0, y0] = ring[0]
           const [xl, yl] = ring[ring.length - 1]
@@ -282,16 +285,16 @@ function StencilMesh() {
           return ring
         }
 
-        const pointsToRing = (pts: THREE.Vector2[]) =>
-          closeRing(pts.map(p => [p.x, p.y]))
+        const pointsToRing = (pts: THREE.Vector2[]): Pair[] =>
+          closeRing(pts.map(p => [p.x, p.y] as Pair))
 
-        const shapeToPolygon = (shape: THREE.Shape): number[][][] => {
+        const shapeToPolygon = (shape: THREE.Shape): Pair[][] => {
           const outer = pointsToRing(shape.getPoints(curveSegments))
           const holesRings = shape.holes.map(h => pointsToRing(h.getPoints(curveSegments)))
           return [outer, ...holesRings]
         }
 
-        const buildShapeFromPolygon = (poly: number[][][]) => {
+        const buildShapeFromPolygon = (poly: Pair[][]) => {
           if (!poly || poly.length === 0) return null
           const outer = poly[0].slice(0, -1)
           if (outer.length < 3) return null
@@ -320,8 +323,8 @@ function StencilMesh() {
         )
 
         if (plateShape2D) {
-          let platePoly: MultiPoly[] = [shapeToPolygon(plateShape2D)]
-          const clipPolys: MultiPoly[] = []
+          let platePoly: MultiPoly = [shapeToPolygon(plateShape2D)]
+          const clipPolys: Poly[] = []
 
           if (holes && holes.length > 0) {
             holes.forEach(hole => {
@@ -377,7 +380,7 @@ function StencilMesh() {
               })
             }
 
-            const shapeToPolygonWithTransform = (shape: THREE.Shape): number[][][] => {
+            const shapeToPolygonWithTransform = (shape: THREE.Shape): Pair[][] => {
               const outerPts = transformPoints(shape.getPoints(curveSegments))
               const outer = pointsToRing(outerPts)
               const holesRings = shape.holes.map(h => pointsToRing(transformPoints(h.getPoints(curveSegments))))
@@ -392,7 +395,7 @@ function StencilMesh() {
 
           if (clipPolys.length > 0) {
             const clipUnion = clipPolys.reduce((acc, val) => polygonClipping.union(acc, val) as MultiPoly, [] as MultiPoly)
-            platePoly = polygonClipping.difference(platePoly, clipUnion) as MultiPoly[]
+            platePoly = polygonClipping.difference(platePoly, clipUnion) as MultiPoly
           }
 
           const extruded: THREE.BufferGeometry[] = []

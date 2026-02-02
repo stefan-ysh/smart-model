@@ -451,7 +451,7 @@ export const useModelStore = create<ModelStore>((set) => ({
   updateParam: (key, value) =>
     set((state) => {
       const nextValue =
-        key === "plateShape" && value === "square" ? "rectangle" : value
+        key === "plateShape" && value === "square" ? ("rectangle" as PlateShape) : value
       const params = { ...state.parameters, [key]: nextValue }
 
       if (key === "textContent" && typeof value === "string") {
@@ -490,7 +490,7 @@ export const useModelStore = create<ModelStore>((set) => ({
     set((state) => {
       const nextParams =
         params.plateShape === "square"
-          ? { ...params, plateShape: "rectangle" }
+          ? { ...params, plateShape: "rectangle" as PlateShape }
           : params
       return {
         parameters: { ...state.parameters, ...nextParams },

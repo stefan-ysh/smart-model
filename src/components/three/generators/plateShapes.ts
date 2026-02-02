@@ -597,6 +597,15 @@ function createPlateGeometryInternal(
     curveSegments: baseSegments,
   });
 
+  const applyHoles = (shape: THREE.Shape) => {
+    if (!holes || holes.length === 0) return;
+    holes.forEach((hole) => {
+      const holePath = new THREE.Path();
+      holePath.absarc(hole.x, hole.y, hole.radius, 0, Math.PI * 2, false);
+      shape.holes.push(holePath);
+    });
+  };
+
   switch (shape) {
     case "rectangle": {
       const bevelSettings = getBevelSettings();

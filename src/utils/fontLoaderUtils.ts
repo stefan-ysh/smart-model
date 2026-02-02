@@ -25,7 +25,8 @@ export class UniversalFontLoader extends Loader {
         url,
         (json) => {
           // Parse the TTF JSON to a Three.js Font
-          const font = this.fontLoader.parse(json as Record<string, unknown>)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const font = this.fontLoader.parse(json as any)
           onLoad(font)
         },
         onProgress,
@@ -38,7 +39,8 @@ export class UniversalFontLoader extends Loader {
   }
 
   parse(json: unknown): Font {
-    return this.fontLoader.parse(json as Record<string, unknown>)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this.fontLoader.parse(json as any)
   }
 }
 

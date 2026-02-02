@@ -33,7 +33,9 @@ function createReliefPlateGeometry2D(
 ): THREE.BufferGeometry | null {
   const curveSegments = 32 * Math.max(1, Math.min(5, modelResolution))
 
-  const closeRing = (ring: number[][]) => {
+  type Pair = [number, number]
+
+  const closeRing = (ring: Pair[]): Pair[] => {
     if (ring.length === 0) return ring
     const [x0, y0] = ring[0]
     const [xl, yl] = ring[ring.length - 1]
@@ -41,10 +43,10 @@ function createReliefPlateGeometry2D(
     return ring
   }
 
-  const pointsToRing = (pts: THREE.Vector2[]) =>
-    closeRing(pts.map(p => [p.x, p.y]))
+  const pointsToRing = (pts: THREE.Vector2[]): Pair[] =>
+    closeRing(pts.map(p => [p.x, p.y] as Pair))
 
-  const ringArea = (ring: number[][]) => {
+  const ringArea = (ring: Pair[]) => {
     let sum = 0
     for (let i = 0; i < ring.length - 1; i++) {
       const [x1, y1] = ring[i]
@@ -54,13 +56,13 @@ function createReliefPlateGeometry2D(
     return sum / 2
   }
 
-  const shapeToPolygon = (shape: THREE.Shape): number[][][] => {
+  const shapeToPolygon = (shape: THREE.Shape): Pair[][] => {
     const outer = pointsToRing(shape.getPoints(curveSegments))
     const holesRings = shape.holes.map(h => pointsToRing(h.getPoints(curveSegments)))
     return [outer, ...holesRings]
   }
 
-    const buildShapeFromPolygon = (poly: number[][][]) => {
+    const buildShapeFromPolygon = (poly: Pair[][]) => {
       if (!poly || poly.length === 0) return null
       const outer = poly[0].slice(0, -1)
       if (outer.length < 3) return null
@@ -78,9 +80,9 @@ function createReliefPlateGeometry2D(
       return shape
     }
 
-  type Poly = number[][][]
+  type Poly = Pair[][]
   type MultiPoly = Poly[]
-  const holePolys: MultiPoly[] = []
+  const holePolys: Poly[] = []
   if (holes && holes.length > 0) {
     holes.forEach(hole => {
       const hShape = new THREE.Shape()
@@ -116,14 +118,14 @@ function createReliefPlateGeometry2D(
     )
     if (!inner) return null
 
-    const outerPoly: MultiPoly[] = [shapeToPolygon(outer)]
-    const innerPoly: MultiPoly[] = [shapeToPolygon(inner)]
+    const outerPoly: MultiPoly = [shapeToPolygon(outer)]
+    const innerPoly: MultiPoly = [shapeToPolygon(inner)]
 
     let basePoly = outerPoly
-    if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly[]
+    if (holesUnion) basePoly = polygonClipping.difference(basePoly, holesUnion) as MultiPoly
 
-    let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly[]
-    if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly[]
+    let ringPoly = polygonClipping.difference(outerPoly, innerPoly) as MultiPoly
+    if (holesUnion) ringPoly = polygonClipping.difference(ringPoly, holesUnion) as MultiPoly
 
     const baseGeos: THREE.BufferGeometry[] = []
     for (const poly of basePoly) {
@@ -165,9 +167,9 @@ function createReliefPlateGeometry2D(
   )
   if (!shape2D) return null
 
-  let platePoly: MultiPoly[] = [shapeToPolygon(shape2D)]
+  let platePoly: MultiPoly = [shapeToPolygon(shape2D)]
   if (holesUnion) {
-    platePoly = polygonClipping.difference(platePoly, holesUnion) as MultiPoly[]
+    platePoly = polygonClipping.difference(platePoly, holesUnion) as MultiPoly
   }
 
   const geos: THREE.BufferGeometry[] = []
@@ -285,7 +287,7 @@ function ReliefMesh() {
           id: item.id,
         };
       })
-      .filter(Boolean);
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
   }, [fontMap, textItems]);
 
   // Create plate geometry

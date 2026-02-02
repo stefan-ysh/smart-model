@@ -81,7 +81,8 @@ export function TransformableObject({
       
       {isTransformEnabled && group && (
         <TransformControls
-          ref={controlsRef}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ref={controlsRef as any}
           object={group}
           mode={transformMode}
           size={0.8}

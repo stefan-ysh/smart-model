@@ -6,7 +6,7 @@ import { useModelStore } from "@/lib/store"
 import { createPlateGeometry, createPlateShape2D } from "./plateShapes"
 import polygonClipping from "polygon-clipping"
 import { mergeBufferGeometries } from "three-stdlib"
-import { rotate2D, toShapeXY } from "@/components/three/utils/coords"
+import { rotate2D, toPlateLocal, toShapeXY } from "@/components/three/utils/coords"
 import { useDebounce } from "@/components/hooks/useDebounce"
 
 // Helper to load image
@@ -123,10 +123,15 @@ export function ImageReliefGenerator() {
     type Poly = Pair[][]
     type MultiPoly = Poly[]
     const holePolys: Poly[] = []
-    if (holes && holes.length > 0) {
-      holes.forEach(hole => {
+    const localHoles = holes
+      ? holes.map((hole) => {
+          const local = toPlateLocal({ x: hole.x, y: hole.y }, platePosition)
+          return { ...hole, x: local.x, y: local.y }
+        })
+      : holes
+    if (localHoles && localHoles.length > 0) {
+      localHoles.forEach(hole => {
         const hShape = new THREE.Shape()
-        // Convert world-space hole to plate-local space
         const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
         const rotated = rotate2D(shapeXY, -plateRotation)
         const hx = rotated.x
@@ -229,7 +234,7 @@ export function ImageReliefGenerator() {
       edgeBevelType,
       edgeBevelSize,
       modelResolution,
-      holes
+      localHoles
     )
   }, [
     plateShape,
@@ -245,7 +250,8 @@ export function ImageReliefGenerator() {
     edgeBevelSize,
     modelResolution,
     holes,
-    plateRotation
+    plateRotation,
+    platePosition
   ])
 
 
@@ -565,7 +571,11 @@ export function ImageReliefGenerator() {
             
             // Translate offset
             if (debouncedTextPosition && (debouncedTextPosition.x !== 0 || debouncedTextPosition.y !== 0)) {
-                const shapeXY = toShapeXY({ x: debouncedTextPosition.x, y: debouncedTextPosition.y })
+                const local = toPlateLocal(
+                  { x: debouncedTextPosition.x, y: debouncedTextPosition.y },
+                  platePosition
+                )
+                const shapeXY = toShapeXY(local)
                 textGeo.translate(shapeXY.x, shapeXY.y, 0)
             }
         }
@@ -623,6 +633,7 @@ export function ImageReliefGenerator() {
       debouncedImageRotation,
       debouncedTextPosition,
       plateRotation,
+      platePosition,
   ])
 
   if (!mergedGeometry) return null

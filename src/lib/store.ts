@@ -226,8 +226,6 @@ interface ModelStore {
   // Effects
   bloomEnabled: boolean;
   setBloomEnabled: (enabled: boolean) => void;
-  contactShadowsEnabled: boolean;
-  setContactShadowsEnabled: (enabled: boolean) => void;
 
   // Scene settings
   showGrid: boolean;
@@ -454,6 +452,7 @@ export const useModelStore = create<ModelStore>((set) => ({
         key === "plateShape" && value === "square" ? ("rectangle" as PlateShape) : value
       const params = { ...state.parameters, [key]: nextValue }
 
+
       if (key === "textContent" && typeof value === "string") {
         const nextItems = [...params.textItems]
         if (nextItems.length > 0) {
@@ -659,9 +658,6 @@ export const useModelStore = create<ModelStore>((set) => ({
   // Effects
   bloomEnabled: false,
   setBloomEnabled: (enabled: boolean) => set({ bloomEnabled: enabled }),
-  contactShadowsEnabled: true,
-  setContactShadowsEnabled: (enabled: boolean) =>
-    set({ contactShadowsEnabled: enabled }),
 
   // Scene settings
   showGrid: true,

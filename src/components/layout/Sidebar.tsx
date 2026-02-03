@@ -25,7 +25,7 @@ const SidebarItem = ({ icon: Icon, label, isActive, onClick }: SidebarItemProps)
     >
       {/* Active Highlight Background */}
       {isActive && (
-        <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 shadow-[0_0_20px_rgba(59,130,246,0.5)] z-0 animate-in fade-in zoom-in duration-300" />
+        <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 shadow-[0_0_20px_rgba(59,130,246,0.5)] z-0" />
       )}
       
       {/* Icon with potential glow */}
@@ -81,7 +81,7 @@ export function Sidebar() {
       
       {/* Bottom Visual Element */}
       <div className="w-12 h-1 rounded-full bg-zinc-900 overflow-hidden">
-        <div className="h-full w-1/2 bg-blue-500 animate-[loading_2s_infinite_linear]" />
+        <div className="h-full w-1/2 bg-blue-500" />
       </div>
     </aside>
   )

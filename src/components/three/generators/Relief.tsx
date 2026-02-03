@@ -9,7 +9,7 @@ import { createPlateGeometry, createPlateShape2D } from "./plateShapes";
 import { mergeBufferGeometries } from "three-stdlib";
 import polygonClipping from "polygon-clipping";
 import { UniversalFontLoader } from "@/utils/fontLoaderUtils";
-import { toShapeXY } from "@/components/three/utils/coords";
+import { toPlateLocal, toShapeXY } from "@/components/three/utils/coords";
 import { LRUCache } from "@/components/three/utils/lru";
 
 // Create plate geometry based on shape type (same as Stencil)
@@ -293,11 +293,31 @@ function ReliefMesh() {
   // Create plate geometry
   const plateGeo = useMemo(() => {
     const cacheKey = JSON.stringify({
-      plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius, trayBorderWidth, trayBorderHeight, edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes
+      plateShape,
+      size,
+      plateWidth,
+      plateHeight,
+      baseThickness,
+      plateCornerRadius,
+      trayBorderWidth,
+      trayBorderHeight,
+      edgeBevelEnabled,
+      edgeBevelType,
+      edgeBevelSize,
+      modelResolution,
+      holes,
+      platePosition
     })
 
     const cached = plateCache.get(cacheKey)
     if (cached) return cached
+    
+    const localHoles = holes
+      ? holes.map((hole) => {
+          const local = toPlateLocal({ x: hole.x, y: hole.y }, platePosition)
+          return { ...hole, x: local.x, y: local.y }
+        })
+      : holes
 
     const geo = createReliefPlateGeometry2D(
       plateShape,
@@ -309,7 +329,7 @@ function ReliefMesh() {
       trayBorderWidth,
       trayBorderHeight,
       modelResolution,
-      holes
+      localHoles
     ) || createPlateGeometry(
       plateShape,
       size,
@@ -323,7 +343,7 @@ function ReliefMesh() {
       edgeBevelType,
       edgeBevelSize,
       modelResolution,
-      holes
+      localHoles
     );
 
 
@@ -332,7 +352,7 @@ function ReliefMesh() {
     }
 
     return geo
-  }, [plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius, trayBorderWidth, trayBorderHeight, edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes]);
+  }, [plateShape, size, plateWidth, plateHeight, baseThickness, plateCornerRadius, trayBorderWidth, trayBorderHeight, edgeBevelEnabled, edgeBevelType, edgeBevelSize, modelResolution, holes, platePosition]);
 
   return (
     <>

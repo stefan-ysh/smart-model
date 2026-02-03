@@ -127,7 +127,7 @@ export function Header() {
           <span className="relative z-10">导出 {parameters.exportFormat.toUpperCase()}</span>
           
           {/* Shine effect */}
-          <div className="absolute -inset-full h-[300%] w-[300%] bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] -translate-x-full animate-[shimmer_3s_infinite] transition-transform group-hover:duration-1000" />
+          <div className="absolute -inset-full h-[300%] w-[300%] bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] -translate-x-full transition-transform group-hover:duration-1000" />
         </button>
       </div>
     </header>

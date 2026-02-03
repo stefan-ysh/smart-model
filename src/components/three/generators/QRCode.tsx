@@ -2,7 +2,7 @@ import { useMemo, useEffect, useRef } from "react"
 import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
 import QRCode from "qrcode"
-import { toShapeXY } from "@/components/three/utils/coords"
+import { toPlateLocal, toShapeXY } from "@/components/three/utils/coords"
 import { useDebounce } from "@/components/hooks/useDebounce"
 // (mergeBufferGeometries removed; instanced preview handles blocks)
 
@@ -95,9 +95,16 @@ export function QRCodeGenerator() {
     const padding = Math.max(0, qrMargin)
     const plateSize = qrSize + padding * 2
     
+    const localHoles = holes
+      ? holes.map((hole) => {
+          const local = toPlateLocal({ x: hole.x, y: hole.y }, platePosition)
+          return { ...hole, x: local.x, y: local.y }
+        })
+      : holes
+
     const addHoles = (shape: THREE.Shape) => {
-      if (!holes || holes.length === 0) return
-      holes.forEach(hole => {
+      if (!localHoles || localHoles.length === 0) return
+      localHoles.forEach(hole => {
         const h = new THREE.Path()
         const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
         h.absarc(shapeXY.x, shapeXY.y, hole.radius, 0, Math.PI * 2, false)
@@ -122,8 +129,8 @@ export function QRCodeGenerator() {
     }
     
     const isInHole = (x: number, y: number) => {
-      if (!holes || holes.length === 0) return false
-      for (const hole of holes) {
+      if (!localHoles || localHoles.length === 0) return false
+      for (const hole of localHoles) {
         const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
         const dx = x - shapeXY.x
         const dy = y - shapeXY.y
@@ -203,7 +210,7 @@ export function QRCodeGenerator() {
 
     return { baseGeometry, borderGeometry, blockGeo, instanceMatrices }
 
-  }, [qrMatrix, qrSize, qrDepth, qrInvert, qrIsThrough, baseThickness, qrMargin, plateCornerRadius, holes])
+  }, [qrMatrix, qrSize, qrDepth, qrInvert, qrIsThrough, baseThickness, qrMargin, plateCornerRadius, holes, platePosition])
 
   const instancedRef = useRef<THREE.InstancedMesh>(null)
 

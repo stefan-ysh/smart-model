@@ -26,8 +26,8 @@ export function MobileNotSupported() {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150" />
         
         {/* Animated Orbs */}
-        <div className="absolute -left-24 -top-24 h-96 w-96 animate-pulse rounded-full bg-blue-500/10 blur-[100px]" />
-        <div className="absolute -right-24 -bottom-24 h-96 w-96 animate-pulse rounded-full bg-purple-500/10 blur-[100px] [animation-delay:1s]" />
+        <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" />
+        <div className="absolute -right-24 -bottom-24 h-96 w-96 rounded-full bg-purple-500/10 blur-[100px]" />
       </div>
 
       {/* Glassmorphism Card */}
@@ -36,7 +36,7 @@ export function MobileNotSupported() {
         
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="mb-8 relative">
-            <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/20 blur-xl" />
+            <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl" />
             <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-white/10 bg-zinc-900/50 shadow-2xl">
               <Monitor className="h-12 w-12 text-blue-400" />
               <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-4 border-zinc-900 bg-red-500 shadow-lg">

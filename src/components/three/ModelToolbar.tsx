@@ -4,7 +4,7 @@ import { useState } from "react"
 import type { LucideIcon } from "lucide-react"
 import { 
   RotateCw, Camera, Palette, Grid3X3, Maximize, Home, 
-  Sparkles, Eclipse, X, ChevronUp, Grid2X2
+  Sparkles, X, ChevronUp, Grid2X2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useModelStore, MaterialPreset } from "@/lib/store"
@@ -61,7 +61,6 @@ export function ModelToolbar() {
     triggerScreenshot,
     triggerResetView,
     bloomEnabled, setBloomEnabled,
-    contactShadowsEnabled, setContactShadowsEnabled,
     showGrid, setShowGrid,
   } = useModelStore()
 
@@ -93,7 +92,7 @@ export function ModelToolbar() {
     <div className="absolute bottom-4 left-4 z-20 flex flex-col gap-2">
       {/* Material Picker Popup */}
       {showMaterialPicker && (
-        <div className="mb-2 p-3 bg-background/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-200">
+        <div className="mb-2 p-3 bg-background/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-foreground">材质预设</span>
             <button 
@@ -158,12 +157,6 @@ export function ModelToolbar() {
           label="辉光效果" 
           active={bloomEnabled}
           onClick={() => setBloomEnabled(!bloomEnabled)}
-        />
-        <ToolbarButton 
-          icon={Eclipse} 
-          label="地面阴影" 
-          active={contactShadowsEnabled}
-          onClick={() => setContactShadowsEnabled(!contactShadowsEnabled)}
         />
         <ToolbarButton 
           icon={Grid2X2} 

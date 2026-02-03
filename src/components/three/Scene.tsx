@@ -1,7 +1,7 @@
 "use client"
 
 import { Canvas, useThree, useFrame } from "@react-three/fiber"
-import { OrbitControls, Grid, Html, useProgress, Environment, ContactShadows } from "@react-three/drei"
+import { OrbitControls, Grid, Html, useProgress, Environment } from "@react-three/drei"
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing"
 import { Suspense, useRef, useEffect, useState, useMemo } from "react"
 import { useModelStore } from "@/lib/store"
@@ -31,7 +31,7 @@ function Loader() {
     <Html center>
       <div className="relative flex flex-col items-center justify-center pointer-events-none select-none">
         {/* Outer Glow */}
-        <div className="absolute h-40 w-40 animate-pulse rounded-full bg-blue-500/10 blur-[60px]" />
+        <div className="absolute h-40 w-40 rounded-full bg-blue-500/10 blur-[60px]" />
         
         {/* Progress Container */}
         <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl border border-white/10 bg-zinc-950/40 backdrop-blur-xl shadow-2xl">
@@ -71,7 +71,7 @@ function Loader() {
         
         <div className="mt-6 flex flex-col items-center gap-1.5">
           <div className="flex items-center gap-2">
-            <div className="h-1 w-1 rounded-full bg-blue-500 animate-ping" />
+            <div className="h-1 w-1 rounded-full bg-blue-500" />
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400">
               Initializing Engine
             </span>
@@ -182,16 +182,18 @@ function CameraController({
 // Model entrance animation wrapper
 function AnimatedModelWrapper({ children }: { children: React.ReactNode }) {
   const groupRef = useRef<THREE.Group>(null)
-  const [animationProgress, setAnimationProgress] = useState(0)
+  const progressRef = useRef(0)
+  const invalidate = useThree(state => state.invalidate)
   
   useFrame((_, delta) => {
-    if (animationProgress < 1) {
-      setAnimationProgress(prev => Math.min(1, prev + delta * 2))
+    if (progressRef.current < 1) {
+      progressRef.current = Math.min(1, progressRef.current + delta * 2)
+      invalidate()
     }
     
     if (groupRef.current) {
       // Elastic easing for bouncy effect
-      const t = animationProgress
+      const t = progressRef.current
       const elastic = t < 1 
         ? 1 - Math.pow(2, -10 * t) * Math.cos((t * 10 - 0.75) * ((2 * Math.PI) / 3))
         : 1
@@ -251,15 +253,17 @@ function CurrentModel() {
 function Effects() {
   const bloomEnabled = useModelStore(state => state.bloomEnabled)
   
+  if (!bloomEnabled) return null
+  
   return (
     <EffectComposer enabled={true}>
       <Bloom 
-        intensity={bloomEnabled ? 0.4 : 0} 
+        intensity={0.4} 
         luminanceThreshold={0.7} 
         luminanceSmoothing={0.9}
         mipmapBlur
       />
-      <Vignette eskil={false} offset={0.1} darkness={bloomEnabled ? 0.5 : 0} />
+      <Vignette eskil={false} offset={0.1} darkness={0.5} />
     </EffectComposer>
   )
 }
@@ -269,7 +273,6 @@ function HoleMarkers() {
   const currentMode = useModelStore(state => state.currentMode)
   const holes = useModelStore(state => state.parameters.holes)
   const baseThickness = useModelStore(state => state.parameters.baseThickness)
-  const platePosition = useModelStore(state => state.parameters.platePosition)
   const updateHole = useModelStore(state => state.updateHole)
   
   // Only show markers in relevant modes
@@ -281,14 +284,10 @@ function HoleMarkers() {
       {holes.map(hole => (
         <DraggableHole
           key={hole.id}
-          hole={{
-            ...hole,
-            x: hole.x + platePosition.x,
-            y: hole.y + platePosition.y
-          }}
+          hole={hole}
           baseThickness={baseThickness}
           onPositionChange={(x, y) =>
-            updateHole(hole.id, { x: x - platePosition.x, y: y - platePosition.y })
+            updateHole(hole.id, { x, y })
           }
         />
       ))}
@@ -365,23 +364,6 @@ function TextPositionMarker() {
   )
 }
 
-// Ground shadows
-function GroundEffects() {
-  const contactShadowsEnabled = useModelStore(state => state.contactShadowsEnabled)
-  
-  if (!contactShadowsEnabled) return null
-  
-  return (
-    <ContactShadows 
-      position={[0, -0.5, 0]}
-      opacity={0.5}
-      scale={150}
-      blur={2.5}
-      far={50}
-      color="#000000"
-    />
-  )
-}
 
 export function Scene() {
   const controlsRef = useRef<OrbitControlsLike | null>(null)
@@ -405,14 +387,14 @@ export function Scene() {
       {isLoadingFont && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-md">
           <div className="relative flex flex-col items-center justify-center">
-            <div className="absolute h-40 w-40 animate-pulse rounded-full bg-purple-500/10 blur-[60px]" />
+            <div className="absolute h-40 w-40 rounded-full bg-purple-500/10 blur-[60px]" />
             <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl border border-white/10 bg-zinc-950/40 backdrop-blur-xl shadow-2xl">
               <div className="absolute inset-0 bg-linear-to-b from-white/5 to-transparent rounded-3xl" />
-              <div className="h-12 w-12 animate-spin rounded-full border-2 border-purple-500/30 border-t-purple-500" />
+              <div className="h-12 w-12 rounded-full border-2 border-purple-500/30 border-t-purple-500" />
             </div>
             <div className="mt-6 flex flex-col items-center gap-1.5">
               <div className="flex items-center gap-2">
-                <div className="h-1 w-1 rounded-full bg-purple-500 animate-ping" />
+                <div className="h-1 w-1 rounded-full bg-purple-500" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-400">
                   Global Typography
                 </span>
@@ -436,6 +418,8 @@ export function Scene() {
         shadows={showShadows}
         camera={{ position: [80, 80, 80], fov: 45, near: 0.1, far: 10000 }}
         gl={{ antialias: true, preserveDrawingBuffer: true }}
+        frameloop={autoRotate ? "always" : "demand"}
+        dpr={[1, 1.5]}
       >
         <Suspense fallback={<Loader />}>
           {/* Environment for reflections */}
@@ -453,9 +437,6 @@ export function Scene() {
             position={[-30, 50, -30]} 
             intensity={0.3} 
           />
-          
-          {/* Ground effects */}
-          <GroundEffects />
           
           {/* Model - positioned so it sits on the grid */}
           <group 
@@ -497,6 +478,7 @@ export function Scene() {
           
           <ExportHandler />
           <ScreenshotHandler />
+          <StoreInvalidator />
           <CameraController controlsRef={controlsRef} />
           
           {/* Post-processing effects */}
@@ -504,21 +486,47 @@ export function Scene() {
         </Suspense>
         
         {/* Controls with zoom limits and auto-rotate */}
-        <OrbitControls 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ref={controlsRef as any}
-          makeDefault 
-          minDistance={20}
-          maxDistance={500}
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI * 0.9}
-          enableDamping={false}
-          target={[0, 0, 0]}
-          autoRotate={autoRotate}
-          autoRotateSpeed={2}
-        />
+        <Controls controlsRef={controlsRef} autoRotate={autoRotate} />
       </Canvas>
     </div>
+  )
+}
+
+function StoreInvalidator() {
+  const invalidate = useThree(state => state.invalidate)
+  
+  useEffect(() => {
+    const unsubscribe = useModelStore.subscribe(() => invalidate())
+    return unsubscribe
+  }, [invalidate])
+  
+  return null
+}
+
+function Controls({
+  controlsRef,
+  autoRotate
+}: {
+  controlsRef: React.RefObject<OrbitControlsLike | null>
+  autoRotate: boolean
+}) {
+  const invalidate = useThree(state => state.invalidate)
+  
+  return (
+    <OrbitControls 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ref={controlsRef as any}
+      makeDefault 
+      minDistance={20}
+      maxDistance={500}
+      minPolarAngle={0}
+      maxPolarAngle={Math.PI * 0.9}
+      enableDamping={false}
+      target={[0, 0, 0]}
+      autoRotate={autoRotate}
+      autoRotateSpeed={2}
+      onChange={() => invalidate()}
+    />
   )
 }
 
@@ -637,9 +645,9 @@ function LayerOverlay() {
       const match = parameters.holes.find((hole) => `hole-${hole.id}` === id)
       if (match) {
         setFocusTarget({
-          x: match.x + parameters.platePosition.x,
+          x: match.x,
           y: 0,
-          z: match.y + parameters.platePosition.y
+          z: match.y
         })
       }
     }

@@ -52,11 +52,19 @@ function StencilMesh() {
       trayBorderWidth, trayBorderHeight,
       edgeBevelEnabled, edgeBevelType, edgeBevelSize,
       modelResolution,
-      holes
+      holes,
+      platePosition
     })
 
     const cached = geometryCache.get(cacheKey)
     if (cached) return cached
+
+    const localHoles = holes
+      ? holes.map((hole) => {
+          const local = toPlateLocal({ x: hole.x, y: hole.y }, platePosition)
+          return { ...hole, x: local.x, y: local.y }
+        })
+      : holes
 
     try {
       // Calculate inverse plate transform
@@ -149,8 +157,9 @@ function StencilMesh() {
           if (holes && holes.length > 0) {
             holes.forEach(hole => {
               const hShape = new THREE.Shape()
-              // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
-              const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
+              // Holes are in world space; convert to plate-local so plate transform doesn't move them
+              const local = toPlateLocal({ x: hole.x, y: hole.y }, platePosition)
+              const shapeXY = toShapeXY(local)
               const rotated = rotate2D(shapeXY, -plateRotation)
               const hx = rotated.x
               const hy = rotated.y
@@ -329,8 +338,8 @@ function StencilMesh() {
           if (holes && holes.length > 0) {
             holes.forEach(hole => {
               const hShape = new THREE.Shape()
-              // Holes stay in world space; convert to plate-local so plate rotation doesn't affect them
-              const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
+              const local = toPlateLocal({ x: hole.x, y: hole.y }, platePosition)
+              const shapeXY = toShapeXY(local)
               const rotated = rotate2D(shapeXY, -plateRotation)
               const hx = rotated.x
               const hy = rotated.y
@@ -433,7 +442,7 @@ function StencilMesh() {
         plateShape, size, plateWidth, plateHeight, baseThickness, 
         plateCornerRadius, trayBorderWidth, trayBorderHeight, 
         edgeBevelEnabled, edgeBevelType, edgeBevelSize, 
-        modelResolution, holes
+        modelResolution, localHoles
       )
     }
   }, [fontMap, size, baseThickness, textItems, plateShape, plateWidth, plateHeight, 

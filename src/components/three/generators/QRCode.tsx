@@ -101,10 +101,17 @@ export function QRCodeGenerator() {
           return { ...hole, x: local.x, y: local.y }
         })
       : holes
+    const halfPlate = plateSize / 2
+    const usableHoles = localHoles
+      ? localHoles.filter((hole) => {
+          const limit = halfPlate - hole.radius
+          return Math.abs(hole.x) <= limit && Math.abs(hole.y) <= limit
+        })
+      : localHoles
 
     const addHoles = (shape: THREE.Shape) => {
-      if (!localHoles || localHoles.length === 0) return
-      localHoles.forEach(hole => {
+      if (!usableHoles || usableHoles.length === 0) return
+      usableHoles.forEach(hole => {
         const h = new THREE.Path()
         const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
         h.absarc(shapeXY.x, shapeXY.y, hole.radius, 0, Math.PI * 2, false)
@@ -129,8 +136,8 @@ export function QRCodeGenerator() {
     }
     
     const isInHole = (x: number, y: number) => {
-      if (!localHoles || localHoles.length === 0) return false
-      for (const hole of localHoles) {
+      if (!usableHoles || usableHoles.length === 0) return false
+      for (const hole of usableHoles) {
         const shapeXY = toShapeXY({ x: hole.x, y: hole.y })
         const dx = x - shapeXY.x
         const dy = y - shapeXY.y

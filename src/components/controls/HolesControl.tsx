@@ -16,7 +16,7 @@ export function HolesControl({ holes, addHole, removeHole, updateHole }: HolesCo
   const safeHoles = holes || [];
 
   return (
-    <div className="space-y-4 pt-4 border-t border-white/5">
+    <div className="space-y-4 pt-4 border-t border-border/50">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">底板打孔</h3>
         <Button
@@ -34,7 +34,7 @@ export function HolesControl({ holes, addHole, removeHole, updateHole }: HolesCo
         {safeHoles.map((hole, index) => (
           <div key={hole.id} className="p-3 bg-secondary/50 rounded-md space-y-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-zinc-400">孔位 #{index + 1}</span>
+              <span className="text-xs font-medium text-muted-foreground">孔位 #{index + 1}</span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -48,7 +48,7 @@ export function HolesControl({ holes, addHole, removeHole, updateHole }: HolesCo
             <div className="flex flex-col gap-3">
                {/* X Position */}
                <div className="space-y-1.5">
-                  <Label className="text-[10px] text-zinc-400">X 坐标</Label>
+                  <Label className="text-[10px] text-muted-foreground">X 坐标</Label>
                   <SliderWithInput
                     value={hole.x}
                     min={-150}
@@ -61,7 +61,7 @@ export function HolesControl({ holes, addHole, removeHole, updateHole }: HolesCo
 
                {/* Y Position */}
                <div className="space-y-1.5">
-                  <Label className="text-[10px] text-zinc-400">Y 坐标</Label>
+                  <Label className="text-[10px] text-muted-foreground">Y 坐标</Label>
                   <SliderWithInput
                     value={hole.y}
                     min={-150}
@@ -74,7 +74,7 @@ export function HolesControl({ holes, addHole, removeHole, updateHole }: HolesCo
 
                {/* Radius */}
                <div className="space-y-1.5">
-                  <Label className="text-[10px] text-zinc-400">半径 (mm)</Label>
+                  <Label className="text-[10px] text-muted-foreground">半径 (mm)</Label>
                   <SliderWithInput
                     value={hole.radius}
                     min={1}
@@ -88,7 +88,7 @@ export function HolesControl({ holes, addHole, removeHole, updateHole }: HolesCo
           </div>
         ))}
         {safeHoles.length === 0 && (
-          <div className="text-center py-6 text-xs text-zinc-500 border border-dashed border-white/10 rounded-md">
+          <div className="text-center py-6 text-xs text-muted-foreground/80 border border-dashed border-border/70 rounded-md">
             暂无孔位，点击上方按钮添加
           </div>
         )}

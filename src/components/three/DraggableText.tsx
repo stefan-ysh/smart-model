@@ -3,6 +3,7 @@
 import { useModelStore, TextItem } from "@/lib/store"
 import * as THREE from "three"
 import { DraggableGizmo } from "@/components/three/DraggableGizmo"
+import { THEME_COLORS } from "@/lib/theme-colors"
 
 interface DraggableTextProps {
   item: TextItem
@@ -40,7 +41,7 @@ export function DraggableText({
           ]}
         />
         <meshBasicMaterial
-          color={isSelected ? "#3b82f6" : "#10b981"}
+          color={isSelected ? THEME_COLORS.primary : THEME_COLORS.accent}
           transparent
           opacity={isSelected ? 0.3 : 0.12}
           side={THREE.DoubleSide}

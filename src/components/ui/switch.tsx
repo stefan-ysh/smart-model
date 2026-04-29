@@ -22,8 +22,10 @@ export function Switch({ checked, onCheckedChange, disabled, className, id }: Sw
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
-        checked ? "bg-primary" : "bg-white/10",
+        "relative inline-flex h-6 w-11 items-center rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+        checked
+          ? "bg-primary border-primary/80 shadow-xs"
+          : "bg-muted/60 border-border/80 shadow-inner",
         className
       )}
     >
@@ -35,7 +37,8 @@ export function Switch({ checked, onCheckedChange, disabled, className, id }: Sw
           damping: 30
         }}
         className={cn(
-          "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0",
+          "pointer-events-none block h-5 w-5 rounded-full shadow-sm ring-1 ring-black/5 dark:ring-white/10",
+          checked ? "bg-primary-foreground" : "bg-background",
           checked ? "translate-x-5" : "translate-x-1"
         )}
       />

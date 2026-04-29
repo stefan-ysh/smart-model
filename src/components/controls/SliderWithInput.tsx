@@ -67,14 +67,14 @@ export function SliderWithInput({
   
   return (
     <div className={cn(
-      "flex flex-col rounded-2xl border border-white/5 hover:border-white/10 transition-all group",
-      compact ? "p-2.5 gap-1.5" : "p-3.5 gap-2.5 bg-white/3",
+      "flex flex-col rounded-2xl border border-border/50 hover:border-border/70 transition-all group",
+      compact ? "p-2.5 gap-1.5" : "p-3.5 gap-2.5 bg-card/3",
       className
     )}>
       <div className="flex items-center justify-between mb-2">
         {showInput ? (
           <div className={cn(
-            "flex-1 flex items-center gap-1.5 bg-zinc-950 border border-white/10 rounded-lg shadow-inner transition-colors group-hover:border-white/20",
+            "flex-1 flex items-center gap-1.5 bg-background border border-border/70 rounded-lg shadow-inner transition-colors group-hover:border-border/80",
             compact ? "px-2 py-1" : "px-3 py-1.5"
           )}>
             <Input
@@ -87,15 +87,15 @@ export function SliderWithInput({
               max={max}
               step={step}
               className={cn(
-                "border-0 bg-transparent p-0 flex-1 tabular-nums focus-visible:ring-0 shadow-none text-blue-400 font-bold",
+                "border-0 bg-transparent p-0 flex-1 tabular-nums focus-visible:ring-0 shadow-none text-primary font-bold",
                 compact ? "text-xs" : "text-sm",
                 "text-left"
               )}
             />
-            {unit && <span className="text-[10px] text-zinc-600 font-bold shrink-0">{unit}</span>}
+            {unit && <span className="text-[10px] text-muted-foreground/70 font-bold shrink-0">{unit}</span>}
           </div>
         ) : (
-          <span className="text-xs font-bold tabular-nums text-blue-400 w-full text-right">{value}{unit}</span>
+          <span className="text-xs font-bold tabular-nums text-primary w-full text-right">{value}{unit}</span>
         )}
       </div>
       

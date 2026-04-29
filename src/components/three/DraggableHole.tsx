@@ -3,6 +3,7 @@
 import { HoleItem, useModelStore } from "@/lib/store"
 import * as THREE from "three"
 import { DraggableGizmo } from "@/components/three/DraggableGizmo"
+import { THEME_COLORS } from "@/lib/theme-colors"
 
 interface DraggableHoleProps {
   hole: HoleItem
@@ -28,7 +29,7 @@ export function DraggableHole({
       <mesh userData={{ noExport: true }}>
         <cylinderGeometry args={[hole.radius, hole.radius, 1, 32]} />
         <meshStandardMaterial 
-          color={isSelected ? "#3b82f6" : "#ef4444"}
+          color={isSelected ? THEME_COLORS.primary : THEME_COLORS.destructive}
           transparent 
           opacity={0.6}
         />
@@ -36,7 +37,7 @@ export function DraggableHole({
       {isSelected && (
         <mesh position={[0, 0.6, 0]} rotation={[-Math.PI / 2, 0, 0]} userData={{ noExport: true }}>
           <ringGeometry args={[hole.radius + 1, hole.radius + 2, 32]} />
-          <meshBasicMaterial color="#3b82f6" transparent opacity={0.7} side={THREE.DoubleSide} />
+          <meshBasicMaterial color={THEME_COLORS.primary} transparent opacity={0.7} side={THREE.DoubleSide} />
         </mesh>
       )}
     </DraggableGizmo>

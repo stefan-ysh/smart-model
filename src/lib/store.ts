@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { THEME_COLORS } from "@/lib/theme-colors";
 
 export type GeneratorMode =
   | "basic"
@@ -171,9 +172,30 @@ export type MaterialPreset =
   | "glass"
   | "neon";
 
+type EditorSnapshot = {
+  currentMode: GeneratorMode;
+  parameters: ModelParams;
+  materialPreset: MaterialPreset;
+  wireframeMode: boolean;
+  bloomEnabled: boolean;
+  showGrid: boolean;
+};
+
+type HydratableWorkspace = {
+  currentMode?: GeneratorMode;
+  parameters?: Partial<ModelParams>;
+  materialPreset?: MaterialPreset;
+  wireframeMode?: boolean;
+  bloomEnabled?: boolean;
+  showGrid?: boolean;
+};
+
 interface ModelStore {
+  past: EditorSnapshot[];
+  future: EditorSnapshot[];
   currentMode: GeneratorMode;
   setMode: (mode: GeneratorMode) => void;
+  hydrateWorkspace: (workspace: HydratableWorkspace) => void;
 
   parameters: ModelParams;
   updateParam: (key: keyof ModelParams, value: unknown) => void;
@@ -218,10 +240,16 @@ interface ModelStore {
   setWireframeMode: (enabled: boolean) => void;
   materialPreset: MaterialPreset;
   setMaterialPreset: (preset: MaterialPreset) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
   screenshotTrigger: number;
   triggerScreenshot: () => void;
   resetViewTrigger: number;
   triggerResetView: () => void;
+  isExporting: boolean;
+  setExporting: (exporting: boolean) => void;
 
   // Effects
   bloomEnabled: boolean;
@@ -341,6 +369,25 @@ export const ALL_FONTS = [
 ];
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
+const HISTORY_LIMIT = 50
+
+function normalizeParams(params: Partial<ModelParams>): Partial<ModelParams> {
+  if (params.plateShape === "square") {
+    return { ...params, plateShape: "rectangle" as PlateShape }
+  }
+  return params
+}
+
+function createSnapshot(state: Pick<ModelStore, "currentMode" | "parameters" | "materialPreset" | "wireframeMode" | "bloomEnabled" | "showGrid">): EditorSnapshot {
+  return {
+    currentMode: state.currentMode,
+    parameters: state.parameters,
+    materialPreset: state.materialPreset,
+    wireframeMode: state.wireframeMode,
+    bloomEnabled: state.bloomEnabled,
+    showGrid: state.showGrid,
+  }
+}
 
 const defaultParams: ModelParams = {
   shapeType: "cube",
@@ -409,8 +456,8 @@ const defaultParams: ModelParams = {
   modelResolution: 3,
 
   // Material defaults
-  plateColor: "#0ea5e9",
-  textColor: "#e2e8f0",
+  plateColor: THEME_COLORS.primary,
+  textColor: THEME_COLORS.primaryForeground,
   roughness: 0.3,
   metalness: 0.1,
 
@@ -433,16 +480,60 @@ const defaultParams: ModelParams = {
   layerCoordsVersion: 1,
 };
 
-export const useModelStore = create<ModelStore>((set) => ({
+export const useModelStore = create<ModelStore>((set, get) => {
+  const pushHistory = (updater: (state: ModelStore) => Partial<ModelStore>) => {
+    set((state) => {
+      const nextState = updater(state)
+      const snapshot = createSnapshot(state)
+      const past = [...((state as ModelStore & { past?: EditorSnapshot[] }).past || []), snapshot].slice(-HISTORY_LIMIT)
+      return {
+        ...nextState,
+        past,
+        future: [],
+        canUndo: past.length > 0,
+        canRedo: false,
+      } as Partial<ModelStore>
+    })
+  }
+
+  const applySnapshot = (snapshot: EditorSnapshot, history: { past: EditorSnapshot[]; future: EditorSnapshot[] }) => {
+    set({
+      currentMode: snapshot.currentMode,
+      parameters: snapshot.parameters,
+      materialPreset: snapshot.materialPreset,
+      wireframeMode: snapshot.wireframeMode,
+      bloomEnabled: snapshot.bloomEnabled,
+      showGrid: snapshot.showGrid,
+      past: history.past,
+      future: history.future,
+      canUndo: history.past.length > 0,
+      canRedo: history.future.length > 0,
+    } as Partial<ModelStore>)
+  }
+
+  return ({
   currentMode: "basic",
-  setMode: (mode) => set({ currentMode: mode }),
+  setMode: (mode) => pushHistory(() => ({ currentMode: mode })),
+  hydrateWorkspace: (workspace) =>
+    set((state) => ({
+      currentMode: workspace.currentMode ?? state.currentMode,
+      parameters: workspace.parameters ? { ...state.parameters, ...normalizeParams(workspace.parameters) } : state.parameters,
+      materialPreset: workspace.materialPreset ?? state.materialPreset,
+      wireframeMode: workspace.wireframeMode ?? state.wireframeMode,
+      bloomEnabled: workspace.bloomEnabled ?? state.bloomEnabled,
+      showGrid: workspace.showGrid ?? state.showGrid,
+      past: [],
+      future: [],
+      canUndo: false,
+      canRedo: false,
+    })),
 
   viewPreset: null,
   setViewPreset: (preset) => set({ viewPreset: preset }),
 
   parameters: defaultParams,
   updateParam: (key, value) =>
-    set((state) => {
+    pushHistory((state) => {
       const nextValue =
         key === "plateShape" && value === "square" ? ("rectangle" as PlateShape) : value
       const params = { ...state.parameters, [key]: nextValue }
@@ -481,11 +572,8 @@ export const useModelStore = create<ModelStore>((set) => ({
       }
     }),
   setParameters: (params) =>
-    set((state) => {
-      const nextParams =
-        params.plateShape === "square"
-          ? { ...params, plateShape: "rectangle" as PlateShape }
-          : params
+    pushHistory((state) => {
+      const nextParams = normalizeParams(params)
       return {
         parameters: { ...state.parameters, ...nextParams },
       }
@@ -529,7 +617,7 @@ export const useModelStore = create<ModelStore>((set) => ({
 
   // Multi-text management
   addTextItem: () =>
-    set((state) => ({
+    pushHistory((state) => ({
       parameters: {
         ...state.parameters,
         textItems: [
@@ -552,7 +640,7 @@ export const useModelStore = create<ModelStore>((set) => ({
     })),
 
   removeTextItem: (id) =>
-    set((state) => ({
+    pushHistory((state) => ({
       parameters: {
         ...state.parameters,
         textItems: state.parameters.textItems.filter((item) => item.id !== id),
@@ -560,7 +648,7 @@ export const useModelStore = create<ModelStore>((set) => ({
     })),
 
   updateTextItem: (id, updates) =>
-    set((state) => ({
+    pushHistory((state) => ({
       parameters: (() => {
         const nextItems = state.parameters.textItems.map((item) =>
           item.id === id ? { ...item, ...updates } : item,
@@ -587,7 +675,7 @@ export const useModelStore = create<ModelStore>((set) => ({
 
   // Hole management
   addHole: () =>
-    set((state) => ({
+    pushHistory((state) => ({
       parameters: {
         ...state.parameters,
         holes: [
@@ -603,7 +691,7 @@ export const useModelStore = create<ModelStore>((set) => ({
     })),
 
   removeHole: (id) =>
-    set((state) => ({
+    pushHistory((state) => ({
       parameters: {
         ...state.parameters,
         holes: state.parameters.holes.filter((h) => h.id !== id),
@@ -611,7 +699,7 @@ export const useModelStore = create<ModelStore>((set) => ({
     })),
 
   updateHole: (id, updates) =>
-    set((state) => ({
+    pushHistory((state) => ({
       parameters: {
         ...state.parameters,
         holes: state.parameters.holes.map((h) =>
@@ -640,21 +728,49 @@ export const useModelStore = create<ModelStore>((set) => ({
   autoRotate: false,
   setAutoRotate: (enabled) => set({ autoRotate: enabled }),
   wireframeMode: false,
-  setWireframeMode: (enabled) => set({ wireframeMode: enabled }),
+  setWireframeMode: (enabled) => pushHistory(() => ({ wireframeMode: enabled })),
   materialPreset: "default",
-  setMaterialPreset: (preset) => set({ materialPreset: preset }),
+  setMaterialPreset: (preset) => pushHistory(() => ({ materialPreset: preset })),
+  past: [],
+  future: [],
+  canUndo: false,
+  canRedo: false,
+  undo: () => {
+    const state = get() as ModelStore & { past?: EditorSnapshot[]; future?: EditorSnapshot[] }
+    const past = state.past || []
+    if (past.length === 0) return
+    const previous = past[past.length - 1]
+    const currentSnapshot = createSnapshot(state)
+    applySnapshot(previous, {
+      past: past.slice(0, -1),
+      future: [currentSnapshot, ...(state.future || [])].slice(0, HISTORY_LIMIT),
+    })
+  },
+  redo: () => {
+    const state = get() as ModelStore & { past?: EditorSnapshot[]; future?: EditorSnapshot[] }
+    const future = state.future || []
+    if (future.length === 0) return
+    const next = future[0]
+    const currentSnapshot = createSnapshot(state)
+    applySnapshot(next, {
+      past: [...(state.past || []), currentSnapshot].slice(-HISTORY_LIMIT),
+      future: future.slice(1),
+    })
+  },
   screenshotTrigger: 0,
   triggerScreenshot: () =>
     set((state) => ({ screenshotTrigger: state.screenshotTrigger + 1 })),
   resetViewTrigger: 0,
   triggerResetView: () =>
     set((state) => ({ resetViewTrigger: state.resetViewTrigger + 1 })),
+  isExporting: false,
+  setExporting: (exporting) => set({ isExporting: exporting }),
 
   // Effects
   bloomEnabled: false,
-  setBloomEnabled: (enabled: boolean) => set({ bloomEnabled: enabled }),
+  setBloomEnabled: (enabled: boolean) => pushHistory(() => ({ bloomEnabled: enabled })),
 
   // Scene settings
   showGrid: true,
-  setShowGrid: (enabled: boolean) => set({ showGrid: enabled }),
-}));
+  setShowGrid: (enabled: boolean) => pushHistory(() => ({ showGrid: enabled })),
+})})

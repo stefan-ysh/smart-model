@@ -187,7 +187,7 @@ function collectMeshes(target: THREE.Object3D): {
 /**
  * Export as STL (binary)
  */
-function exportSTL(mesh: THREE.Mesh): void {
+function exportSTL(mesh: THREE.Mesh): Promise<void> {
   const exporter = new STLExporter()
   const result = exporter.parse(mesh, { binary: true }) as DataView
   
@@ -200,12 +200,13 @@ function exportSTL(mesh: THREE.Mesh): void {
     new Blob([arrayBuffer], { type: 'application/octet-stream' }),
     'stl'
   )
+  return Promise.resolve()
 }
 
 /**
  * Export as OBJ
  */
-function exportOBJ(mesh: THREE.Mesh): void {
+function exportOBJ(mesh: THREE.Mesh): Promise<void> {
   const exporter = new OBJExporter()
   const result = exporter.parse(mesh)
   
@@ -213,49 +214,58 @@ function exportOBJ(mesh: THREE.Mesh): void {
     new Blob([result], { type: 'text/plain' }),
     'obj'
   )
+  return Promise.resolve()
 }
 
 /**
  * Export as GLTF (JSON format)
  */
-function exportGLTF(mesh: THREE.Mesh): void {
+function exportGLTF(mesh: THREE.Mesh): Promise<void> {
   const exporter = new GLTFExporter()
-  
-  exporter.parse(
-    mesh,
-    (result) => {
-      const output = JSON.stringify(result, null, 2)
-      downloadBlob(
-        new Blob([output], { type: 'application/json' }),
-        'gltf'
-      )
-    },
-    (error) => {
-      console.error('GLTF export error:', error)
-    },
-    { binary: false }
-  )
+
+  return new Promise((resolve, reject) => {
+    exporter.parse(
+      mesh,
+      (result) => {
+        const output = JSON.stringify(result, null, 2)
+        downloadBlob(
+          new Blob([output], { type: 'application/json' }),
+          'gltf'
+        )
+        resolve()
+      },
+      (error) => {
+        console.error('GLTF export error:', error)
+        reject(error)
+      },
+      { binary: false }
+    )
+  })
 }
 
 /**
  * Export as GLB (binary GLTF)
  */
-function exportGLB(mesh: THREE.Mesh): void {
+function exportGLB(mesh: THREE.Mesh): Promise<void> {
   const exporter = new GLTFExporter()
-  
-  exporter.parse(
-    mesh,
-    (result) => {
-      downloadBlob(
-        new Blob([result as ArrayBuffer], { type: 'application/octet-stream' }),
-        'glb'
-      )
-    },
-    (error) => {
-      console.error('GLB export error:', error)
-    },
-    { binary: true }
-  )
+
+  return new Promise((resolve, reject) => {
+    exporter.parse(
+      mesh,
+      (result) => {
+        downloadBlob(
+          new Blob([result as ArrayBuffer], { type: 'application/octet-stream' }),
+          'glb'
+        )
+        resolve()
+      },
+      (error) => {
+        console.error('GLB export error:', error)
+        reject(error)
+      },
+      { binary: true }
+    )
+  })
 }
 
 /**
@@ -271,8 +281,9 @@ function downloadBlob(blob: Blob, extension: string): void {
 
 export function ExportHandler() {
   const { scene } = useThree()
-  const { parameters } = useModelStore()
-  const { exportTrigger, exportFormat } = parameters
+  const exportTrigger = useModelStore((state) => state.parameters.exportTrigger)
+  const exportFormat = useModelStore((state) => state.parameters.exportFormat)
+  const setExporting = useModelStore((state) => state.setExporting)
   const lastExportTriggerRef = useRef(exportTrigger)
 
   useEffect(() => {
@@ -280,45 +291,58 @@ export function ExportHandler() {
     if (exportTrigger === lastExportTriggerRef.current) return
     lastExportTriggerRef.current = exportTrigger
 
-    // Find the export target group
-    const target = scene.getObjectByName('export-target')
-    if (!target) {
-      console.warn("Export target not found")
-      return
-    }
+    setExporting(true)
+    let isCancelled = false
 
-    const { geometries, mesh } = collectMeshes(target)
-    
-    if (!mesh) {
-      console.warn("No meshes found in export target")
-      return
-    }
+    const frameId = window.requestAnimationFrame(async () => {
+      if (isCancelled) return
 
-    // Export based on selected format
-    switch (exportFormat) {
-      case 'stl':
-        exportSTL(mesh)
-        break
-      case 'obj':
-        exportOBJ(mesh)
-        break
-      case 'gltf':
-        exportGLTF(mesh)
-        break
-      case 'glb':
-        exportGLB(mesh)
-        break
-      default:
-        exportSTL(mesh)
-    }
+      try {
+        const target = scene.getObjectByName("export-target")
+        if (!target) {
+          console.warn("Export target not found")
+          return
+        }
 
-    // Cleanup
-    geometries.forEach(g => g.dispose())
-    if (geometries.length > 1 && mesh.geometry) {
-      mesh.geometry.dispose()
+        const { geometries, mesh } = collectMeshes(target)
+
+        if (!mesh) {
+          console.warn("No meshes found in export target")
+          return
+        }
+
+        switch (exportFormat) {
+          case "stl":
+            await exportSTL(mesh)
+            break
+          case "obj":
+            await exportOBJ(mesh)
+            break
+          case "gltf":
+            await exportGLTF(mesh)
+            break
+          case "glb":
+            await exportGLB(mesh)
+            break
+          default:
+            await exportSTL(mesh)
+        }
+
+        geometries.forEach((g) => g.dispose())
+        if (geometries.length > 1 && mesh.geometry) {
+          mesh.geometry.dispose()
+        }
+      } finally {
+        setExporting(false)
+      }
+    })
+
+    return () => {
+      isCancelled = true
+      window.cancelAnimationFrame(frameId)
+      setExporting(false)
     }
-    
-  }, [exportTrigger, exportFormat, scene])
+  }, [exportTrigger, exportFormat, scene, setExporting])
 
   return null
 }

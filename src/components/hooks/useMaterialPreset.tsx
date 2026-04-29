@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { useModelStore, MaterialPreset } from "@/lib/store"
 import * as THREE from "three"
+import { THEME_COLORS } from "@/lib/theme-colors"
 
 // Material preset configurations
 export const MATERIAL_CONFIGS: Record<MaterialPreset, {
@@ -21,13 +22,13 @@ export const MATERIAL_CONFIGS: Record<MaterialPreset, {
     envMapIntensity: 1,
   },
   gold: {
-    color: '#ffd700',
+    color: THEME_COLORS.secondary,
     metalness: 1,
     roughness: 0.2,
     envMapIntensity: 1.5,
   },
   chrome: {
-    color: '#e8e8e8',
+    color: THEME_COLORS.foreground,
     metalness: 1,
     roughness: 0.05,
     envMapIntensity: 2,
@@ -38,7 +39,7 @@ export const MATERIAL_CONFIGS: Record<MaterialPreset, {
     envMapIntensity: 0.5,
   },
   glass: {
-    color: '#88ccff',
+    color: THEME_COLORS.secondary,
     metalness: 0.1,
     roughness: 0.05,
     transparent: true,
@@ -48,7 +49,7 @@ export const MATERIAL_CONFIGS: Record<MaterialPreset, {
   neon: {
     metalness: 0.3,
     roughness: 0.2,
-    emissive: '#ff00ff',
+    emissive: THEME_COLORS.primary,
     emissiveIntensity: 0.5,
     envMapIntensity: 1,
   },

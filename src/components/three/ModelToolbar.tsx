@@ -3,8 +3,8 @@
 import { useState } from "react"
 import type { LucideIcon } from "lucide-react"
 import { 
-  RotateCw, Camera, Palette, Grid3X3, Maximize, Home, 
-  Sparkles, X, ChevronUp, Grid2X2
+  RotateCw, Camera, Palette, Grid3X3, Maximize, Home,
+  Sparkles, X, ChevronUp, Grid2X2, Undo2, Redo2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useModelStore, MaterialPreset } from "@/lib/store"
@@ -23,7 +23,7 @@ const ToolbarButton = ({ icon: Icon, label, active, onClick, className }: Toolba
     title={label}
     className={cn(
       "relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300",
-      "hover:scale-110 hover:bg-white/10",
+      "hover:scale-110 hover:bg-card/60",
       "active:scale-95",
       active 
         ? "bg-primary/20 text-primary shadow-lg shadow-primary/20" 
@@ -33,7 +33,7 @@ const ToolbarButton = ({ icon: Icon, label, active, onClick, className }: Toolba
   >
     <Icon className={cn(
       "h-5 w-5 transition-transform",
-      active ? "drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]" : undefined
+      active ? "drop-shadow-sm" : undefined
     )} />
     {active && (
       <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
@@ -42,12 +42,12 @@ const ToolbarButton = ({ icon: Icon, label, active, onClick, className }: Toolba
 )
 
 const MATERIAL_PRESETS: { value: MaterialPreset; label: string; color: string }[] = [
-  { value: 'default', label: '默认', color: 'bg-sky-500' },
-  { value: 'gold', label: '黄金', color: 'bg-yellow-500' },
-  { value: 'chrome', label: '镀铬', color: 'bg-slate-400' },
-  { value: 'matte', label: '哑光', color: 'bg-stone-500' },
-  { value: 'glass', label: '玻璃', color: 'bg-cyan-300' },
-  { value: 'neon', label: '霓虹', color: 'bg-fuchsia-500' },
+  { value: 'default', label: '默认', color: 'bg-primary' },
+  { value: 'gold', label: '黄金', color: 'bg-secondary' },
+  { value: 'chrome', label: '镀铬', color: 'bg-muted' },
+  { value: 'matte', label: '哑光', color: 'bg-accent' },
+  { value: 'glass', label: '玻璃', color: 'bg-secondary' },
+  { value: 'neon', label: '霓虹', color: 'bg-primary' },
 ]
 
 export function ModelToolbar() {
@@ -62,6 +62,7 @@ export function ModelToolbar() {
     triggerResetView,
     bloomEnabled, setBloomEnabled,
     showGrid, setShowGrid,
+    canUndo, canRedo, undo, redo,
   } = useModelStore()
 
   const handleFullscreen = () => {
@@ -80,7 +81,7 @@ export function ModelToolbar() {
       <div className="absolute bottom-4 left-4 z-20">
         <button
           onClick={() => setIsCollapsed(false)}
-          className="flex items-center justify-center w-10 h-10 rounded-xl bg-background/80 backdrop-blur-xl border border-white/10 text-muted-foreground hover:text-foreground transition-all hover:scale-105 shadow-xl"
+          className="flex items-center justify-center w-10 h-10 rounded-xl bg-background/80 backdrop-blur-xl border border-border/70 text-muted-foreground hover:text-foreground transition-all hover:scale-105 shadow-xl"
         >
           <ChevronUp className="h-5 w-5" />
         </button>
@@ -92,7 +93,7 @@ export function ModelToolbar() {
     <div className="absolute bottom-4 left-4 z-20 flex flex-col gap-2">
       {/* Material Picker Popup */}
       {showMaterialPicker && (
-        <div className="mb-2 p-3 bg-background/90 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
+        <div className="mb-2 p-3 bg-background/90 backdrop-blur-xl rounded-2xl border border-border/70 shadow-2xl">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-foreground">材质预设</span>
             <button 
@@ -112,7 +113,7 @@ export function ModelToolbar() {
                 }}
                 className={cn(
                   "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
-                  "hover:bg-white/10",
+                  "hover:bg-card/60",
                   materialPreset === preset.value && "bg-primary/20 ring-1 ring-primary"
                 )}
               >
@@ -125,7 +126,7 @@ export function ModelToolbar() {
       )}
 
       {/* Main Toolbar */}
-      <div className="flex items-center gap-1 p-1.5 bg-background/80 backdrop-blur-xl rounded-2xl border border-white/10 shadow-xl">
+      <div className="flex items-center gap-1 p-1.5 bg-background/80 backdrop-blur-xl rounded-2xl border border-border/70 shadow-xl">
         <ToolbarButton 
           icon={RotateCw} 
           label="自动旋转" 
@@ -136,6 +137,18 @@ export function ModelToolbar() {
           icon={Camera} 
           label="截图" 
           onClick={triggerScreenshot}
+        />
+        <ToolbarButton
+          icon={Undo2}
+          label="撤销"
+          onClick={undo}
+          className={!canUndo ? "pointer-events-none opacity-40" : undefined}
+        />
+        <ToolbarButton
+          icon={Redo2}
+          label="重做"
+          onClick={redo}
+          className={!canRedo ? "pointer-events-none opacity-40" : undefined}
         />
         <ToolbarButton 
           icon={Palette} 
@@ -150,7 +163,7 @@ export function ModelToolbar() {
           onClick={() => setWireframeMode(!wireframeMode)}
         />
         
-        <div className="w-px h-6 bg-white/10 mx-1" />
+        <div className="w-px h-6 bg-card/60 mx-1" />
         
         <ToolbarButton 
           icon={Sparkles} 
@@ -165,7 +178,7 @@ export function ModelToolbar() {
           onClick={() => setShowGrid(!showGrid)}
         />
         
-        <div className="w-px h-6 bg-white/10 mx-1" />
+        <div className="w-px h-6 bg-card/60 mx-1" />
         
         <ToolbarButton 
           icon={Home} 

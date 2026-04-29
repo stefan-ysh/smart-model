@@ -4,6 +4,7 @@ import { useRef, useState, useCallback } from "react"
 import { useThree, ThreeEvent } from "@react-three/fiber"
 import { useModelStore } from "@/lib/store"
 import * as THREE from "three"
+import { THEME_COLORS } from "@/lib/theme-colors"
 
 interface DraggableLayerProps {
   layerId: string  // 'base' or textItem.id
@@ -142,7 +143,7 @@ export function DraggableLayer({
       {isSelected && isTransformEnabled && (
         <mesh position={[0, 0.1, 0]}>
           <ringGeometry args={[15, 17, 32]} />
-          <meshBasicMaterial color="#3b82f6" transparent opacity={0.5} side={THREE.DoubleSide} />
+          <meshBasicMaterial color={THEME_COLORS.primary} transparent opacity={0.5} side={THREE.DoubleSide} />
         </mesh>
       )}
     </group>

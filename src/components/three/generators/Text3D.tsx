@@ -6,6 +6,7 @@ import { useLoader } from "@react-three/fiber"
 import { UniversalFontLoader } from "@/utils/fontLoaderUtils"
 import { useMemo } from "react"
 import { Font } from "three-stdlib"
+import { THEME_COLORS } from "@/lib/theme-colors"
 
 // Filter text to only include characters that exist in the font
 function filterSupportedChars(text: string, font: Font): string {
@@ -51,7 +52,7 @@ export function Text3DGenerator() {
           bevelSegments={3}
         >
           {safeText}
-          <meshStandardMaterial color="#ec4899" roughness={0.3} />
+          <meshStandardMaterial color={THEME_COLORS.primary} roughness={0.3} />
         </DreiText3D>
       </Center>
     </group>

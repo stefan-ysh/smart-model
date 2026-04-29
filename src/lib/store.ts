@@ -254,11 +254,6 @@ export const FONT_GROUPS = {
         value: "/fonts/Pangmenzhengdaoqingsongti_Regular.json",
         label: "庞门正道轻松体",
       },
-      {
-        value: "/fonts/Swei Dart Sans CJK JP_Black.json",
-        label: "狮尾镖刺黑体",
-      },
-      { value: "/fonts/XianErTi_Regular.json", label: "仙儿体" },
       { value: "/fonts/baotuxiaobaiti_Regular.json", label: "包图小白体" },
       { value: "/fonts/k8x12S_Regular.json", label: "K8像素字体" },
       {
